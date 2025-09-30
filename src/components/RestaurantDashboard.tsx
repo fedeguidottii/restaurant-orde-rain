@@ -590,17 +590,9 @@ export default function RestaurantDashboard({ user, onLogout }: Props) {
                                       {/* Item Details */}
                                       <div className="flex-1 min-w-0">
                                         <div className="mb-2">
-                                          <h4 className="text-lg font-bold text-foreground mb-1 leading-tight">
+                                          <h4 className="text-xl font-bold text-foreground mb-1 leading-tight">
                                             {menuItem?.name || 'Piatto non trovato'}
                                           </h4>
-                                          {menuItem?.description && (
-                                            <p className="text-sm text-muted-foreground leading-relaxed">
-                                              {menuItem.description.length > 80 
-                                                ? `${menuItem.description.substring(0, 80)}...` 
-                                                : menuItem.description
-                                              }
-                                            </p>
-                                          )}
                                         </div>
                                         
                                         {item.notes && (
@@ -712,41 +704,33 @@ export default function RestaurantDashboard({ user, onLogout }: Props) {
                                 const itemIndex = originalOrder?.items.findIndex(i => i.menuItemId === item.menuItemId) || 0
 
                                 return (
-                                  <div key={`${item.orderId}-${index}`} className="group bg-gradient-to-r from-card via-background to-card border border-border/8 rounded-xl p-5 hover:shadow-lg transition-all duration-300">
-                                    <div className="flex items-start justify-between gap-6">
+                                  <div key={`${item.orderId}-${index}`} className="group bg-gradient-to-r from-card via-background to-card border border-border/8 rounded-xl p-4 hover:shadow-lg transition-all duration-300">
+                                    <div className="flex items-center justify-between gap-4">
                                       {/* Quantity Badge */}
                                       <div className="flex-shrink-0">
                                         <div className="relative">
-                                          <div className="w-16 h-16 bg-primary/15 rounded-2xl flex items-center justify-center border-2 border-primary/20">
-                                            <span className="text-2xl font-black text-primary">{item.quantity}</span>
+                                          <div className="w-12 h-12 bg-primary/15 rounded-xl flex items-center justify-center border-2 border-primary/20">
+                                            <span className="text-lg font-black text-primary">{item.quantity}</span>
                                           </div>
-                                          <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-accent rounded-full flex items-center justify-center">
-                                            <div className="w-2 h-2 bg-white rounded-full animate-pulse"></div>
+                                          <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-accent rounded-full flex items-center justify-center">
+                                            <div className="w-1.5 h-1.5 bg-white rounded-full animate-pulse"></div>
                                           </div>
                                         </div>
                                       </div>
 
                                       {/* Table Details */}
                                       <div className="flex-1 min-w-0">
-                                        <div className="mb-2">
-                                          <h4 className="text-lg font-bold text-foreground mb-1 leading-tight">
-                                            {table?.name || 'Tavolo sconosciuto'}
-                                          </h4>
-                                          <p className="text-sm text-muted-foreground leading-relaxed">
-                                            Ordinato {getTimeAgo(item.timestamp)}
-                                          </p>
-                                        </div>
-                                        
+                                        <h4 className="text-lg font-bold text-foreground leading-tight">
+                                          {table?.name || 'Tavolo sconosciuto'}
+                                        </h4>
+                                        <p className="text-sm text-muted-foreground">
+                                          {getTimeAgo(item.timestamp)}
+                                        </p>
                                         {item.notes && (
-                                          <div className="mt-3 p-3 bg-amber-50 border border-amber-200 rounded-lg">
-                                            <div className="flex items-start gap-2">
-                                              <div className="w-5 h-5 bg-amber-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
-                                                <span className="text-xs">📝</span>
-                                              </div>
-                                              <p className="text-sm text-amber-800 font-medium">
-                                                {item.notes}
-                                              </p>
-                                            </div>
+                                          <div className="mt-2 p-2 bg-amber-50 border border-amber-200 rounded-lg">
+                                            <p className="text-xs text-amber-800 font-medium">
+                                              📝 {item.notes}
+                                            </p>
                                           </div>
                                         )}
                                       </div>
@@ -756,13 +740,10 @@ export default function RestaurantDashboard({ user, onLogout }: Props) {
                                         <Button
                                           size="lg"
                                           onClick={() => originalOrder && handleCompleteOrderItem(originalOrder.id, itemIndex)}
-                                          className="h-16 px-8 bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white font-bold text-lg shadow-lg hover:shadow-xl transition-all duration-300 rounded-xl border-0 group-hover:scale-105"
+                                          className="h-12 px-6 bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white font-bold shadow-lg hover:shadow-xl transition-all duration-300 rounded-xl border-0 group-hover:scale-105"
                                         >
-                                          <CheckCircle size={28} className="mr-3" />
-                                          <div className="flex flex-col items-start">
-                                            <span className="text-base leading-none">PRONTO</span>
-                                            <span className="text-xs opacity-90 leading-none mt-1">Completa</span>
-                                          </div>
+                                          <CheckCircle size={20} className="mr-2" />
+                                          PRONTO
                                         </Button>
                                       </div>
                                     </div>
