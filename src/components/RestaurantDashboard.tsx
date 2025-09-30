@@ -463,7 +463,7 @@ export default function RestaurantDashboard({ user, onLogout }: Props) {
         <div className="p-6">
           {/* Orders Section */}
           {activeSection === 'orders' && (
-            <div className="space-y-6">
+            <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <h2 className="text-2xl font-bold">Gestione Ordini</h2>
                 <div className="flex items-center gap-2">
@@ -479,7 +479,7 @@ export default function RestaurantDashboard({ user, onLogout }: Props) {
                 </div>
               </div>
 
-              <div className="grid lg:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-3">
+              <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
                 {restaurantOrders.length === 0 ? (
                   <div className="col-span-full text-center text-muted-foreground py-8">
                     Nessun ordine ricevuto oggi.
@@ -510,21 +510,23 @@ export default function RestaurantDashboard({ user, onLogout }: Props) {
                         )
 
                         return (
-                          <Card key={tableId} className="shadow-gold bg-card-gradient">
-                            <CardHeader className="pb-3">
+                          <Card key={tableId} className="shadow-gold bg-card-gradient border-l-4 border-l-primary">
+                            <CardHeader className="pb-2">
                               <div className="flex items-center justify-between">
-                                <CardTitle className="text-lg">
+                                <CardTitle className="text-xl font-bold text-primary">
                                   {table?.name || 'Tavolo sconosciuto'}
                                 </CardTitle>
-                                <Badge variant="secondary" className="bg-primary/20">
-                                  {orders.length} ordini
-                                </Badge>
+                                <div className="flex items-center gap-2">
+                                  <Badge variant="secondary" className="bg-accent text-accent-foreground font-bold px-3 py-1">
+                                    {orders.length} {orders.length === 1 ? 'ordine' : 'ordini'}
+                                  </Badge>
+                                  <Badge variant="outline" className="text-muted-foreground font-medium">
+                                    {getTimeAgo(oldestOrder.timestamp)}
+                                  </Badge>
+                                </div>
                               </div>
-                              <p className="text-sm text-muted-foreground">
-                                {getTimeAgo(oldestOrder.timestamp)} • €{totalAmount.toFixed(2)}
-                              </p>
                             </CardHeader>
-                            <CardContent className="space-y-3">
+                            <CardContent className="space-y-2">
                               {orders.flatMap(order => order.items).map((item, index) => {
                                 const menuItem = restaurantMenuItems.find(m => m.id === item.menuItemId)
                                 const originalOrderIndex = restaurantOrders.findIndex(o => 
@@ -534,20 +536,32 @@ export default function RestaurantDashboard({ user, onLogout }: Props) {
                                 const itemIndex = originalOrder?.items.findIndex(i => i.menuItemId === item.menuItemId) || 0
 
                                 return (
-                                  <div key={`${item.menuItemId}-${index}`} className="flex justify-between items-center text-sm">
-                                    <div>
-                                      <span>{item.quantity}x {menuItem?.name || 'Piatto non trovato'}</span>
+                                  <div key={`${item.menuItemId}-${index}`} className="flex items-center justify-between p-3 bg-white/70 rounded-lg border border-border/50">
+                                    <div className="flex-1">
+                                      <div className="flex items-center gap-3">
+                                        <Badge variant="secondary" className="bg-primary text-primary-foreground font-bold text-lg px-2 py-1 min-w-[2.5rem] text-center">
+                                          {item.quantity}x
+                                        </Badge>
+                                        <span className="font-semibold text-lg text-foreground">
+                                          {menuItem?.name || 'Piatto non trovato'}
+                                        </span>
+                                      </div>
                                       {item.notes && (
-                                        <p className="text-muted-foreground text-xs italic">Note: {item.notes}</p>
+                                        <div className="mt-2 ml-12">
+                                          <Badge variant="outline" className="bg-yellow-50 border-yellow-300 text-yellow-800">
+                                            Note: {item.notes}
+                                          </Badge>
+                                        </div>
                                       )}
                                     </div>
                                     <Button
-                                      size="sm"
+                                      size="lg"
                                       variant="outline"
                                       onClick={() => originalOrder && handleCompleteOrderItem(originalOrder.id, itemIndex)}
-                                      className="ml-2 shadow-sm hover:shadow-gold transition-shadow duration-200"
+                                      className="ml-4 shadow-sm hover:shadow-gold transition-all duration-200 border-green-500 hover:bg-green-50 hover:border-green-600"
                                     >
-                                      <CheckCircle size={14} className="text-green-600" />
+                                      <CheckCircle size={20} className="text-green-600" />
+                                      <span className="ml-2 font-medium">Pronto</span>
                                     </Button>
                                   </div>
                                 )
@@ -590,41 +604,55 @@ export default function RestaurantDashboard({ user, onLogout }: Props) {
                         )
 
                         return (
-                          <Card key={menuItemId} className="shadow-gold bg-card-gradient">
-                            <CardHeader className="pb-3">
+                          <Card key={menuItemId} className="shadow-gold bg-card-gradient border-l-4 border-l-accent">
+                            <CardHeader className="pb-2">
                               <div className="flex items-center justify-between">
-                                <CardTitle className="text-lg">
+                                <CardTitle className="text-xl font-bold text-accent">
                                   {menuItem?.name || 'Piatto non trovato'}
                                 </CardTitle>
-                                <Badge variant="secondary" className="bg-primary/20">
-                                  {totalQuantity}x
-                                </Badge>
+                                <div className="flex items-center gap-2">
+                                  <Badge variant="secondary" className="bg-primary text-primary-foreground font-bold text-lg px-3 py-1">
+                                    {totalQuantity}x
+                                  </Badge>
+                                  <Badge variant="outline" className="text-muted-foreground font-medium">
+                                    {getTimeAgo(oldestItem.timestamp)}
+                                  </Badge>
+                                </div>
                               </div>
-                              <p className="text-sm text-muted-foreground">
-                                {getTimeAgo(oldestItem.timestamp)} • €{((menuItem?.price || 0) * totalQuantity).toFixed(2)}
-                              </p>
                             </CardHeader>
-                            <CardContent className="space-y-3">
+                            <CardContent className="space-y-2">
                               {items.map((item, index) => {
                                 const table = restaurantTables.find(t => t.id === item.tableId)
                                 const originalOrder = restaurantOrders.find(o => o.id === item.orderId)
                                 const itemIndex = originalOrder?.items.findIndex(i => i.menuItemId === item.menuItemId) || 0
 
                                 return (
-                                  <div key={`${item.orderId}-${index}`} className="flex justify-between items-center text-sm">
-                                    <div>
-                                      <span>{item.quantity}x da {table?.name || 'Tavolo sconosciuto'}</span>
+                                  <div key={`${item.orderId}-${index}`} className="flex items-center justify-between p-3 bg-white/70 rounded-lg border border-border/50">
+                                    <div className="flex-1">
+                                      <div className="flex items-center gap-3">
+                                        <Badge variant="secondary" className="bg-accent text-accent-foreground font-bold text-lg px-2 py-1 min-w-[2.5rem] text-center">
+                                          {item.quantity}x
+                                        </Badge>
+                                        <span className="font-semibold text-lg text-foreground">
+                                          {table?.name || 'Tavolo sconosciuto'}
+                                        </span>
+                                      </div>
                                       {item.notes && (
-                                        <p className="text-muted-foreground text-xs italic">Note: {item.notes}</p>
+                                        <div className="mt-2 ml-12">
+                                          <Badge variant="outline" className="bg-yellow-50 border-yellow-300 text-yellow-800">
+                                            Note: {item.notes}
+                                          </Badge>
+                                        </div>
                                       )}
                                     </div>
                                     <Button
-                                      size="sm"
+                                      size="lg"
                                       variant="outline"
                                       onClick={() => originalOrder && handleCompleteOrderItem(originalOrder.id, itemIndex)}
-                                      className="ml-2 shadow-sm hover:shadow-gold transition-shadow duration-200"
+                                      className="ml-4 shadow-sm hover:shadow-gold transition-all duration-200 border-green-500 hover:bg-green-50 hover:border-green-600"
                                     >
-                                      <CheckCircle size={14} className="text-green-600" />
+                                      <CheckCircle size={20} className="text-green-600" />
+                                      <span className="ml-2 font-medium">Pronto</span>
                                     </Button>
                                   </div>
                                 )
@@ -641,7 +669,7 @@ export default function RestaurantDashboard({ user, onLogout }: Props) {
               {restaurantCompletedOrders.length > 0 && (
                 <div className="space-y-4">
                   <h3 className="text-lg font-semibold text-muted-foreground">Ordini Completati</h3>
-                  <div className="grid lg:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-3">
+                  <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
                     {restaurantCompletedOrders.map((order) => {
                       const table = restaurantTables.find(t => t.id === order.tableId)
                       return (
@@ -654,27 +682,39 @@ export default function RestaurantDashboard({ user, onLogout }: Props) {
                               <Badge variant="outline">Completato</Badge>
                             </div>
                             <p className="text-sm text-muted-foreground">
-                              {getTimeAgo(order.timestamp)} • €{order.total.toFixed(2)}
+                              {getTimeAgo(order.timestamp)}
                             </p>
                           </CardHeader>
-                          <CardContent className="space-y-3">
+                          <CardContent className="space-y-2">
                             {order.items.map((item, index) => {
                               const menuItem = restaurantMenuItems.find(m => m.id === item.menuItemId)
                               return (
-                                <div key={index} className="flex justify-between items-center text-sm">
-                                  <div>
-                                    <span>{item.quantity}x {menuItem?.name || 'Piatto non trovato'}</span>
+                                <div key={index} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg border border-border/30">
+                                  <div className="flex-1">
+                                    <div className="flex items-center gap-3">
+                                      <Badge variant="outline" className="font-bold text-base px-2 py-1 min-w-[2.5rem] text-center">
+                                        {item.quantity}x
+                                      </Badge>
+                                      <span className="font-medium text-base text-muted-foreground">
+                                        {menuItem?.name || 'Piatto non trovato'}
+                                      </span>
+                                    </div>
                                     {item.notes && (
-                                      <p className="text-muted-foreground text-xs italic">Note: {item.notes}</p>
+                                      <div className="mt-2 ml-12">
+                                        <Badge variant="outline" className="bg-gray-50 border-gray-300 text-gray-600">
+                                          Note: {item.notes}
+                                        </Badge>
+                                      </div>
                                     )}
                                   </div>
                                   <Button
-                                    size="sm"
+                                    size="lg"
                                     variant="outline"
                                     onClick={() => handleUncompleteOrderItem(order.id)}
-                                    className="ml-2 shadow-sm hover:shadow-gold transition-shadow duration-200"
+                                    className="ml-4 shadow-sm hover:shadow-gold transition-all duration-200 border-muted-foreground hover:bg-muted/50"
                                   >
-                                    <Circle size={14} className="text-muted-foreground" />
+                                    <Circle size={20} className="text-muted-foreground" />
+                                    <span className="ml-2 font-medium">Annulla</span>
                                   </Button>
                                 </div>
                               )
