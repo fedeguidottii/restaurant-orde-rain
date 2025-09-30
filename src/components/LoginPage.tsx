@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -24,6 +24,17 @@ export default function LoginPage({ onLogin, onTableAccess }: Props) {
 
   const [users] = useKV<User[]>('users', [])
   const [tables] = useKV<Table[]>('tables', [])
+
+  // Check for QR code parameters in URL
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search)
+    const tableId = urlParams.get('table')
+    if (tableId) {
+      setTableCode(tableId)
+      // Clear the URL parameter
+      window.history.replaceState({}, document.title, window.location.pathname)
+    }
+  }, [])
 
   const handleLogin = async () => {
     setLoading(true)
@@ -157,7 +168,8 @@ export default function LoginPage({ onLogin, onTableAccess }: Props) {
                       id="tableCode"
                       value={tableCode}
                       onChange={(e) => setTableCode(e.target.value)}
-                      placeholder="Es: table-1"
+                      placeholder="Es: table-1234567890"
+                      className={tableCode ? 'bg-green-50 border-green-200' : ''}
                     />
                   </div>
                   <div className="space-y-2">

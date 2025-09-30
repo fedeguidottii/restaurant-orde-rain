@@ -35,7 +35,8 @@ import {
   Calendar,
   DownloadSimple,
   Money,
-  CreditCard
+  CreditCard,
+  X
 } from '@phosphor-icons/react'
 
 interface Props {
@@ -68,9 +69,12 @@ export default function RestaurantDashboard({ user, onLogout }: Props) {
   const [showMenuDialog, setShowMenuDialog] = useState(false)
   const [showCategoryDialog, setShowCategoryDialog] = useState(false)
   const [showQRDialog, setShowQRDialog] = useState(false)
+  const [showBillDialog, setShowBillDialog] = useState(false)
+  const [showCategoryManageDialog, setShowCategoryManageDialog] = useState(false)
   const [selectedTable, setSelectedTable] = useState<Table | null>(null)
   const [orderViewMode, setOrderViewMode] = useState<'tables' | 'dishes'>('tables')
   const [editingTable, setEditingTable] = useState<Table | null>(null)
+  const [allYouCanEatPrice, setAllYouCanEatPrice] = useKV<number>('allYouCanEatPrice', 25.00)
 
   const restaurant = restaurants?.find(r => r.id === user.restaurantId)
   const restaurantTables = tables?.filter(t => t.restaurantId === user.restaurantId) || []
@@ -91,12 +95,13 @@ export default function RestaurantDashboard({ user, onLogout }: Props) {
       return
     }
 
+    const tableId = `table-${Date.now()}`
     const table: Table = {
-      id: `table-${Date.now()}`,
+      id: tableId,
       name: newTable.name,
       isActive: true,
       pin: generatePin(),
-      qrCode: `${window.location.origin}?table=table-${Date.now()}`,
+      qrCode: `${window.location.origin}?table=${tableId}`,
       restaurantId: user.restaurantId!
     }
 
@@ -238,7 +243,48 @@ export default function RestaurantDashboard({ user, onLogout }: Props) {
 
   const handleDeleteTable = (tableId: string) => {
     setTables((current) => (current || []).filter(t => t.id !== tableId))
+    // Also clear from paid tables
+    setPaidTables((current) => (current || []).filter(id => id !== tableId))
     toast.success('Tavolo eliminato')
+  }
+
+  const handleDeleteCompletedOrder = (orderId: string) => {
+    setCompletedOrders((current) => (current || []).filter(o => o.id !== orderId))
+    toast.success('Ordine eliminato')
+  }
+
+  const handleMoveCategoryUp = (index: number) => {
+    if (index === 0) return
+    setCategories((current) => {
+      const newCategories = [...(current || [])]
+      const temp = newCategories[index]
+      newCategories[index] = newCategories[index - 1]
+      newCategories[index - 1] = temp
+      return newCategories
+    })
+  }
+
+  const handleMoveCategoryDown = (index: number) => {
+    if (index === (categories || []).length - 1) return
+    setCategories((current) => {
+      const newCategories = [...(current || [])]
+      const temp = newCategories[index]
+      newCategories[index] = newCategories[index + 1]
+      newCategories[index + 1] = temp
+      return newCategories
+    })
+  }
+
+  const handleDeleteCategory = (categoryName: string) => {
+    // Check if there are items in this category
+    const categoryItems = restaurantMenuItems.filter(item => item.category === categoryName)
+    if (categoryItems.length > 0) {
+      toast.error('Non puoi eliminare una categoria che contiene piatti')
+      return
+    }
+    
+    setCategories((current) => (current || []).filter(c => c !== categoryName))
+    toast.success('Categoria eliminata')
   }
 
   const handleDeleteMenuItem = (menuId: string) => {
@@ -316,6 +362,15 @@ export default function RestaurantDashboard({ user, onLogout }: Props) {
             </Button>
             
             <Button
+              variant={activeSection === 'categories' ? 'secondary' : 'ghost'}
+              className={`w-full justify-start ${!sidebarExpanded && 'px-2'}`}
+              onClick={() => setActiveSection('categories')}
+            >
+              <List size={16} />
+              {sidebarExpanded && <span className="ml-2">Categorie</span>}
+            </Button>
+            
+            <Button
               variant={activeSection === 'menu' ? 'secondary' : 'ghost'}
               className={`w-full justify-start ${!sidebarExpanded && 'px-2'}`}
               onClick={() => setActiveSection('menu')}
@@ -373,7 +428,7 @@ export default function RestaurantDashboard({ user, onLogout }: Props) {
                 </div>
               </div>
 
-              <div className="grid lg:grid-cols-2 xl:grid-cols-3 gap-4">
+              <div className="grid lg:grid-cols-2 xl:grid-cols-3 gap-3">
                 {restaurantOrders.length === 0 ? (
                   <div className="col-span-full text-center text-muted-foreground py-8">
                     Nessun ordine ricevuto oggi.
@@ -440,7 +495,7 @@ export default function RestaurantDashboard({ user, onLogout }: Props) {
               {restaurantCompletedOrders.length > 0 && (
                 <div className="space-y-4">
                   <h3 className="text-lg font-semibold text-muted-foreground">Ordini Completati</h3>
-                  <div className="grid lg:grid-cols-2 xl:grid-cols-3 gap-4">
+                  <div className="grid lg:grid-cols-2 xl:grid-cols-3 gap-3">
                     {restaurantCompletedOrders.map((order) => {
                       const table = restaurantTables.find(t => t.id === order.tableId)
                       return (
@@ -525,7 +580,7 @@ export default function RestaurantDashboard({ user, onLogout }: Props) {
                 </Dialog>
               </div>
 
-              <div className="grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+              <div className="grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
                 {restaurantTables.map((table) => {
                   const bill = getTableBill(table.id)
                   const isPaid = (paidTables || []).includes(table.id)
@@ -542,7 +597,7 @@ export default function RestaurantDashboard({ user, onLogout }: Props) {
                         <p className="text-sm text-muted-foreground">PIN: {table.pin}</p>
                       </CardHeader>
                       <CardContent className="space-y-3">
-                        <div className="flex flex-wrap gap-2">
+                        <div className="flex flex-wrap gap-1">
                           <Button
                             variant="outline"
                             size="sm"
@@ -564,7 +619,8 @@ export default function RestaurantDashboard({ user, onLogout }: Props) {
                             variant="outline"
                             size="sm"
                             onClick={() => {
-                              // Show bill dialog
+                              setSelectedTable(table)
+                              setShowBillDialog(true)
                             }}
                           >
                             <Receipt size={14} />
@@ -590,12 +646,12 @@ export default function RestaurantDashboard({ user, onLogout }: Props) {
                             ✓ Pagato
                           </div>
                         )}
-                        <div className="flex gap-2">
+                        <div className="flex gap-1">
                           <Button
                             variant="outline"
                             size="sm"
                             onClick={() => handleToggleTable(table.id)}
-                            className="flex-1"
+                            className="flex-1 px-2"
                           >
                             {table.isActive ? <EyeSlash size={14} /> : <Eye size={14} />}
                           </Button>
@@ -603,6 +659,7 @@ export default function RestaurantDashboard({ user, onLogout }: Props) {
                             variant="destructive"
                             size="sm"
                             onClick={() => handleDeleteTable(table.id)}
+                            className="px-2"
                           >
                             <Trash size={14} />
                           </Button>
@@ -620,39 +677,110 @@ export default function RestaurantDashboard({ user, onLogout }: Props) {
             </div>
           )}
 
+          {/* Categories Section */}
+          {activeSection === 'categories' && (
+            <div className="space-y-6">
+              <div className="flex items-center justify-between">
+                <h2 className="text-2xl font-bold">Gestione Categorie</h2>
+                <Dialog open={showCategoryDialog} onOpenChange={setShowCategoryDialog}>
+                  <DialogTrigger asChild>
+                    <Button className="flex items-center gap-2">
+                      <Plus size={16} />
+                      Nuova Categoria
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>Crea Nuova Categoria</DialogTitle>
+                    </DialogHeader>
+                    <div className="space-y-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="categoryName">Nome Categoria</Label>
+                        <Input
+                          id="categoryName"
+                          value={newCategory}
+                          onChange={(e) => setNewCategory(e.target.value)}
+                          placeholder="Es: Pizze"
+                        />
+                      </div>
+                      <Button onClick={handleCreateCategory} className="w-full">
+                        Crea Categoria
+                      </Button>
+                    </div>
+                  </DialogContent>
+                </Dialog>
+              </div>
+
+              <div className="space-y-3">
+                {categories?.map((category, index) => {
+                  const categoryItemsCount = restaurantMenuItems.filter(item => item.category === category).length
+                  
+                  return (
+                    <Card key={category}>
+                      <CardContent className="p-4">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-3">
+                            <div className="flex flex-col gap-1">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleMoveCategoryUp(index)}
+                                disabled={index === 0}
+                                className="h-6 w-6 p-0"
+                              >
+                                ↑
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleMoveCategoryDown(index)}
+                                disabled={index === (categories || []).length - 1}
+                                className="h-6 w-6 p-0"
+                              >
+                                ↓
+                              </Button>
+                            </div>
+                            <div>
+                              <h3 className="font-semibold text-lg">{category}</h3>
+                              <p className="text-sm text-muted-foreground">
+                                {categoryItemsCount} piatt{categoryItemsCount === 1 ? 'o' : 'i'}
+                              </p>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Badge variant="secondary">
+                              Posizione {index + 1}
+                            </Badge>
+                            <Button
+                              variant="destructive"
+                              size="sm"
+                              onClick={() => handleDeleteCategory(category)}
+                              disabled={categoryItemsCount > 0}
+                            >
+                              <Trash size={14} />
+                            </Button>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  )
+                })}
+                
+                {(categories || []).length === 0 && (
+                  <div className="text-center text-muted-foreground py-8">
+                    Nessuna categoria configurata. Crea la prima categoria per iniziare.
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
           {/* Menu Section */}
           {activeSection === 'menu' && (
             <div className="space-y-6">
               <div className="flex items-center justify-between">
                 <h2 className="text-2xl font-bold">Gestione Menù</h2>
                 <div className="flex gap-2">
-                  <Dialog open={showCategoryDialog} onOpenChange={setShowCategoryDialog}>
-                    <DialogTrigger asChild>
-                      <Button variant="outline" className="flex items-center gap-2">
-                        <Plus size={16} />
-                        Nuova Categoria
-                      </Button>
-                    </DialogTrigger>
-                    <DialogContent>
-                      <DialogHeader>
-                        <DialogTitle>Crea Nuova Categoria</DialogTitle>
-                      </DialogHeader>
-                      <div className="space-y-4">
-                        <div className="space-y-2">
-                          <Label htmlFor="categoryName">Nome Categoria</Label>
-                          <Input
-                            id="categoryName"
-                            value={newCategory}
-                            onChange={(e) => setNewCategory(e.target.value)}
-                            placeholder="Es: Pizze"
-                          />
-                        </div>
-                        <Button onClick={handleCreateCategory} className="w-full">
-                          Crea Categoria
-                        </Button>
-                      </div>
-                    </DialogContent>
-                  </Dialog>
                   <Dialog open={showMenuDialog} onOpenChange={setShowMenuDialog}>
                     <DialogTrigger asChild>
                       <Button className="flex items-center gap-2">
@@ -731,7 +859,7 @@ export default function RestaurantDashboard({ user, onLogout }: Props) {
                   return (
                     <div key={category} className="space-y-4">
                       <h3 className="text-xl font-semibold text-primary">{category}</h3>
-                      <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+                      <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-3">
                         {categoryItems.map((item) => (
                           <Card key={item.id} className={!item.isActive ? 'opacity-50' : ''}>
                             <CardHeader className="pb-3">
@@ -937,6 +1065,20 @@ export default function RestaurantDashboard({ user, onLogout }: Props) {
                       />
                     </div>
 
+                    {allYouCanEatMode && (
+                      <div className="space-y-2 pl-4 border-l-2 border-primary/20">
+                        <Label htmlFor="allYouCanEatPrice">Prezzo per persona (€)</Label>
+                        <Input
+                          id="allYouCanEatPrice"
+                          type="number"
+                          step="0.01"
+                          value={allYouCanEatPrice}
+                          onChange={(e) => setAllYouCanEatPrice(parseFloat(e.target.value) || 0)}
+                          placeholder="25.00"
+                        />
+                      </div>
+                    )}
+
                     <div className="flex items-center justify-between">
                       <div className="space-y-0.5">
                         <Label className="text-base">Coperto</Label>
@@ -1005,6 +1147,106 @@ export default function RestaurantDashboard({ user, onLogout }: Props) {
               Scarica QR Code
             </Button>
           </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Bill Dialog */}
+      <Dialog open={showBillDialog} onOpenChange={setShowBillDialog}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Conto - {selectedTable?.name}</DialogTitle>
+            <DialogDescription>
+              Dettaglio ordini e totale del tavolo
+            </DialogDescription>
+          </DialogHeader>
+          {selectedTable && (
+            <div className="space-y-4">
+              {(() => {
+                const bill = getTableBill(selectedTable.id)
+                const isPaid = (paidTables || []).includes(selectedTable.id)
+                
+                return (
+                  <>
+                    <div className="space-y-3 max-h-60 overflow-y-auto">
+                      {bill.orders.map((order) => (
+                        <div key={order.id} className="border rounded-lg p-3">
+                          <div className="flex justify-between items-center mb-2">
+                            <span className="text-sm text-muted-foreground">
+                              {new Date(order.timestamp).toLocaleTimeString()}
+                            </span>
+                            <Badge variant="outline">€{order.total.toFixed(2)}</Badge>
+                          </div>
+                          <div className="space-y-1">
+                            {order.items.map((item, index) => {
+                              const menuItem = restaurantMenuItems.find(m => m.id === item.menuItemId)
+                              return (
+                                <div key={index} className="flex justify-between text-sm">
+                                  <span>{item.quantity}x {menuItem?.name}</span>
+                                  <span>€{((menuItem?.price || 0) * item.quantity).toFixed(2)}</span>
+                                </div>
+                              )
+                            })}
+                          </div>
+                        </div>
+                      ))}
+                      
+                      {bill.orders.length === 0 && (
+                        <div className="text-center text-muted-foreground py-4">
+                          Nessun ordine per questo tavolo
+                        </div>
+                      )}
+                    </div>
+                    
+                    {bill.total > 0 && (
+                      <>
+                        <div className="border-t pt-4">
+                          <div className="flex justify-between items-center text-lg font-semibold">
+                            <span>Totale:</span>
+                            <span>€{bill.total.toFixed(2)}</span>
+                          </div>
+                        </div>
+                        
+                        <div className="space-y-2">
+                          {!isPaid ? (
+                            <Button 
+                              className="w-full" 
+                              onClick={() => {
+                                handleMarkTableAsPaid(selectedTable.id)
+                                setShowBillDialog(false)
+                              }}
+                            >
+                              <CreditCard size={16} className="mr-2" />
+                              Segna come Pagato
+                            </Button>
+                          ) : (
+                            <div className="text-center text-green-600 font-medium py-2">
+                              ✓ Tavolo già pagato
+                            </div>
+                          )}
+                          
+                          <Button 
+                            variant="destructive" 
+                            className="w-full"
+                            onClick={() => {
+                              // Delete all orders for this table
+                              setOrders((current) => (current || []).filter(o => o.tableId !== selectedTable.id))
+                              setCompletedOrders((current) => (current || []).filter(o => o.tableId !== selectedTable.id))
+                              setPaidTables((current) => (current || []).filter(id => id !== selectedTable.id))
+                              setShowBillDialog(false)
+                              toast.success('Ordini eliminati')
+                            }}
+                          >
+                            <Trash size={16} className="mr-2" />
+                            Elimina Ordini
+                          </Button>
+                        </div>
+                      </>
+                    )}
+                  </>
+                )
+              })()}
+            </div>
+          )}
         </DialogContent>
       </Dialog>
     </div>
