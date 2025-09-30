@@ -318,12 +318,12 @@ export default function RestaurantDashboard({ user, onLogout }: Props) {
   return (
     <div className="min-h-screen bg-background flex">
       {/* Sidebar */}
-      <div className={`${sidebarExpanded ? 'w-64' : 'w-16'} transition-all duration-300 ease-in-out bg-card-gradient border-r shadow-gold-lg flex flex-col backdrop-blur-sm`}>
+      <div className={`${sidebarExpanded ? 'w-64' : 'w-16'} transition-all duration-300 ease-in-out bg-order-card border-r shadow-liquid-lg flex flex-col backdrop-blur-sm border-liquid`}>
         <div className="p-4">
           <div className="flex items-center justify-between">
             <div className={`flex items-center space-x-3 transition-all duration-300 ${!sidebarExpanded && 'justify-center'}`}>
-              <div className="w-10 h-10 bg-gold-gradient rounded-lg flex items-center justify-center shadow-gold glow-gold">
-                <ChefHat weight="bold" size={20} className="text-primary-foreground" />
+              <div className="w-10 h-10 bg-liquid-gradient rounded-lg flex items-center justify-center shadow-liquid-lg">
+                <ChefHat weight="bold" size={20} className="text-primary-foreground drop-shadow-sm" />
               </div>
               {sidebarExpanded && (
                 <div className="transition-opacity duration-300">
@@ -510,23 +510,27 @@ export default function RestaurantDashboard({ user, onLogout }: Props) {
                         )
 
                         return (
-                          <Card key={tableId} className="shadow-gold bg-card-gradient border-l-4 border-l-primary">
-                            <CardHeader className="pb-2">
+                          <Card key={tableId} className="shadow-liquid-lg bg-order-card border-liquid overflow-hidden">
+                            <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-accent/5 pointer-events-none"></div>
+                            <CardHeader className="pb-3 relative">
                               <div className="flex items-center justify-between">
-                                <CardTitle className="text-xl font-bold text-primary">
-                                  {table?.name || 'Tavolo sconosciuto'}
-                                </CardTitle>
+                                <div className="flex items-center gap-3">
+                                  <div className="w-3 h-3 rounded-full bg-liquid-gradient animate-pulse"></div>
+                                  <CardTitle className="text-2xl font-bold text-primary drop-shadow-sm">
+                                    {table?.name || 'Tavolo sconosciuto'}
+                                  </CardTitle>
+                                </div>
                                 <div className="flex items-center gap-2">
-                                  <Badge variant="secondary" className="bg-accent text-accent-foreground font-bold px-3 py-1">
+                                  <Badge variant="secondary" className="bg-liquid-gradient text-primary-foreground font-bold text-lg px-4 py-2 shadow-liquid">
                                     {orders.length} {orders.length === 1 ? 'ordine' : 'ordini'}
                                   </Badge>
-                                  <Badge variant="outline" className="text-muted-foreground font-medium">
+                                  <Badge variant="outline" className="text-muted-foreground font-medium border-liquid">
                                     {getTimeAgo(oldestOrder.timestamp)}
                                   </Badge>
                                 </div>
                               </div>
                             </CardHeader>
-                            <CardContent className="space-y-2">
+                            <CardContent className="space-y-3 relative">
                               {orders.flatMap(order => order.items).map((item, index) => {
                                 const menuItem = restaurantMenuItems.find(m => m.id === item.menuItemId)
                                 const originalOrderIndex = restaurantOrders.findIndex(o => 
@@ -536,32 +540,43 @@ export default function RestaurantDashboard({ user, onLogout }: Props) {
                                 const itemIndex = originalOrder?.items.findIndex(i => i.menuItemId === item.menuItemId) || 0
 
                                 return (
-                                  <div key={`${item.menuItemId}-${index}`} className="flex items-center justify-between p-3 bg-white/70 rounded-lg border border-border/50">
+                                  <div key={`${item.menuItemId}-${index}`} className="flex items-center justify-between p-4 bg-liquid-gradient rounded-xl border-liquid shadow-liquid transition-all duration-300 hover:shadow-liquid-lg">
                                     <div className="flex-1">
-                                      <div className="flex items-center gap-3">
-                                        <Badge variant="secondary" className="bg-primary text-primary-foreground font-bold text-lg px-2 py-1 min-w-[2.5rem] text-center">
-                                          {item.quantity}x
-                                        </Badge>
-                                        <span className="font-semibold text-lg text-foreground">
-                                          {menuItem?.name || 'Piatto non trovato'}
-                                        </span>
+                                      <div className="flex items-center gap-4">
+                                        <div className="relative">
+                                          <Badge variant="secondary" className="bg-accent text-accent-foreground font-bold text-xl px-3 py-2 min-w-[3rem] text-center shadow-liquid">
+                                            {item.quantity}
+                                          </Badge>
+                                          <div className="absolute -top-1 -right-1 w-2 h-2 bg-primary rounded-full animate-pulse"></div>
+                                        </div>
+                                        <div className="flex flex-col">
+                                          <span className="font-bold text-xl text-foreground drop-shadow-sm">
+                                            {menuItem?.name || 'Piatto non trovato'}
+                                          </span>
+                                          {menuItem?.description && (
+                                            <span className="text-sm text-muted-foreground mt-1">
+                                              {menuItem.description.substring(0, 50)}...
+                                            </span>
+                                          )}
+                                        </div>
                                       </div>
                                       {item.notes && (
-                                        <div className="mt-2 ml-12">
-                                          <Badge variant="outline" className="bg-yellow-50 border-yellow-300 text-yellow-800">
-                                            Note: {item.notes}
-                                          </Badge>
+                                        <div className="mt-3 ml-16">
+                                          <div className="bg-yellow-100/80 border border-yellow-300/50 rounded-lg px-3 py-2 shadow-sm">
+                                            <span className="text-yellow-800 font-medium text-sm">
+                                              📝 {item.notes}
+                                            </span>
+                                          </div>
                                         </div>
                                       )}
                                     </div>
                                     <Button
                                       size="lg"
-                                      variant="outline"
                                       onClick={() => originalOrder && handleCompleteOrderItem(originalOrder.id, itemIndex)}
-                                      className="ml-4 shadow-sm hover:shadow-gold transition-all duration-200 border-green-500 hover:bg-green-50 hover:border-green-600"
+                                      className="ml-6 px-6 py-3 bg-green-500 hover:bg-green-600 text-white font-bold text-lg shadow-liquid-lg hover:shadow-[0_12px_48px_-12px_rgba(34,197,94,0.4)] transition-all duration-300 rounded-xl border-0"
                                     >
-                                      <CheckCircle size={20} className="text-green-600" />
-                                      <span className="ml-2 font-medium">Pronto</span>
+                                      <CheckCircle size={24} className="mr-2" />
+                                      PRONTO
                                     </Button>
                                   </div>
                                 )
@@ -604,55 +619,68 @@ export default function RestaurantDashboard({ user, onLogout }: Props) {
                         )
 
                         return (
-                          <Card key={menuItemId} className="shadow-gold bg-card-gradient border-l-4 border-l-accent">
-                            <CardHeader className="pb-2">
+                          <Card key={menuItemId} className="shadow-liquid-lg bg-order-card border-liquid overflow-hidden">
+                            <div className="absolute inset-0 bg-gradient-to-br from-accent/5 via-transparent to-primary/5 pointer-events-none"></div>
+                            <CardHeader className="pb-3 relative">
                               <div className="flex items-center justify-between">
-                                <CardTitle className="text-xl font-bold text-accent">
-                                  {menuItem?.name || 'Piatto non trovato'}
-                                </CardTitle>
+                                <div className="flex items-center gap-3">
+                                  <div className="w-3 h-3 rounded-full bg-liquid-gradient animate-pulse"></div>
+                                  <CardTitle className="text-2xl font-bold text-accent drop-shadow-sm">
+                                    {menuItem?.name || 'Piatto non trovato'}
+                                  </CardTitle>
+                                </div>
                                 <div className="flex items-center gap-2">
-                                  <Badge variant="secondary" className="bg-primary text-primary-foreground font-bold text-lg px-3 py-1">
-                                    {totalQuantity}x
+                                  <Badge variant="secondary" className="bg-liquid-gradient text-primary-foreground font-bold text-xl px-4 py-2 shadow-liquid">
+                                    {totalQuantity}
                                   </Badge>
-                                  <Badge variant="outline" className="text-muted-foreground font-medium">
+                                  <Badge variant="outline" className="text-muted-foreground font-medium border-liquid">
                                     {getTimeAgo(oldestItem.timestamp)}
                                   </Badge>
                                 </div>
                               </div>
                             </CardHeader>
-                            <CardContent className="space-y-2">
+                            <CardContent className="space-y-3 relative">
                               {items.map((item, index) => {
                                 const table = restaurantTables.find(t => t.id === item.tableId)
                                 const originalOrder = restaurantOrders.find(o => o.id === item.orderId)
                                 const itemIndex = originalOrder?.items.findIndex(i => i.menuItemId === item.menuItemId) || 0
 
                                 return (
-                                  <div key={`${item.orderId}-${index}`} className="flex items-center justify-between p-3 bg-white/70 rounded-lg border border-border/50">
+                                  <div key={`${item.orderId}-${index}`} className="flex items-center justify-between p-4 bg-liquid-gradient rounded-xl border-liquid shadow-liquid transition-all duration-300 hover:shadow-liquid-lg">
                                     <div className="flex-1">
-                                      <div className="flex items-center gap-3">
-                                        <Badge variant="secondary" className="bg-accent text-accent-foreground font-bold text-lg px-2 py-1 min-w-[2.5rem] text-center">
-                                          {item.quantity}x
-                                        </Badge>
-                                        <span className="font-semibold text-lg text-foreground">
-                                          {table?.name || 'Tavolo sconosciuto'}
-                                        </span>
+                                      <div className="flex items-center gap-4">
+                                        <div className="relative">
+                                          <Badge variant="secondary" className="bg-primary text-primary-foreground font-bold text-xl px-3 py-2 min-w-[3rem] text-center shadow-liquid">
+                                            {item.quantity}
+                                          </Badge>
+                                          <div className="absolute -top-1 -right-1 w-2 h-2 bg-accent rounded-full animate-pulse"></div>
+                                        </div>
+                                        <div className="flex flex-col">
+                                          <span className="font-bold text-xl text-foreground drop-shadow-sm">
+                                            {table?.name || 'Tavolo sconosciuto'}
+                                          </span>
+                                          <span className="text-sm text-muted-foreground">
+                                            {getTimeAgo(item.timestamp)}
+                                          </span>
+                                        </div>
                                       </div>
                                       {item.notes && (
-                                        <div className="mt-2 ml-12">
-                                          <Badge variant="outline" className="bg-yellow-50 border-yellow-300 text-yellow-800">
-                                            Note: {item.notes}
-                                          </Badge>
+                                        <div className="mt-3 ml-16">
+                                          <div className="bg-yellow-100/80 border border-yellow-300/50 rounded-lg px-3 py-2 shadow-sm">
+                                            <span className="text-yellow-800 font-medium text-sm">
+                                              📝 {item.notes}
+                                            </span>
+                                          </div>
                                         </div>
                                       )}
                                     </div>
                                     <Button
                                       size="lg"
-                                      variant="outline"
                                       onClick={() => originalOrder && handleCompleteOrderItem(originalOrder.id, itemIndex)}
-                                      className="ml-4 shadow-sm hover:shadow-gold transition-all duration-200 border-green-500 hover:bg-green-50 hover:border-green-600"
+                                      className="ml-6 px-6 py-3 bg-green-500 hover:bg-green-600 text-white font-bold text-lg shadow-liquid-lg hover:shadow-[0_12px_48px_-12px_rgba(34,197,94,0.4)] transition-all duration-300 rounded-xl border-0"
                                     >
-                                      <CheckCircle size={20} className="text-green-600" />
-                                      <span className="ml-2 font-medium">Pronto</span>
+                                      <CheckCircle size={24} className="mr-2" />
+                                      PRONTO
                                     </Button>
                                   </div>
                                 )
@@ -1322,16 +1350,37 @@ export default function RestaurantDashboard({ user, onLogout }: Props) {
             </DialogDescription>
           </DialogHeader>
           <div className="flex flex-col items-center space-y-4">
-            <div className="w-48 h-48 border-2 border-dashed border-primary/30 rounded-lg flex items-center justify-center bg-card-gradient shadow-gold">
-              <QrCode size={64} className="text-primary glow-gold" />
+            <div className="w-48 h-48 border-2 border-dashed border-primary/30 rounded-lg flex items-center justify-center bg-card-gradient shadow-gold relative overflow-hidden">
+              <div className="absolute inset-0 bg-white rounded-lg m-2 flex flex-col items-center justify-center">
+                <QrCode size={80} className="text-primary mb-2" />
+                <div className="text-xs font-mono text-center px-2">
+                  <div className="font-bold text-primary">{selectedTable?.name}</div>
+                  <div className="text-muted-foreground mt-1">
+                    {window.location.origin}?table={selectedTable?.id}
+                  </div>
+                </div>
+              </div>
             </div>
             <p className="text-sm text-muted-foreground text-center">
               PIN: <span className="font-semibold text-primary">{selectedTable?.pin}</span>
             </p>
-            <Button className="w-full bg-gold-gradient shadow-gold hover:shadow-gold-lg transition-shadow duration-200">
-              <DownloadSimple size={16} className="mr-2" />
-              Scarica QR Code
-            </Button>
+            <div className="flex gap-2">
+              <Button className="flex-1 bg-gold-gradient shadow-gold hover:shadow-gold-lg transition-shadow duration-200">
+                <DownloadSimple size={16} className="mr-2" />
+                Scarica QR Code
+              </Button>
+              <Button 
+                variant="outline" 
+                onClick={() => {
+                  const url = `${window.location.origin}?table=${selectedTable?.id}`
+                  window.open(url, '_blank')
+                }}
+                className="px-3 shadow-gold hover:shadow-gold-lg transition-shadow duration-200"
+                title="Testa il QR code"
+              >
+                🧪
+              </Button>
+            </div>
           </div>
         </DialogContent>
       </Dialog>
@@ -1360,7 +1409,7 @@ export default function RestaurantDashboard({ user, onLogout }: Props) {
                             <span className="text-sm text-muted-foreground">
                               {new Date(order.timestamp).toLocaleTimeString()}
                             </span>
-                            <Badge variant="outline" className="bg-primary/10">€{order.total.toFixed(2)}</Badge>
+                            <Badge variant="outline" className="bg-primary/10">Completato</Badge>
                           </div>
                           <div className="space-y-1">
                             {order.items.map((item, index) => {
@@ -1368,7 +1417,6 @@ export default function RestaurantDashboard({ user, onLogout }: Props) {
                               return (
                                 <div key={index} className="flex justify-between text-sm">
                                   <span>{item.quantity}x {menuItem?.name}</span>
-                                  <span>€{((menuItem?.price || 0) * item.quantity).toFixed(2)}</span>
                                 </div>
                               )
                             })}

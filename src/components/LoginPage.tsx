@@ -78,124 +78,138 @@ export default function LoginPage({ onLogin, onTableAccess }: Props) {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background to-secondary/30 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-background via-secondary/20 to-primary/10 flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
-          <div className="w-16 h-16 bg-primary rounded-2xl flex items-center justify-center mx-auto mb-4">
+          <div className="w-16 h-16 bg-liquid-gradient rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-liquid-lg">
             <Users weight="bold" size={32} className="text-primary-foreground" />
           </div>
           <h1 className="text-3xl font-bold text-foreground mb-2">Restaurant Manager</h1>
           <p className="text-muted-foreground">Sistema di gestione ordini per ristoranti</p>
         </div>
 
-        <Tabs defaultValue="staff" className="w-full">
-          <TabsList className="grid w-full grid-cols-2 mb-6">
-            <TabsTrigger value="staff" className="flex items-center gap-2">
-              <Crown size={16} />
-              Staff
-            </TabsTrigger>
+        <Tabs defaultValue="customer" className="w-full">
+          <TabsList className="grid w-full grid-cols-2 mb-6 shadow-liquid bg-order-card">
             <TabsTrigger value="customer" className="flex items-center gap-2">
               <QrCode size={16} />
               Cliente
             </TabsTrigger>
+            <TabsTrigger value="staff" className="flex items-center gap-2">
+              <Crown size={16} />
+              Staff
+            </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="staff">
-            <Card>
+          <TabsContent value="customer">
+            <Card className="shadow-liquid-lg bg-order-card border-liquid">
               <CardHeader>
-                <CardTitle>Accesso Staff</CardTitle>
+                <CardTitle className="text-xl">Accesso Cliente</CardTitle>
                 <CardDescription>
-                  Accedi come amministratore o gestore ristorante
+                  Scansiona il QR code del tavolo o inserisci i dati manualmente
                 </CardDescription>
               </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="username">Nome utente</Label>
-                    <Input
-                      id="username"
-                      value={username}
-                      onChange={(e) => setUsername(e.target.value)}
-                      placeholder="Inserisci nome utente"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="password">Password</Label>
-                    <Input
-                      id="password"
-                      type="password"
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      placeholder="Inserisci password"
-                    />
-                  </div>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="tableCode">Codice Tavolo</Label>
+                  <Input
+                    id="tableCode"
+                    value={tableCode}
+                    onChange={(e) => setTableCode(e.target.value)}
+                    placeholder="table-xxxxx"
+                    className="shadow-liquid"
+                  />
                 </div>
-
-                <div className="flex flex-col gap-3">
-                  <Button 
-                    onClick={handleLogin}
-                    disabled={loading || !username || !password}
-                    className="w-full"
-                  >
-                    Accedi
-                  </Button>
+                <div className="space-y-2">
+                  <Label htmlFor="pin">PIN Temporaneo</Label>
+                  <Input
+                    id="pin"
+                    value={pin}
+                    onChange={(e) => setPin(e.target.value)}
+                    placeholder="PIN a 4 cifre"
+                    className="shadow-liquid text-center text-xl font-bold"
+                    maxLength={4}
+                  />
                 </div>
-
-                <div className="pt-4 border-t">
-                  <p className="text-xs text-muted-foreground text-center mb-2">Credenziali demo:</p>
-                  <div className="flex flex-wrap gap-2 justify-center">
-                    <Badge variant="outline" className="text-xs">admin / admin123</Badge>
-                    <Badge variant="outline" className="text-xs">restaurant / restaurant123</Badge>
+                <Button 
+                  onClick={handleTableAccess} 
+                  disabled={loading || !tableCode || !pin}
+                  className="w-full bg-liquid-gradient shadow-liquid-lg hover:shadow-[0_12px_48px_-12px_rgba(201,161,82,0.5)] transition-all duration-300 text-lg font-bold py-3"
+                >
+                  {loading ? 'Accesso in corso...' : 'Accedi al Menù'}
+                </Button>
+                
+                <div className="text-center pt-4 border-t">
+                  <p className="text-sm text-muted-foreground mb-3">
+                    Come funziona:
+                  </p>
+                  <div className="text-xs text-muted-foreground space-y-2">
+                    <div className="flex items-center gap-2">
+                      <div className="w-6 h-6 bg-primary/20 rounded-full flex items-center justify-center text-primary font-bold text-xs">1</div>
+                      <span>Scansiona il QR code sul tavolo</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="w-6 h-6 bg-primary/20 rounded-full flex items-center justify-center text-primary font-bold text-xs">2</div>
+                      <span>Inserisci il PIN temporaneo fornito dal cameriere</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="w-6 h-6 bg-primary/20 rounded-full flex items-center justify-center text-primary font-bold text-xs">3</div>
+                      <span>Ordina direttamente dal tuo dispositivo</span>
+                    </div>
                   </div>
                 </div>
               </CardContent>
             </Card>
           </TabsContent>
 
-          <TabsContent value="customer">
-            <Card>
+          <TabsContent value="staff">
+            <Card className="shadow-liquid-lg bg-order-card border-liquid">
               <CardHeader>
-                <CardTitle>Accesso Cliente</CardTitle>
+                <CardTitle className="text-xl">Accesso Staff</CardTitle>
                 <CardDescription>
-                  Scansiona il QR del tavolo e inserisci il PIN
+                  Accedi come amministratore o gestore del ristorante
                 </CardDescription>
               </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="tableCode">Codice Tavolo</Label>
-                    <Input
-                      id="tableCode"
-                      value={tableCode}
-                      onChange={(e) => setTableCode(e.target.value)}
-                      placeholder="Es: table-1234567890"
-                      className={tableCode ? 'bg-green-50 border-green-200' : ''}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="pin">PIN Tavolo</Label>
-                    <Input
-                      id="pin"
-                      value={pin}
-                      onChange={(e) => setPin(e.target.value)}
-                      placeholder="Inserisci PIN a 4 cifre"
-                      maxLength={4}
-                    />
-                  </div>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="username">Nome Utente</Label>
+                  <Input
+                    id="username"
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
+                    placeholder="admin o nome ristorante"
+                    className="shadow-liquid"
+                  />
                 </div>
-
+                <div className="space-y-2">
+                  <Label htmlFor="password">Password</Label>
+                  <Input
+                    id="password"
+                    type="password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="Password"
+                    className="shadow-liquid"
+                  />
+                </div>
                 <Button 
-                  onClick={handleTableAccess}
-                  disabled={loading || !tableCode || !pin}
-                  className="w-full"
+                  onClick={handleLogin} 
+                  disabled={loading || !username || !password}
+                  className="w-full bg-liquid-gradient shadow-liquid-lg hover:shadow-[0_12px_48px_-12px_rgba(201,161,82,0.5)] transition-all duration-300 text-lg font-bold py-3"
                 >
-                  Accedi al Menù
+                  {loading ? 'Accesso in corso...' : 'Accedi'}
                 </Button>
-
-                <div className="pt-4 border-t">
-                  <p className="text-xs text-muted-foreground text-center">
-                    Il PIN ti viene fornito dal personale del ristorante
-                  </p>
+                
+                <div className="text-center pt-4 border-t">
+                  <div className="space-y-2 text-xs text-muted-foreground">
+                    <div>
+                      <Badge variant="outline" className="mr-2">Admin</Badge>
+                      Username: admin | Password: admin123
+                    </div>
+                    <div>
+                      <Badge variant="outline" className="mr-2">Ristorante</Badge>
+                      Usa il nome del tuo ristorante | Password: restaurant123
+                    </div>
+                  </div>
                 </div>
               </CardContent>
             </Card>
