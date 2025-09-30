@@ -25,31 +25,30 @@ export default function LoginPage({ onLogin, onTableAccess }: Props) {
   const [users] = useKV<User[]>('users', [])
   const [tables] = useKV<Table[]>('tables', [])
 
-  const handleAdminLogin = async () => {
+  const handleLogin = async () => {
     setLoading(true)
     
+    // Try admin login first
     const adminUser = (users || []).find(u => u.username === username && u.role === 'admin')
     if (adminUser && password === 'admin123') {
       onLogin(adminUser)
       toast.success('Accesso amministratore effettuato')
-    } else {
-      toast.error('Credenziali amministratore non valide')
+      setLoading(false)
+      return
     }
     
-    setLoading(false)
-  }
-
-  const handleRestaurantLogin = async () => {
-    setLoading(true)
-    
+    // Try restaurant login
     const restaurantUser = (users || []).find(u => u.username === username && u.role === 'restaurant')
     if (restaurantUser && password === 'restaurant123') {
       onLogin(restaurantUser)
       toast.success('Accesso ristorante effettuato')
-    } else {
-      toast.error('Credenziali ristorante non valide')
+      setLoading(false)
+      return
     }
     
+    // Try waiter login (could be added later)
+    
+    toast.error('Credenziali non valide')
     setLoading(false)
   }
 
@@ -123,20 +122,11 @@ export default function LoginPage({ onLogin, onTableAccess }: Props) {
 
                 <div className="flex flex-col gap-3">
                   <Button 
-                    onClick={handleAdminLogin}
+                    onClick={handleLogin}
                     disabled={loading || !username || !password}
                     className="w-full"
-                    variant="default"
                   >
-                    Accedi come Amministratore
-                  </Button>
-                  <Button 
-                    onClick={handleRestaurantLogin}
-                    disabled={loading || !username || !password}
-                    className="w-full"
-                    variant="secondary"
-                  >
-                    Accedi come Ristorante
+                    Accedi
                   </Button>
                 </div>
 
