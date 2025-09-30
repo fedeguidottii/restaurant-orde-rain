@@ -318,12 +318,12 @@ export default function RestaurantDashboard({ user, onLogout }: Props) {
   return (
     <div className="min-h-screen bg-background flex">
       {/* Sidebar */}
-      <div className={`${sidebarExpanded ? 'w-64' : 'w-16'} transition-all duration-300 ease-in-out bg-order-card border-r shadow-liquid-lg flex flex-col backdrop-blur-sm border-liquid`}>
+      <div className={`${sidebarExpanded ? 'w-64' : 'w-16'} transition-all duration-300 ease-in-out bg-white border-r border-border/20 shadow-professional flex flex-col`}>
         <div className="p-4">
           <div className="flex items-center justify-between">
             <div className={`flex items-center space-x-3 transition-all duration-300 ${!sidebarExpanded && 'justify-center'}`}>
-              <div className="w-10 h-10 bg-liquid-gradient rounded-lg flex items-center justify-center shadow-liquid-lg">
-                <ChefHat weight="bold" size={20} className="text-primary-foreground drop-shadow-sm" />
+              <div className="w-10 h-10 bg-primary/15 rounded-xl flex items-center justify-center shadow-professional">
+                <ChefHat weight="bold" size={20} className="text-primary" />
               </div>
               {sidebarExpanded && (
                 <div className="transition-opacity duration-300">
@@ -338,7 +338,7 @@ export default function RestaurantDashboard({ user, onLogout }: Props) {
               variant="ghost"
               size="sm"
               onClick={() => setSidebarExpanded(!sidebarExpanded)}
-              className="p-1 hover:bg-primary/20 transition-all duration-200 hover:shadow-gold rounded-lg"
+              className="p-1 hover:bg-primary/10 transition-all duration-200 hover:shadow-gold rounded-lg"
             >
               {sidebarExpanded ? <CaretLeft size={16} /> : <CaretRight size={16} />}
             </Button>
@@ -349,7 +349,7 @@ export default function RestaurantDashboard({ user, onLogout }: Props) {
           <div className="space-y-1">
             <Button
               variant={activeSection === 'orders' ? 'secondary' : 'ghost'}
-              className={`w-full justify-start ${!sidebarExpanded && 'px-2'} transition-all duration-200 hover:shadow-gold ${activeSection === 'orders' ? 'shadow-gold bg-primary/10' : ''}`}
+              className={`w-full justify-start ${!sidebarExpanded && 'px-2'} transition-all duration-200 hover:shadow-gold ${activeSection === 'orders' ? 'shadow-gold bg-primary/10 text-primary border-primary/20' : 'hover:bg-primary/5'}`}
               onClick={() => {
                 if (!sidebarExpanded) {
                   setSidebarExpanded(true)
@@ -370,7 +370,7 @@ export default function RestaurantDashboard({ user, onLogout }: Props) {
             
             <Button
               variant={activeSection === 'tables' ? 'secondary' : 'ghost'}
-              className={`w-full justify-start ${!sidebarExpanded && 'px-2'} transition-all duration-200 hover:shadow-gold ${activeSection === 'tables' ? 'shadow-gold bg-primary/10' : ''}`}
+              className={`w-full justify-start ${!sidebarExpanded && 'px-2'} transition-all duration-200 hover:shadow-gold ${activeSection === 'tables' ? 'shadow-gold bg-primary/10 text-primary border-primary/20' : 'hover:bg-primary/5'}`}
               onClick={() => {
                 if (!sidebarExpanded) {
                   setSidebarExpanded(true)
@@ -386,7 +386,7 @@ export default function RestaurantDashboard({ user, onLogout }: Props) {
             
             <Button
               variant={activeSection === 'categories' ? 'secondary' : 'ghost'}
-              className={`w-full justify-start ${!sidebarExpanded && 'px-2'} transition-all duration-200 hover:shadow-gold ${activeSection === 'categories' ? 'shadow-gold bg-primary/10' : ''}`}
+              className={`w-full justify-start ${!sidebarExpanded && 'px-2'} transition-all duration-200 hover:shadow-gold ${activeSection === 'categories' ? 'shadow-gold bg-primary/10 text-primary border-primary/20' : 'hover:bg-primary/5'}`}
               onClick={() => {
                 if (!sidebarExpanded) {
                   setSidebarExpanded(true)
@@ -402,7 +402,7 @@ export default function RestaurantDashboard({ user, onLogout }: Props) {
             
             <Button
               variant={activeSection === 'menu' ? 'secondary' : 'ghost'}
-              className={`w-full justify-start ${!sidebarExpanded && 'px-2'} transition-all duration-200 hover:shadow-gold ${activeSection === 'menu' ? 'shadow-gold bg-primary/10' : ''}`}
+              className={`w-full justify-start ${!sidebarExpanded && 'px-2'} transition-all duration-200 hover:shadow-gold ${activeSection === 'menu' ? 'shadow-gold bg-primary/10 text-primary border-primary/20' : 'hover:bg-primary/5'}`}
               onClick={() => {
                 if (!sidebarExpanded) {
                   setSidebarExpanded(true)
@@ -418,7 +418,7 @@ export default function RestaurantDashboard({ user, onLogout }: Props) {
             
             <Button
               variant={activeSection === 'analytics' ? 'secondary' : 'ghost'}
-              className={`w-full justify-start ${!sidebarExpanded && 'px-2'} transition-all duration-200 hover:shadow-gold ${activeSection === 'analytics' ? 'shadow-gold bg-primary/10' : ''}`}
+              className={`w-full justify-start ${!sidebarExpanded && 'px-2'} transition-all duration-200 hover:shadow-gold ${activeSection === 'analytics' ? 'shadow-gold bg-primary/10 text-primary border-primary/20' : 'hover:bg-primary/5'}`}
               onClick={() => {
                 if (!sidebarExpanded) {
                   setSidebarExpanded(true)
@@ -434,7 +434,7 @@ export default function RestaurantDashboard({ user, onLogout }: Props) {
             
             <Button
               variant={activeSection === 'settings' ? 'secondary' : 'ghost'}
-              className={`w-full justify-start ${!sidebarExpanded && 'px-2'} transition-all duration-200 hover:shadow-gold ${activeSection === 'settings' ? 'shadow-gold bg-primary/10' : ''}`}
+              className={`w-full justify-start ${!sidebarExpanded && 'px-2'} transition-all duration-200 hover:shadow-gold ${activeSection === 'settings' ? 'shadow-gold bg-primary/10 text-primary border-primary/20' : 'hover:bg-primary/5'}`}
               onClick={() => {
                 if (!sidebarExpanded) {
                   setSidebarExpanded(true)
@@ -451,7 +451,7 @@ export default function RestaurantDashboard({ user, onLogout }: Props) {
         </nav>
 
         <div className="p-2">
-          <Button variant="outline" onClick={onLogout} className={`w-full ${!sidebarExpanded && 'px-2'} transition-all duration-200 hover:shadow-gold hover:bg-destructive/5 hover:border-destructive/20`}>
+          <Button variant="outline" onClick={onLogout} className={`w-full ${!sidebarExpanded && 'px-2'} transition-all duration-200 hover:shadow-gold hover:bg-destructive/5 hover:border-destructive/20 hover:text-destructive`}>
             <SignOut size={16} />
             {sidebarExpanded && <span className="ml-2 transition-all duration-200">Esci</span>}
           </Button>
@@ -459,33 +459,54 @@ export default function RestaurantDashboard({ user, onLogout }: Props) {
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 overflow-auto">
-        <div className="p-6">
-          {/* Orders Section */}
-          {activeSection === 'orders' && (
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <h2 className="text-2xl font-bold">Gestione Ordini</h2>
-                <div className="flex items-center gap-2">
-                  <Select value={orderViewMode} onValueChange={(value: 'tables' | 'dishes') => setOrderViewMode(value)}>
-                    <SelectTrigger className="w-40 shadow-gold">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="tables">Per Tavoli</SelectItem>
-                      <SelectItem value="dishes">Per Piatti</SelectItem>
-                    </SelectContent>
-                  </Select>
+      <div className="flex-1 min-w-0 bg-gradient-to-br from-background via-background/95 to-background">
+        <div className="h-full overflow-y-auto">
+          <div className="max-w-7xl mx-auto p-6 space-y-8">
+            {/* Orders Section */}
+            {activeSection === 'orders' && (
+              <div className="space-y-8">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 bg-primary/15 rounded-xl flex items-center justify-center">
+                      <Bell size={24} className="text-primary" />
+                    </div>
+                    <div>
+                      <h2 className="text-3xl font-bold text-foreground">Gestione Ordini</h2>
+                      <p className="text-muted-foreground">Monitora e completa gli ordini in tempo reale</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <Select value={orderViewMode} onValueChange={(value: 'tables' | 'dishes') => setOrderViewMode(value)}>
+                      <SelectTrigger className="w-48 h-12 shadow-sm border-border/20 hover:border-primary/30 transition-colors">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="tables">
+                          <div className="flex items-center gap-2">
+                            <Square size={16} />
+                            Per Tavoli
+                          </div>
+                        </SelectItem>
+                        <SelectItem value="dishes">
+                          <div className="flex items-center gap-2">
+                            <ChefHat size={16} />
+                            Per Piatti
+                          </div>
+                        </SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
-              </div>
 
-              <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
+              <div className="space-y-6">
                 {restaurantOrders.length === 0 ? (
-                  <div className="col-span-full text-center text-muted-foreground py-8">
-                    Nessun ordine ricevuto oggi.
+                  <div className="text-center text-muted-foreground py-12">
+                    <Bell size={64} className="mx-auto mb-4 opacity-30" />
+                    <p className="text-xl font-medium">Nessun ordine in attesa</p>
+                    <p className="text-sm mt-2">Gli ordini appariranno qui quando arriveranno</p>
                   </div>
                 ) : orderViewMode === 'tables' ? (
-                  // Group by tables
+                  // Group by tables - Professional Layout
                   (() => {
                     const groupedByTable = restaurantOrders.reduce((groups, order) => {
                       const tableId = order.tableId
@@ -510,27 +531,39 @@ export default function RestaurantDashboard({ user, onLogout }: Props) {
                         )
 
                         return (
-                          <Card key={tableId} className="shadow-liquid-lg bg-order-card border-liquid overflow-hidden">
-                            <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-accent/5 pointer-events-none"></div>
-                            <CardHeader className="pb-3 relative">
+                          <Card key={tableId} className="bg-white border border-border/10 shadow-[0_8px_32px_-8px_rgba(0,0,0,0.08)] rounded-2xl overflow-hidden hover:shadow-[0_20px_64px_-12px_rgba(0,0,0,0.15)] transition-all duration-500">
+                            {/* Header with Table Info */}
+                            <div className="bg-gradient-to-r from-primary/8 via-primary/4 to-accent/8 px-6 py-4 border-b border-border/10">
                               <div className="flex items-center justify-between">
-                                <div className="flex items-center gap-3">
-                                  <div className="w-3 h-3 rounded-full bg-liquid-gradient animate-pulse"></div>
-                                  <CardTitle className="text-2xl font-bold text-primary drop-shadow-sm">
-                                    {table?.name || 'Tavolo sconosciuto'}
-                                  </CardTitle>
+                                <div className="flex items-center gap-4">
+                                  <div className="relative">
+                                    <div className="w-12 h-12 bg-primary/15 rounded-xl flex items-center justify-center">
+                                      <Square size={24} weight="fill" className="text-primary" />
+                                    </div>
+                                    <div className="absolute -top-1 -right-1 w-4 h-4 bg-green-500 rounded-full flex items-center justify-center">
+                                      <div className="w-2 h-2 bg-white rounded-full"></div>
+                                    </div>
+                                  </div>
+                                  <div>
+                                    <h3 className="text-2xl font-bold text-foreground">
+                                      {table?.name || 'Tavolo sconosciuto'}
+                                    </h3>
+                                    <p className="text-sm text-muted-foreground font-medium">
+                                      {orders.length} {orders.length === 1 ? 'ordine' : 'ordini'} • {getTimeAgo(oldestOrder.timestamp)}
+                                    </p>
+                                  </div>
                                 </div>
-                                <div className="flex items-center gap-2">
-                                  <Badge variant="secondary" className="bg-liquid-gradient text-primary-foreground font-bold text-lg px-4 py-2 shadow-liquid">
-                                    {orders.length} {orders.length === 1 ? 'ordine' : 'ordini'}
-                                  </Badge>
-                                  <Badge variant="outline" className="text-muted-foreground font-medium border-liquid">
-                                    {getTimeAgo(oldestOrder.timestamp)}
+                                <div className="text-right">
+                                  <div className="text-lg font-bold text-primary">€{totalAmount.toFixed(2)}</div>
+                                  <Badge variant="secondary" className="bg-primary/10 text-primary border-0 font-medium">
+                                    In preparazione
                                   </Badge>
                                 </div>
                               </div>
-                            </CardHeader>
-                            <CardContent className="space-y-3 relative">
+                            </div>
+
+                            {/* Order Items */}
+                            <div className="p-6 space-y-4">
                               {orders.flatMap(order => order.items).map((item, index) => {
                                 const menuItem = restaurantMenuItems.find(m => m.id === item.menuItemId)
                                 const originalOrderIndex = restaurantOrders.findIndex(o => 
@@ -540,54 +573,75 @@ export default function RestaurantDashboard({ user, onLogout }: Props) {
                                 const itemIndex = originalOrder?.items.findIndex(i => i.menuItemId === item.menuItemId) || 0
 
                                 return (
-                                  <div key={`${item.menuItemId}-${index}`} className="flex items-center justify-between p-4 bg-liquid-gradient rounded-xl border-liquid shadow-liquid transition-all duration-300 hover:shadow-liquid-lg">
-                                    <div className="flex-1">
-                                      <div className="flex items-center gap-4">
+                                  <div key={`${item.menuItemId}-${index}`} className="group bg-gradient-to-r from-card via-background to-card border border-border/8 rounded-xl p-5 hover:shadow-lg transition-all duration-300">
+                                    <div className="flex items-start justify-between gap-6">
+                                      {/* Quantity Badge */}
+                                      <div className="flex-shrink-0">
                                         <div className="relative">
-                                          <Badge variant="secondary" className="bg-accent text-accent-foreground font-bold text-xl px-3 py-2 min-w-[3rem] text-center shadow-liquid">
-                                            {item.quantity}
-                                          </Badge>
-                                          <div className="absolute -top-1 -right-1 w-2 h-2 bg-primary rounded-full animate-pulse"></div>
-                                        </div>
-                                        <div className="flex flex-col">
-                                          <span className="font-bold text-xl text-foreground drop-shadow-sm">
-                                            {menuItem?.name || 'Piatto non trovato'}
-                                          </span>
-                                          {menuItem?.description && (
-                                            <span className="text-sm text-muted-foreground mt-1">
-                                              {menuItem.description.substring(0, 50)}...
-                                            </span>
-                                          )}
-                                        </div>
-                                      </div>
-                                      {item.notes && (
-                                        <div className="mt-3 ml-16">
-                                          <div className="bg-yellow-100/80 border border-yellow-300/50 rounded-lg px-3 py-2 shadow-sm">
-                                            <span className="text-yellow-800 font-medium text-sm">
-                                              📝 {item.notes}
-                                            </span>
+                                          <div className="w-16 h-16 bg-accent/15 rounded-2xl flex items-center justify-center border-2 border-accent/20">
+                                            <span className="text-2xl font-black text-accent">{item.quantity}</span>
+                                          </div>
+                                          <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-primary rounded-full flex items-center justify-center">
+                                            <div className="w-2 h-2 bg-white rounded-full animate-pulse"></div>
                                           </div>
                                         </div>
-                                      )}
+                                      </div>
+
+                                      {/* Item Details */}
+                                      <div className="flex-1 min-w-0">
+                                        <div className="mb-2">
+                                          <h4 className="text-lg font-bold text-foreground mb-1 leading-tight">
+                                            {menuItem?.name || 'Piatto non trovato'}
+                                          </h4>
+                                          {menuItem?.description && (
+                                            <p className="text-sm text-muted-foreground leading-relaxed">
+                                              {menuItem.description.length > 80 
+                                                ? `${menuItem.description.substring(0, 80)}...` 
+                                                : menuItem.description
+                                              }
+                                            </p>
+                                          )}
+                                        </div>
+                                        
+                                        {item.notes && (
+                                          <div className="mt-3 p-3 bg-amber-50 border border-amber-200 rounded-lg">
+                                            <div className="flex items-start gap-2">
+                                              <div className="w-5 h-5 bg-amber-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                                                <span className="text-xs">📝</span>
+                                              </div>
+                                              <p className="text-sm text-amber-800 font-medium">
+                                                {item.notes}
+                                              </p>
+                                            </div>
+                                          </div>
+                                        )}
+                                      </div>
+
+                                      {/* Complete Button */}
+                                      <div className="flex-shrink-0">
+                                        <Button
+                                          size="lg"
+                                          onClick={() => originalOrder && handleCompleteOrderItem(originalOrder.id, itemIndex)}
+                                          className="h-16 px-8 bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white font-bold text-lg shadow-lg hover:shadow-xl transition-all duration-300 rounded-xl border-0 group-hover:scale-105"
+                                        >
+                                          <CheckCircle size={28} className="mr-3" />
+                                          <div className="flex flex-col items-start">
+                                            <span className="text-base leading-none">PRONTO</span>
+                                            <span className="text-xs opacity-90 leading-none mt-1">Completa</span>
+                                          </div>
+                                        </Button>
+                                      </div>
                                     </div>
-                                    <Button
-                                      size="lg"
-                                      onClick={() => originalOrder && handleCompleteOrderItem(originalOrder.id, itemIndex)}
-                                      className="ml-6 px-6 py-3 bg-green-500 hover:bg-green-600 text-white font-bold text-lg shadow-liquid-lg hover:shadow-[0_12px_48px_-12px_rgba(34,197,94,0.4)] transition-all duration-300 rounded-xl border-0"
-                                    >
-                                      <CheckCircle size={24} className="mr-2" />
-                                      PRONTO
-                                    </Button>
                                   </div>
                                 )
                               })}
-                            </CardContent>
+                            </div>
                           </Card>
                         )
                       })
                   })()
                 ) : (
-                  // Group by dishes
+                  // Group by dishes - Professional Layout
                   (() => {
                     const groupedByDish = restaurantOrders.flatMap(order => 
                       order.items.map(item => ({
@@ -619,73 +673,103 @@ export default function RestaurantDashboard({ user, onLogout }: Props) {
                         )
 
                         return (
-                          <Card key={menuItemId} className="shadow-liquid-lg bg-order-card border-liquid overflow-hidden">
-                            <div className="absolute inset-0 bg-gradient-to-br from-accent/5 via-transparent to-primary/5 pointer-events-none"></div>
-                            <CardHeader className="pb-3 relative">
+                          <Card key={menuItemId} className="bg-white border border-border/10 shadow-[0_8px_32px_-8px_rgba(0,0,0,0.08)] rounded-2xl overflow-hidden hover:shadow-[0_20px_64px_-12px_rgba(0,0,0,0.15)] transition-all duration-500">
+                            {/* Header with Dish Info */}
+                            <div className="bg-gradient-to-r from-accent/8 via-accent/4 to-primary/8 px-6 py-4 border-b border-border/10">
                               <div className="flex items-center justify-between">
-                                <div className="flex items-center gap-3">
-                                  <div className="w-3 h-3 rounded-full bg-liquid-gradient animate-pulse"></div>
-                                  <CardTitle className="text-2xl font-bold text-accent drop-shadow-sm">
-                                    {menuItem?.name || 'Piatto non trovato'}
-                                  </CardTitle>
+                                <div className="flex items-center gap-4">
+                                  <div className="relative">
+                                    <div className="w-12 h-12 bg-accent/15 rounded-xl flex items-center justify-center">
+                                      <ChefHat size={24} weight="fill" className="text-accent" />
+                                    </div>
+                                    <div className="absolute -top-1 -right-1 w-4 h-4 bg-orange-500 rounded-full flex items-center justify-center">
+                                      <div className="w-2 h-2 bg-white rounded-full"></div>
+                                    </div>
+                                  </div>
+                                  <div>
+                                    <h3 className="text-2xl font-bold text-foreground">
+                                      {menuItem?.name || 'Piatto non trovato'}
+                                    </h3>
+                                    <p className="text-sm text-muted-foreground font-medium">
+                                      {totalQuantity} porzioni • {getTimeAgo(oldestItem.timestamp)}
+                                    </p>
+                                  </div>
                                 </div>
-                                <div className="flex items-center gap-2">
-                                  <Badge variant="secondary" className="bg-liquid-gradient text-primary-foreground font-bold text-xl px-4 py-2 shadow-liquid">
-                                    {totalQuantity}
-                                  </Badge>
-                                  <Badge variant="outline" className="text-muted-foreground font-medium border-liquid">
-                                    {getTimeAgo(oldestItem.timestamp)}
+                                <div className="text-right">
+                                  <div className="text-lg font-bold text-accent">×{totalQuantity}</div>
+                                  <Badge variant="secondary" className="bg-accent/10 text-accent border-0 font-medium">
+                                    Da preparare
                                   </Badge>
                                 </div>
                               </div>
-                            </CardHeader>
-                            <CardContent className="space-y-3 relative">
+                            </div>
+
+                            {/* Tables Needing This Dish */}
+                            <div className="p-6 space-y-4">
                               {items.map((item, index) => {
                                 const table = restaurantTables.find(t => t.id === item.tableId)
                                 const originalOrder = restaurantOrders.find(o => o.id === item.orderId)
                                 const itemIndex = originalOrder?.items.findIndex(i => i.menuItemId === item.menuItemId) || 0
 
                                 return (
-                                  <div key={`${item.orderId}-${index}`} className="flex items-center justify-between p-4 bg-liquid-gradient rounded-xl border-liquid shadow-liquid transition-all duration-300 hover:shadow-liquid-lg">
-                                    <div className="flex-1">
-                                      <div className="flex items-center gap-4">
+                                  <div key={`${item.orderId}-${index}`} className="group bg-gradient-to-r from-card via-background to-card border border-border/8 rounded-xl p-5 hover:shadow-lg transition-all duration-300">
+                                    <div className="flex items-start justify-between gap-6">
+                                      {/* Quantity Badge */}
+                                      <div className="flex-shrink-0">
                                         <div className="relative">
-                                          <Badge variant="secondary" className="bg-primary text-primary-foreground font-bold text-xl px-3 py-2 min-w-[3rem] text-center shadow-liquid">
-                                            {item.quantity}
-                                          </Badge>
-                                          <div className="absolute -top-1 -right-1 w-2 h-2 bg-accent rounded-full animate-pulse"></div>
-                                        </div>
-                                        <div className="flex flex-col">
-                                          <span className="font-bold text-xl text-foreground drop-shadow-sm">
-                                            {table?.name || 'Tavolo sconosciuto'}
-                                          </span>
-                                          <span className="text-sm text-muted-foreground">
-                                            {getTimeAgo(item.timestamp)}
-                                          </span>
-                                        </div>
-                                      </div>
-                                      {item.notes && (
-                                        <div className="mt-3 ml-16">
-                                          <div className="bg-yellow-100/80 border border-yellow-300/50 rounded-lg px-3 py-2 shadow-sm">
-                                            <span className="text-yellow-800 font-medium text-sm">
-                                              📝 {item.notes}
-                                            </span>
+                                          <div className="w-16 h-16 bg-primary/15 rounded-2xl flex items-center justify-center border-2 border-primary/20">
+                                            <span className="text-2xl font-black text-primary">{item.quantity}</span>
+                                          </div>
+                                          <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-accent rounded-full flex items-center justify-center">
+                                            <div className="w-2 h-2 bg-white rounded-full animate-pulse"></div>
                                           </div>
                                         </div>
-                                      )}
+                                      </div>
+
+                                      {/* Table Details */}
+                                      <div className="flex-1 min-w-0">
+                                        <div className="mb-2">
+                                          <h4 className="text-lg font-bold text-foreground mb-1 leading-tight">
+                                            {table?.name || 'Tavolo sconosciuto'}
+                                          </h4>
+                                          <p className="text-sm text-muted-foreground leading-relaxed">
+                                            Ordinato {getTimeAgo(item.timestamp)}
+                                          </p>
+                                        </div>
+                                        
+                                        {item.notes && (
+                                          <div className="mt-3 p-3 bg-amber-50 border border-amber-200 rounded-lg">
+                                            <div className="flex items-start gap-2">
+                                              <div className="w-5 h-5 bg-amber-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                                                <span className="text-xs">📝</span>
+                                              </div>
+                                              <p className="text-sm text-amber-800 font-medium">
+                                                {item.notes}
+                                              </p>
+                                            </div>
+                                          </div>
+                                        )}
+                                      </div>
+
+                                      {/* Complete Button */}
+                                      <div className="flex-shrink-0">
+                                        <Button
+                                          size="lg"
+                                          onClick={() => originalOrder && handleCompleteOrderItem(originalOrder.id, itemIndex)}
+                                          className="h-16 px-8 bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white font-bold text-lg shadow-lg hover:shadow-xl transition-all duration-300 rounded-xl border-0 group-hover:scale-105"
+                                        >
+                                          <CheckCircle size={28} className="mr-3" />
+                                          <div className="flex flex-col items-start">
+                                            <span className="text-base leading-none">PRONTO</span>
+                                            <span className="text-xs opacity-90 leading-none mt-1">Completa</span>
+                                          </div>
+                                        </Button>
+                                      </div>
                                     </div>
-                                    <Button
-                                      size="lg"
-                                      onClick={() => originalOrder && handleCompleteOrderItem(originalOrder.id, itemIndex)}
-                                      className="ml-6 px-6 py-3 bg-green-500 hover:bg-green-600 text-white font-bold text-lg shadow-liquid-lg hover:shadow-[0_12px_48px_-12px_rgba(34,197,94,0.4)] transition-all duration-300 rounded-xl border-0"
-                                    >
-                                      <CheckCircle size={24} className="mr-2" />
-                                      PRONTO
-                                    </Button>
                                   </div>
                                 )
                               })}
-                            </CardContent>
+                            </div>
                           </Card>
                         )
                       })
@@ -695,59 +779,76 @@ export default function RestaurantDashboard({ user, onLogout }: Props) {
 
               {/* Completed Orders Section */}
               {restaurantCompletedOrders.length > 0 && (
-                <div className="space-y-4">
-                  <h3 className="text-lg font-semibold text-muted-foreground">Ordini Completati</h3>
-                  <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
+                <div className="space-y-6 mt-12">
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 bg-green-500/15 rounded-lg flex items-center justify-center">
+                      <CheckCircle size={20} className="text-green-600" />
+                    </div>
+                    <h3 className="text-xl font-bold text-foreground">Ordini Completati</h3>
+                    <Badge variant="secondary" className="bg-green-50 text-green-700 border border-green-200">
+                      {restaurantCompletedOrders.length}
+                    </Badge>
+                  </div>
+                  
+                  <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
                     {restaurantCompletedOrders.map((order) => {
                       const table = restaurantTables.find(t => t.id === order.tableId)
                       return (
-                        <Card key={order.id} className="bg-muted/30 shadow-sm">
-                          <CardHeader className="pb-3">
-                            <div className="flex items-center justify-between">
-                              <CardTitle className="text-lg">
-                                {table?.name || 'Tavolo sconosciuto'}
-                              </CardTitle>
-                              <Badge variant="outline">Completato</Badge>
-                            </div>
-                            <p className="text-sm text-muted-foreground">
-                              {getTimeAgo(order.timestamp)}
-                            </p>
-                          </CardHeader>
-                          <CardContent className="space-y-2">
-                            {order.items.map((item, index) => {
-                              const menuItem = restaurantMenuItems.find(m => m.id === item.menuItemId)
-                              return (
-                                <div key={index} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg border border-border/30">
-                                  <div className="flex-1">
-                                    <div className="flex items-center gap-3">
-                                      <Badge variant="outline" className="font-bold text-base px-2 py-1 min-w-[2.5rem] text-center">
-                                        {item.quantity}x
-                                      </Badge>
-                                      <span className="font-medium text-base text-muted-foreground">
-                                        {menuItem?.name || 'Piatto non trovato'}
-                                      </span>
-                                    </div>
-                                    {item.notes && (
-                                      <div className="mt-2 ml-12">
-                                        <Badge variant="outline" className="bg-gray-50 border-gray-300 text-gray-600">
-                                          Note: {item.notes}
-                                        </Badge>
-                                      </div>
-                                    )}
-                                  </div>
-                                  <Button
-                                    size="lg"
-                                    variant="outline"
-                                    onClick={() => handleUncompleteOrderItem(order.id)}
-                                    className="ml-4 shadow-sm hover:shadow-gold transition-all duration-200 border-muted-foreground hover:bg-muted/50"
-                                  >
-                                    <Circle size={20} className="text-muted-foreground" />
-                                    <span className="ml-2 font-medium">Annulla</span>
-                                  </Button>
+                        <Card key={order.id} className="bg-gradient-to-br from-green-50/50 to-background border border-green-200/30 shadow-sm hover:shadow-md transition-all duration-300 rounded-xl">
+                          <div className="p-5">
+                            <div className="flex items-center justify-between mb-4">
+                              <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
+                                  <Square size={20} className="text-green-600" />
                                 </div>
-                              )
-                            })}
-                          </CardContent>
+                                <div>
+                                  <h4 className="font-bold text-foreground">
+                                    {table?.name || 'Tavolo sconosciuto'}
+                                  </h4>
+                                  <p className="text-sm text-muted-foreground">
+                                    {getTimeAgo(order.timestamp)}
+                                  </p>
+                                </div>
+                              </div>
+                              <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200 font-medium">
+                                ✓ Completato
+                              </Badge>
+                            </div>
+                            
+                            <div className="space-y-3">
+                              {order.items.map((item, index) => {
+                                const menuItem = restaurantMenuItems.find(m => m.id === item.menuItemId)
+                                return (
+                                  <div key={index} className="flex items-center justify-between p-3 bg-white/70 rounded-lg border border-green-200/20">
+                                    <div className="flex items-center gap-3">
+                                      <div className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center">
+                                        <span className="text-sm font-bold text-green-600">{item.quantity}</span>
+                                      </div>
+                                      <div className="flex-1 min-w-0">
+                                        <p className="font-medium text-foreground text-sm leading-tight">
+                                          {menuItem?.name || 'Piatto non trovato'}
+                                        </p>
+                                        {item.notes && (
+                                          <p className="text-xs text-muted-foreground mt-1">
+                                            📝 {item.notes}
+                                          </p>
+                                        )}
+                                      </div>
+                                    </div>
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
+                                      onClick={() => handleUncompleteOrderItem(order.id)}
+                                      className="h-8 px-3 text-xs border-muted-foreground/30 hover:bg-muted/50 hover:border-muted-foreground/50 transition-all duration-200"
+                                    >
+                                      <Circle size={14} className="mr-1" />
+                                      Annulla
+                                    </Button>
+                                  </div>
+                                )
+                              })}
+                            </div>
+                          </div>
                         </Card>
                       )
                     })}
@@ -759,13 +860,21 @@ export default function RestaurantDashboard({ user, onLogout }: Props) {
 
           {/* Tables Section */}
           {activeSection === 'tables' && (
-            <div className="space-y-6">
+            <div className="space-y-8">
               <div className="flex items-center justify-between">
-                <h2 className="text-2xl font-bold">Gestione Tavoli</h2>
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 bg-primary/15 rounded-xl flex items-center justify-center">
+                    <Square size={24} className="text-primary" />
+                  </div>
+                  <div>
+                    <h2 className="text-3xl font-bold text-foreground">Gestione Tavoli</h2>
+                    <p className="text-muted-foreground">Configura e monitora i tuoi tavoli</p>
+                  </div>
+                </div>
                 <Dialog open={showTableDialog} onOpenChange={setShowTableDialog}>
                   <DialogTrigger asChild>
-                    <Button className="flex items-center gap-2">
-                      <Plus size={16} />
+                    <Button className="flex items-center gap-2 h-12 px-6">
+                      <Plus size={20} />
                       Nuovo Tavolo
                     </Button>
                   </DialogTrigger>
@@ -794,13 +903,13 @@ export default function RestaurantDashboard({ user, onLogout }: Props) {
                 </Dialog>
               </div>
 
-              <div className="grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+              <div className="grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                 {restaurantTables.map((table) => {
                   const bill = getTableBill(table.id)
                   const isPaid = (paidTables || []).includes(table.id)
                   
                   return (
-                    <Card key={table.id} className={`shadow-gold bg-card-gradient ${!table.isActive ? 'opacity-50' : ''} ${isPaid ? 'bg-green-50 border-green-200' : ''}`}>
+                    <Card key={table.id} className={`bg-white border border-border/10 shadow-[0_8px_32px_-8px_rgba(0,0,0,0.08)] rounded-2xl overflow-hidden hover:shadow-[0_20px_64px_-12px_rgba(0,0,0,0.15)] transition-all duration-500 ${!table.isActive ? 'opacity-50' : ''} ${isPaid ? 'bg-green-50 border-green-200' : ''}`}>
                       <CardHeader className="pb-3">
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-2">
@@ -889,13 +998,21 @@ export default function RestaurantDashboard({ user, onLogout }: Props) {
 
           {/* Categories Section */}
           {activeSection === 'categories' && (
-            <div className="space-y-6">
+            <div className="space-y-8">
               <div className="flex items-center justify-between">
-                <h2 className="text-2xl font-bold">Gestione Categorie</h2>
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 bg-primary/15 rounded-xl flex items-center justify-center">
+                    <List size={24} className="text-primary" />
+                  </div>
+                  <div>
+                    <h2 className="text-3xl font-bold text-foreground">Gestione Categorie</h2>
+                    <p className="text-muted-foreground">Organizza il tuo menu in categorie</p>
+                  </div>
+                </div>
                 <Dialog open={showCategoryDialog} onOpenChange={setShowCategoryDialog}>
                   <DialogTrigger asChild>
-                    <Button className="flex items-center gap-2">
-                      <Plus size={16} />
+                    <Button className="flex items-center gap-2 h-12 px-6">
+                      <Plus size={20} />
                       Nuova Categoria
                     </Button>
                   </DialogTrigger>
@@ -921,22 +1038,22 @@ export default function RestaurantDashboard({ user, onLogout }: Props) {
                 </Dialog>
               </div>
 
-              <div className="space-y-3">
+              <div className="space-y-4">
                 {categories?.map((category, index) => {
                   const categoryItemsCount = restaurantMenuItems.filter(item => item.category === category).length
                   
                   return (
-                    <Card key={category} className="shadow-gold bg-card-gradient">
-                      <CardContent className="p-4">
+                    <Card key={category} className="bg-white border border-border/10 shadow-[0_8px_32px_-8px_rgba(0,0,0,0.08)] rounded-2xl overflow-hidden hover:shadow-[0_20px_64px_-12px_rgba(0,0,0,0.15)] transition-all duration-500">
+                      <CardContent className="p-6">
                         <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-3">
+                          <div className="flex items-center gap-4">
                             <div className="flex flex-col gap-1">
                               <Button
                                 variant="outline"
                                 size="sm"
                                 onClick={() => handleMoveCategoryUp(index)}
                                 disabled={index === 0}
-                                className="h-6 w-6 p-0 shadow-sm hover:shadow-gold transition-shadow duration-200"
+                                className="h-8 w-8 p-0 shadow-sm hover:shadow-gold transition-shadow duration-200"
                               >
                                 ↑
                               </Button>
@@ -945,20 +1062,20 @@ export default function RestaurantDashboard({ user, onLogout }: Props) {
                                 size="sm"
                                 onClick={() => handleMoveCategoryDown(index)}
                                 disabled={index === (categories || []).length - 1}
-                                className="h-6 w-6 p-0 shadow-sm hover:shadow-gold transition-shadow duration-200"
+                                className="h-8 w-8 p-0 shadow-sm hover:shadow-gold transition-shadow duration-200"
                               >
                                 ↓
                               </Button>
                             </div>
                             <div>
-                              <h3 className="font-semibold text-lg">{category}</h3>
+                              <h3 className="font-bold text-xl text-foreground">{category}</h3>
                               <p className="text-sm text-muted-foreground">
                                 {categoryItemsCount} piatt{categoryItemsCount === 1 ? 'o' : 'i'}
                               </p>
                             </div>
                           </div>
-                          <div className="flex items-center gap-2">
-                            <Badge variant="secondary" className="bg-primary/20">
+                          <div className="flex items-center gap-3">
+                            <Badge variant="secondary" className="bg-primary/10 text-primary font-medium">
                               Posizione {index + 1}
                             </Badge>
                             <Button
@@ -968,7 +1085,7 @@ export default function RestaurantDashboard({ user, onLogout }: Props) {
                               disabled={categoryItemsCount > 0}
                               className="shadow-sm"
                             >
-                              <Trash size={14} />
+                              <Trash size={16} />
                             </Button>
                           </div>
                         </div>
@@ -978,8 +1095,10 @@ export default function RestaurantDashboard({ user, onLogout }: Props) {
                 })}
                 
                 {(categories || []).length === 0 && (
-                  <div className="text-center text-muted-foreground py-8">
-                    Nessuna categoria configurata. Crea la prima categoria per iniziare.
+                  <div className="text-center text-muted-foreground py-12">
+                    <List size={64} className="mx-auto mb-4 opacity-30" />
+                    <p className="text-xl font-medium">Nessuna categoria configurata</p>
+                    <p className="text-sm mt-2">Crea la prima categoria per iniziare</p>
                   </div>
                 )}
               </div>
@@ -988,14 +1107,22 @@ export default function RestaurantDashboard({ user, onLogout }: Props) {
 
           {/* Menu Section */}
           {activeSection === 'menu' && (
-            <div className="space-y-6">
+            <div className="space-y-8">
               <div className="flex items-center justify-between">
-                <h2 className="text-2xl font-bold">Gestione Menù</h2>
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 bg-primary/15 rounded-xl flex items-center justify-center">
+                    <List size={24} className="text-primary" />
+                  </div>
+                  <div>
+                    <h2 className="text-3xl font-bold text-foreground">Gestione Menù</h2>
+                    <p className="text-muted-foreground">Aggiungi e gestisci i piatti del tuo menu</p>
+                  </div>
+                </div>
                 <div className="flex gap-2">
                   <Dialog open={showMenuDialog} onOpenChange={setShowMenuDialog}>
                     <DialogTrigger asChild>
-                      <Button className="flex items-center gap-2">
-                        <Plus size={16} />
+                      <Button className="flex items-center gap-2 h-12 px-6">
+                        <Plus size={20} />
                         Nuovo Piatto
                       </Button>
                     </DialogTrigger>
@@ -1069,10 +1196,10 @@ export default function RestaurantDashboard({ user, onLogout }: Props) {
                   
                   return (
                     <div key={category} className="space-y-4">
-                      <h3 className="text-xl font-semibold text-primary">{category}</h3>
-                      <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+                      <h3 className="text-2xl font-bold text-primary">{category}</h3>
+                      <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
                         {categoryItems.map((item) => (
-                          <Card key={item.id} className={`shadow-gold bg-card-gradient ${!item.isActive ? 'opacity-50' : ''}`}>
+                          <Card key={item.id} className={`bg-white border border-border/10 shadow-[0_8px_32px_-8px_rgba(0,0,0,0.08)] rounded-2xl overflow-hidden hover:shadow-[0_20px_64px_-12px_rgba(0,0,0,0.15)] transition-all duration-500 ${!item.isActive ? 'opacity-50' : ''}`}>
                             <CardHeader className="pb-3">
                               <div className="flex items-start justify-between">
                                 <div className="flex-1">
@@ -1080,7 +1207,7 @@ export default function RestaurantDashboard({ user, onLogout }: Props) {
                                   <p className="text-sm text-muted-foreground mt-1">{item.description}</p>
                                 </div>
                                 <div className="text-right">
-                                  <div className="font-semibold text-primary">€{item.price.toFixed(2)}</div>
+                                  <div className="font-bold text-primary text-lg">€{item.price.toFixed(2)}</div>
                                   <Badge variant={item.isActive ? "default" : "secondary"} className="text-xs">
                                     {item.isActive ? "Disponibile" : "Non Disponibile"}
                                   </Badge>
@@ -1116,8 +1243,10 @@ export default function RestaurantDashboard({ user, onLogout }: Props) {
               </div>
 
               {restaurantMenuItems.length === 0 && (
-                <div className="text-center text-muted-foreground py-8">
-                  Nessun piatto nel menù. Aggiungi il primo piatto per iniziare.
+                <div className="text-center text-muted-foreground py-12">
+                  <ChefHat size={64} className="mx-auto mb-4 opacity-30" />
+                  <p className="text-xl font-medium">Nessun piatto nel menù</p>
+                  <p className="text-sm mt-2">Aggiungi il primo piatto per iniziare</p>
                 </div>
               )}
             </div>
@@ -1125,9 +1254,17 @@ export default function RestaurantDashboard({ user, onLogout }: Props) {
 
           {/* Analytics Section */}
           {activeSection === 'analytics' && (
-            <div className="space-y-6">
+            <div className="space-y-8">
               <div className="flex items-center justify-between">
-                <h2 className="text-2xl font-bold">Dashboard Analitiche</h2>
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 bg-primary/15 rounded-xl flex items-center justify-center">
+                    <ChartBar size={24} className="text-primary" />
+                  </div>
+                  <div>
+                    <h2 className="text-3xl font-bold text-foreground">Dashboard Analitiche</h2>
+                    <p className="text-muted-foreground">Monitora le performance del tuo ristorante</p>
+                  </div>
+                </div>
                 <div className="flex items-center gap-2">
                   <Button variant="outline" size="sm">
                     <Calendar size={16} />
@@ -1138,7 +1275,7 @@ export default function RestaurantDashboard({ user, onLogout }: Props) {
 
               {/* Stats Cards */}
               <div className="grid md:grid-cols-4 gap-6">
-                <Card className="shadow-gold bg-card-gradient">
+                <Card className="bg-white border border-border/10 shadow-[0_8px_32px_-8px_rgba(0,0,0,0.08)] rounded-2xl overflow-hidden hover:shadow-[0_20px_64px_-12px_rgba(0,0,0,0.15)] transition-all duration-500">
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                     <CardTitle className="text-sm font-medium">Ordini in Attesa</CardTitle>
                     <Bell className="h-4 w-4 text-accent glow-gold" />
@@ -1148,7 +1285,7 @@ export default function RestaurantDashboard({ user, onLogout }: Props) {
                   </CardContent>
                 </Card>
 
-                <Card className="shadow-gold bg-card-gradient">
+                <Card className="bg-white border border-border/10 shadow-[0_8px_32px_-8px_rgba(0,0,0,0.08)] rounded-2xl overflow-hidden hover:shadow-[0_20px_64px_-12px_rgba(0,0,0,0.15)] transition-all duration-500">
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                     <CardTitle className="text-sm font-medium">Ordini Oggi</CardTitle>
                     <ClockCounterClockwise className="h-4 w-4 text-primary" />
@@ -1158,7 +1295,7 @@ export default function RestaurantDashboard({ user, onLogout }: Props) {
                   </CardContent>
                 </Card>
 
-                <Card className="shadow-gold bg-card-gradient">
+                <Card className="bg-white border border-border/10 shadow-[0_8px_32px_-8px_rgba(0,0,0,0.08)] rounded-2xl overflow-hidden hover:shadow-[0_20px_64px_-12px_rgba(0,0,0,0.15)] transition-all duration-500">
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                     <CardTitle className="text-sm font-medium">Ricavi Oggi</CardTitle>
                     <Money className="h-4 w-4 text-primary" />
@@ -1168,7 +1305,7 @@ export default function RestaurantDashboard({ user, onLogout }: Props) {
                   </CardContent>
                 </Card>
 
-                <Card className="shadow-gold bg-card-gradient">
+                <Card className="bg-white border border-border/10 shadow-[0_8px_32px_-8px_rgba(0,0,0,0.08)] rounded-2xl overflow-hidden hover:shadow-[0_20px_64px_-12px_rgba(0,0,0,0.15)] transition-all duration-500">
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                     <CardTitle className="text-sm font-medium">Scontrino Medio</CardTitle>
                     <Receipt className="h-4 w-4 text-secondary" />
@@ -1182,7 +1319,7 @@ export default function RestaurantDashboard({ user, onLogout }: Props) {
               </div>
 
               <div className="grid md:grid-cols-2 gap-6">
-                <Card className="shadow-gold bg-card-gradient">
+                <Card className="bg-white border border-border/10 shadow-[0_8px_32px_-8px_rgba(0,0,0,0.08)] rounded-2xl overflow-hidden hover:shadow-[0_20px_64px_-12px_rgba(0,0,0,0.15)] transition-all duration-500">
                   <CardHeader>
                     <CardTitle>Statistiche Generali</CardTitle>
                   </CardHeader>
@@ -1206,7 +1343,7 @@ export default function RestaurantDashboard({ user, onLogout }: Props) {
                   </CardContent>
                 </Card>
 
-                <Card className="shadow-gold bg-card-gradient">
+                <Card className="bg-white border border-border/10 shadow-[0_8px_32px_-8px_rgba(0,0,0,0.08)] rounded-2xl overflow-hidden hover:shadow-[0_20px_64px_-12px_rgba(0,0,0,0.15)] transition-all duration-500">
                   <CardHeader>
                     <CardTitle>Performance</CardTitle>
                   </CardHeader>
@@ -1232,11 +1369,19 @@ export default function RestaurantDashboard({ user, onLogout }: Props) {
 
           {/* Settings Section */}
           {activeSection === 'settings' && (
-            <div className="space-y-6">
-              <h2 className="text-2xl font-bold">Impostazioni Ristorante</h2>
+            <div className="space-y-8">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 bg-primary/15 rounded-xl flex items-center justify-center">
+                  <Gear size={24} className="text-primary" />
+                </div>
+                <div>
+                  <h2 className="text-3xl font-bold text-foreground">Impostazioni Ristorante</h2>
+                  <p className="text-muted-foreground">Configura le impostazioni del tuo ristorante</p>
+                </div>
+              </div>
 
-              <div className="grid md:grid-cols-2 gap-6">
-                <Card className="shadow-gold bg-card-gradient">
+              <div className="grid md:grid-cols-2 gap-8">
+                <Card className="bg-white border border-border/10 shadow-[0_8px_32px_-8px_rgba(0,0,0,0.08)] rounded-2xl overflow-hidden hover:shadow-[0_20px_64px_-12px_rgba(0,0,0,0.15)] transition-all duration-500">
                   <CardHeader>
                     <CardTitle>Informazioni Ristorante</CardTitle>
                   </CardHeader>
@@ -1259,7 +1404,7 @@ export default function RestaurantDashboard({ user, onLogout }: Props) {
                   </CardContent>
                 </Card>
 
-                <Card className="shadow-gold bg-card-gradient">
+                <Card className="bg-white border border-border/10 shadow-[0_8px_32px_-8px_rgba(0,0,0,0.08)] rounded-2xl overflow-hidden hover:shadow-[0_20px_64px_-12px_rgba(0,0,0,0.15)] transition-all duration-500">
                   <CardHeader>
                     <CardTitle>Modalità Speciali</CardTitle>
                   </CardHeader>
@@ -1337,6 +1482,7 @@ export default function RestaurantDashboard({ user, onLogout }: Props) {
               </div>
             </div>
           )}
+          </div>
         </div>
       </div>
 
