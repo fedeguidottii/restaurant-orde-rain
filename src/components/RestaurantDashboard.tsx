@@ -68,13 +68,14 @@ export default function RestaurantDashboard({ user, onLogout }: Props) {
   const [showTableDialog, setShowTableDialog] = useState(false)
   const [showMenuDialog, setShowMenuDialog] = useState(false)
   const [showCategoryDialog, setShowCategoryDialog] = useState(false)
-  const [showQRDialog, setShowQRDialog] = useState(false)
   const [showBillDialog, setShowBillDialog] = useState(false)
   const [showCategoryManageDialog, setShowCategoryManageDialog] = useState(false)
+  const [showQRDialog, setShowQRDialog] = useState(false)
   const [selectedTable, setSelectedTable] = useState<Table | null>(null)
-  const [orderViewMode, setOrderViewMode] = useState<'tables' | 'dishes'>('tables')
   const [editingTable, setEditingTable] = useState<Table | null>(null)
+  const [orderViewMode, setOrderViewMode] = useState<'tables' | 'dishes'>('tables')
   const [allYouCanEatPrice, setAllYouCanEatPrice] = useKV<number>('allYouCanEatPrice', 25.00)
+
 
   const restaurant = restaurants?.find(r => r.id === user.restaurantId)
   const restaurantTables = tables?.filter(t => t.restaurantId === user.restaurantId) || []
