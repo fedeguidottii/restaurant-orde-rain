@@ -27,20 +27,31 @@
 - **Why it matters**: Allows kitchen staff to manage orders efficiently at item level
 - **Success criteria**: Orders display correctly on all screen sizes, items can be marked complete individually
 
-### Enhanced Table Management
-- **What it does**: Visual table grid with QR codes, billing, and payment tracking
-- **Why it matters**: Streamlines table operations from setup to payment
-- **Success criteria**: Tables show status clearly, QR codes are accessible, billing is accurate
+### Enhanced Table Management with Status Flow
+- **What it does**: Complete table lifecycle management with states (Available, Waiting for Order, Order Ready, Eating, Waiting for Bill, Paid) and automatic status progression
+- **Why it matters**: Provides real-time table status visibility and streamlines service workflow from seating to payment
+- **Trigger**: Restaurant staff opens new table session or customer places/completes order
+- **Progression**: Table Available → Open Table (generate PIN) → Customer Orders → Order Ready → Eating → Request Bill → Payment → Close Table → Historical Record
+- **Success criteria**: Table states update automatically, staff can manually advance states, payment closes table and moves order to history
 
 ### Organized Menu Management
 - **What it does**: Category-based menu organization with easy item and category management
 - **Why it matters**: Reflects customer-facing menu structure for consistency
 - **Success criteria**: Categories organize items logically, editing is intuitive
 
-### Comprehensive Analytics Dashboard
-- **What it does**: Centralized statistics and performance metrics with filtering
-- **Why it matters**: Provides business insights for decision making
-- **Success criteria**: All key metrics are visible, data is accurate and up-to-date
+### Order History & Analytics
+- **What it does**: Comprehensive order archive with customer details, table info, and payment history with advanced filtering
+- **Why it matters**: Provides business insights and customer service history for future reservations
+- **Trigger**: Order marked as paid automatically moves to historical records
+- **Progression**: Active Order → Payment → Historical Archive → Analytics Dashboard
+- **Success criteria**: All paid orders stored with customer data, searchable by date/table/customer, integrated with reservation system
+
+### Smart Reservation System
+- **What it does**: Time-slot grid reservation system with table availability matrix and customer management
+- **Why it matters**: Optimizes table utilization and provides seamless customer experience integration
+- **Trigger**: Staff clicks time slot in reservation grid or customer requests reservation
+- **Progression**: Select Time/Table → Enter Customer Details → Confirm Reservation → Table Preparation → Customer Arrival → Order Integration
+- **Success criteria**: Visual time/table grid, customer data integration with order history, reservation conflicts prevented
 
 ### Advanced Settings & Special Modes
 - **What it does**: Configurable restaurant modes (All You Can Eat, Cover Charge, Waiters)
