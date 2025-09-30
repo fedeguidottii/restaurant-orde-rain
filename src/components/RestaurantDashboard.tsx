@@ -87,6 +87,14 @@ export default function RestaurantDashboard({ user, onLogout }: Props) {
 
   const getTimeAgo = (timestamp: number) => {
     const minutes = Math.floor((Date.now() - timestamp) / (1000 * 60))
+    if (minutes >= 60) {
+      const hours = Math.floor(minutes / 60)
+      const remainingMinutes = minutes % 60
+      if (remainingMinutes === 0) {
+        return `${hours}h fa`
+      }
+      return `${hours}h ${remainingMinutes}min fa`
+    }
     return `${minutes} min fa`
   }
 
@@ -310,15 +318,15 @@ export default function RestaurantDashboard({ user, onLogout }: Props) {
   return (
     <div className="min-h-screen bg-background flex">
       {/* Sidebar */}
-      <div className={`${sidebarExpanded ? 'w-64' : 'w-16'} transition-all duration-300 bg-card border-r flex flex-col`}>
+      <div className={`${sidebarExpanded ? 'w-64' : 'w-16'} transition-all duration-500 ease-in-out bg-card-gradient border-r shadow-gold-lg flex flex-col`}>
         <div className="p-4">
           <div className="flex items-center justify-between">
-            <div className={`flex items-center space-x-3 ${!sidebarExpanded && 'justify-center'}`}>
-              <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center">
+            <div className={`flex items-center space-x-3 transition-all duration-300 ${!sidebarExpanded && 'justify-center'}`}>
+              <div className="w-10 h-10 bg-gold-gradient rounded-lg flex items-center justify-center shadow-gold glow-gold">
                 <ChefHat weight="bold" size={20} className="text-primary-foreground" />
               </div>
               {sidebarExpanded && (
-                <div>
+                <div className="transition-opacity duration-300">
                   <h1 className="text-lg font-bold text-foreground">
                     {restaurant?.name || 'Ristorante'}
                   </h1>
@@ -330,7 +338,7 @@ export default function RestaurantDashboard({ user, onLogout }: Props) {
               variant="ghost"
               size="sm"
               onClick={() => setSidebarExpanded(!sidebarExpanded)}
-              className="p-1"
+              className="p-1 hover:bg-primary/20 transition-colors duration-200"
             >
               {sidebarExpanded ? <CaretLeft size={16} /> : <CaretRight size={16} />}
             </Button>
@@ -342,7 +350,10 @@ export default function RestaurantDashboard({ user, onLogout }: Props) {
             <Button
               variant={activeSection === 'orders' ? 'secondary' : 'ghost'}
               className={`w-full justify-start ${!sidebarExpanded && 'px-2'}`}
-              onClick={() => setActiveSection('orders')}
+              onClick={() => {
+                setActiveSection('orders')
+                setSidebarExpanded(false)
+              }}
             >
               <Bell size={16} />
               {sidebarExpanded && <span className="ml-2">Ordini</span>}
@@ -356,7 +367,10 @@ export default function RestaurantDashboard({ user, onLogout }: Props) {
             <Button
               variant={activeSection === 'tables' ? 'secondary' : 'ghost'}
               className={`w-full justify-start ${!sidebarExpanded && 'px-2'}`}
-              onClick={() => setActiveSection('tables')}
+              onClick={() => {
+                setActiveSection('tables')
+                setSidebarExpanded(false)
+              }}
             >
               <Square size={16} />
               {sidebarExpanded && <span className="ml-2">Tavoli</span>}
@@ -365,7 +379,10 @@ export default function RestaurantDashboard({ user, onLogout }: Props) {
             <Button
               variant={activeSection === 'categories' ? 'secondary' : 'ghost'}
               className={`w-full justify-start ${!sidebarExpanded && 'px-2'}`}
-              onClick={() => setActiveSection('categories')}
+              onClick={() => {
+                setActiveSection('categories')
+                setSidebarExpanded(false)
+              }}
             >
               <List size={16} />
               {sidebarExpanded && <span className="ml-2">Categorie</span>}
@@ -374,7 +391,10 @@ export default function RestaurantDashboard({ user, onLogout }: Props) {
             <Button
               variant={activeSection === 'menu' ? 'secondary' : 'ghost'}
               className={`w-full justify-start ${!sidebarExpanded && 'px-2'}`}
-              onClick={() => setActiveSection('menu')}
+              onClick={() => {
+                setActiveSection('menu')
+                setSidebarExpanded(false)
+              }}
             >
               <List size={16} />
               {sidebarExpanded && <span className="ml-2">Menù</span>}
@@ -383,7 +403,10 @@ export default function RestaurantDashboard({ user, onLogout }: Props) {
             <Button
               variant={activeSection === 'analytics' ? 'secondary' : 'ghost'}
               className={`w-full justify-start ${!sidebarExpanded && 'px-2'}`}
-              onClick={() => setActiveSection('analytics')}
+              onClick={() => {
+                setActiveSection('analytics')
+                setSidebarExpanded(false)
+              }}
             >
               <ChartBar size={16} />
               {sidebarExpanded && <span className="ml-2">Analitiche</span>}
@@ -392,7 +415,10 @@ export default function RestaurantDashboard({ user, onLogout }: Props) {
             <Button
               variant={activeSection === 'settings' ? 'secondary' : 'ghost'}
               className={`w-full justify-start ${!sidebarExpanded && 'px-2'}`}
-              onClick={() => setActiveSection('settings')}
+              onClick={() => {
+                setActiveSection('settings')
+                setSidebarExpanded(false)
+              }}
             >
               <Gear size={16} />
               {sidebarExpanded && <span className="ml-2">Impostazioni</span>}
@@ -418,7 +444,7 @@ export default function RestaurantDashboard({ user, onLogout }: Props) {
                 <h2 className="text-2xl font-bold">Gestione Ordini</h2>
                 <div className="flex items-center gap-2">
                   <Select value={orderViewMode} onValueChange={(value: 'tables' | 'dishes') => setOrderViewMode(value)}>
-                    <SelectTrigger className="w-40">
+                    <SelectTrigger className="w-40 shadow-gold">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -429,66 +455,161 @@ export default function RestaurantDashboard({ user, onLogout }: Props) {
                 </div>
               </div>
 
-              <div className="grid lg:grid-cols-2 xl:grid-cols-3 gap-3">
+              <div className="grid lg:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4">
                 {restaurantOrders.length === 0 ? (
                   <div className="col-span-full text-center text-muted-foreground py-8">
                     Nessun ordine ricevuto oggi.
                   </div>
-                ) : (
-                  restaurantOrders
-                    .sort((a, b) => b.timestamp - a.timestamp)
-                    .map((order) => {
-                      const table = restaurantTables.find(t => t.id === order.tableId)
-                      return (
-                        <Card key={order.id} className="max-w-sm">
-                          <CardHeader className="pb-3">
-                            <div className="flex items-center justify-between">
-                              <CardTitle className="text-lg">
-                                {table?.name || 'Tavolo sconosciuto'}
-                              </CardTitle>
-                              <Badge 
-                                variant={
-                                  order.status === 'waiting' ? 'destructive' :
-                                  order.status === 'preparing' ? 'default' :
-                                  order.status === 'served' ? 'secondary' : 'outline'
-                                }
-                              >
-                                {order.status === 'waiting' && 'In Attesa'}
-                                {order.status === 'preparing' && 'In Preparazione'}
-                                {order.status === 'served' && 'Servito'}
-                                {order.status === 'completed' && 'Completato'}
-                              </Badge>
-                            </div>
-                            <p className="text-sm text-muted-foreground">
-                              {getTimeAgo(order.timestamp)} • €{order.total.toFixed(2)}
-                            </p>
-                          </CardHeader>
-                          <CardContent className="space-y-3">
-                            {order.items.map((item, index) => {
-                              const menuItem = restaurantMenuItems.find(m => m.id === item.menuItemId)
-                              return (
-                                <div key={index} className="flex justify-between items-center text-sm">
-                                  <div>
-                                    <span>{item.quantity}x {menuItem?.name || 'Piatto non trovato'}</span>
-                                    {item.notes && (
-                                      <p className="text-muted-foreground text-xs italic">Note: {item.notes}</p>
-                                    )}
+                ) : orderViewMode === 'tables' ? (
+                  // Group by tables
+                  (() => {
+                    const groupedByTable = restaurantOrders.reduce((groups, order) => {
+                      const tableId = order.tableId
+                      if (!groups[tableId]) {
+                        groups[tableId] = []
+                      }
+                      groups[tableId].push(order)
+                      return groups
+                    }, {} as Record<string, Order[]>)
+
+                    return Object.entries(groupedByTable)
+                      .sort(([, ordersA], [, ordersB]) => {
+                        const latestA = Math.max(...ordersA.map(o => o.timestamp))
+                        const latestB = Math.max(...ordersB.map(o => o.timestamp))
+                        return latestB - latestA
+                      })
+                      .map(([tableId, orders]) => {
+                        const table = restaurantTables.find(t => t.id === tableId)
+                        const totalAmount = orders.reduce((sum, order) => sum + order.total, 0)
+                        const oldestOrder = orders.reduce((oldest, order) => 
+                          order.timestamp < oldest.timestamp ? order : oldest
+                        )
+
+                        return (
+                          <Card key={tableId} className="shadow-gold bg-card-gradient">
+                            <CardHeader className="pb-3">
+                              <div className="flex items-center justify-between">
+                                <CardTitle className="text-lg">
+                                  {table?.name || 'Tavolo sconosciuto'}
+                                </CardTitle>
+                                <Badge variant="secondary" className="bg-primary/20">
+                                  {orders.length} ordini
+                                </Badge>
+                              </div>
+                              <p className="text-sm text-muted-foreground">
+                                {getTimeAgo(oldestOrder.timestamp)} • €{totalAmount.toFixed(2)}
+                              </p>
+                            </CardHeader>
+                            <CardContent className="space-y-3">
+                              {orders.flatMap(order => order.items).map((item, index) => {
+                                const menuItem = restaurantMenuItems.find(m => m.id === item.menuItemId)
+                                const originalOrderIndex = restaurantOrders.findIndex(o => 
+                                  o.items.some(i => i.menuItemId === item.menuItemId)
+                                )
+                                const originalOrder = restaurantOrders[originalOrderIndex]
+                                const itemIndex = originalOrder?.items.findIndex(i => i.menuItemId === item.menuItemId) || 0
+
+                                return (
+                                  <div key={`${item.menuItemId}-${index}`} className="flex justify-between items-center text-sm">
+                                    <div>
+                                      <span>{item.quantity}x {menuItem?.name || 'Piatto non trovato'}</span>
+                                      {item.notes && (
+                                        <p className="text-muted-foreground text-xs italic">Note: {item.notes}</p>
+                                      )}
+                                    </div>
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
+                                      onClick={() => originalOrder && handleCompleteOrderItem(originalOrder.id, itemIndex)}
+                                      className="ml-2 shadow-sm hover:shadow-gold transition-shadow duration-200"
+                                    >
+                                      <CheckCircle size={14} className="text-green-600" />
+                                    </Button>
                                   </div>
-                                  <Button
-                                    size="sm"
-                                    variant="outline"
-                                    onClick={() => handleCompleteOrderItem(order.id, index)}
-                                    className="ml-2"
-                                  >
-                                    <CheckCircle size={14} className="text-green-600" />
-                                  </Button>
-                                </div>
-                              )
-                            })}
-                          </CardContent>
-                        </Card>
-                      )
-                    })
+                                )
+                              })}
+                            </CardContent>
+                          </Card>
+                        )
+                      })
+                  })()
+                ) : (
+                  // Group by dishes
+                  (() => {
+                    const groupedByDish = restaurantOrders.flatMap(order => 
+                      order.items.map(item => ({
+                        ...item,
+                        orderId: order.id,
+                        tableId: order.tableId,
+                        timestamp: order.timestamp
+                      }))
+                    ).reduce((groups, item) => {
+                      const menuItemId = item.menuItemId
+                      if (!groups[menuItemId]) {
+                        groups[menuItemId] = []
+                      }
+                      groups[menuItemId].push(item)
+                      return groups
+                    }, {} as Record<string, Array<{menuItemId: string, quantity: number, notes?: string, orderId: string, tableId: string, timestamp: number}>>)
+
+                    return Object.entries(groupedByDish)
+                      .sort(([, itemsA], [, itemsB]) => {
+                        const latestA = Math.max(...itemsA.map(i => i.timestamp))
+                        const latestB = Math.max(...itemsB.map(i => i.timestamp))
+                        return latestB - latestA
+                      })
+                      .map(([menuItemId, items]) => {
+                        const menuItem = restaurantMenuItems.find(m => m.id === menuItemId)
+                        const totalQuantity = items.reduce((sum, item) => sum + item.quantity, 0)
+                        const oldestItem = items.reduce((oldest, item) => 
+                          item.timestamp < oldest.timestamp ? item : oldest
+                        )
+
+                        return (
+                          <Card key={menuItemId} className="shadow-gold bg-card-gradient">
+                            <CardHeader className="pb-3">
+                              <div className="flex items-center justify-between">
+                                <CardTitle className="text-lg">
+                                  {menuItem?.name || 'Piatto non trovato'}
+                                </CardTitle>
+                                <Badge variant="secondary" className="bg-primary/20">
+                                  {totalQuantity}x
+                                </Badge>
+                              </div>
+                              <p className="text-sm text-muted-foreground">
+                                {getTimeAgo(oldestItem.timestamp)} • €{((menuItem?.price || 0) * totalQuantity).toFixed(2)}
+                              </p>
+                            </CardHeader>
+                            <CardContent className="space-y-3">
+                              {items.map((item, index) => {
+                                const table = restaurantTables.find(t => t.id === item.tableId)
+                                const originalOrder = restaurantOrders.find(o => o.id === item.orderId)
+                                const itemIndex = originalOrder?.items.findIndex(i => i.menuItemId === item.menuItemId) || 0
+
+                                return (
+                                  <div key={`${item.orderId}-${index}`} className="flex justify-between items-center text-sm">
+                                    <div>
+                                      <span>{item.quantity}x da {table?.name || 'Tavolo sconosciuto'}</span>
+                                      {item.notes && (
+                                        <p className="text-muted-foreground text-xs italic">Note: {item.notes}</p>
+                                      )}
+                                    </div>
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
+                                      onClick={() => originalOrder && handleCompleteOrderItem(originalOrder.id, itemIndex)}
+                                      className="ml-2 shadow-sm hover:shadow-gold transition-shadow duration-200"
+                                    >
+                                      <CheckCircle size={14} className="text-green-600" />
+                                    </Button>
+                                  </div>
+                                )
+                              })}
+                            </CardContent>
+                          </Card>
+                        )
+                      })
+                  })()
                 )}
               </div>
 
@@ -496,11 +617,11 @@ export default function RestaurantDashboard({ user, onLogout }: Props) {
               {restaurantCompletedOrders.length > 0 && (
                 <div className="space-y-4">
                   <h3 className="text-lg font-semibold text-muted-foreground">Ordini Completati</h3>
-                  <div className="grid lg:grid-cols-2 xl:grid-cols-3 gap-3">
+                  <div className="grid lg:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4">
                     {restaurantCompletedOrders.map((order) => {
                       const table = restaurantTables.find(t => t.id === order.tableId)
                       return (
-                        <Card key={order.id} className="max-w-sm bg-muted/30">
+                        <Card key={order.id} className="bg-muted/30 shadow-sm">
                           <CardHeader className="pb-3">
                             <div className="flex items-center justify-between">
                               <CardTitle className="text-lg">
@@ -527,7 +648,7 @@ export default function RestaurantDashboard({ user, onLogout }: Props) {
                                     size="sm"
                                     variant="outline"
                                     onClick={() => handleUncompleteOrderItem(order.id)}
-                                    className="ml-2"
+                                    className="ml-2 shadow-sm hover:shadow-gold transition-shadow duration-200"
                                   >
                                     <Circle size={14} className="text-muted-foreground" />
                                   </Button>
@@ -581,17 +702,17 @@ export default function RestaurantDashboard({ user, onLogout }: Props) {
                 </Dialog>
               </div>
 
-              <div className="grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
+              <div className="grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                 {restaurantTables.map((table) => {
                   const bill = getTableBill(table.id)
                   const isPaid = (paidTables || []).includes(table.id)
                   
                   return (
-                    <Card key={table.id} className={`${!table.isActive ? 'opacity-50' : ''} ${isPaid ? 'bg-green-50 border-green-200' : ''}`}>
+                    <Card key={table.id} className={`shadow-gold bg-card-gradient ${!table.isActive ? 'opacity-50' : ''} ${isPaid ? 'bg-green-50 border-green-200' : ''}`}>
                       <CardHeader className="pb-3">
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-2">
-                            <Square size={20} weight={table.isActive ? 'fill' : 'regular'} />
+                            <Square size={20} weight={table.isActive ? 'fill' : 'regular'} className="text-primary" />
                             <CardTitle className="text-lg">{table.name}</CardTitle>
                           </div>
                         </div>
@@ -603,6 +724,7 @@ export default function RestaurantDashboard({ user, onLogout }: Props) {
                             variant="outline"
                             size="sm"
                             onClick={() => setEditingTable(table)}
+                            className="shadow-sm hover:shadow-gold transition-shadow duration-200"
                           >
                             Modifica
                           </Button>
@@ -613,6 +735,7 @@ export default function RestaurantDashboard({ user, onLogout }: Props) {
                               setSelectedTable(table)
                               setShowQRDialog(true)
                             }}
+                            className="shadow-sm hover:shadow-gold transition-shadow duration-200"
                           >
                             <QrCode size={14} />
                           </Button>
@@ -623,6 +746,7 @@ export default function RestaurantDashboard({ user, onLogout }: Props) {
                               setSelectedTable(table)
                               setShowBillDialog(true)
                             }}
+                            className="shadow-sm hover:shadow-gold transition-shadow duration-200"
                           >
                             <Receipt size={14} />
                           </Button>
@@ -633,13 +757,6 @@ export default function RestaurantDashboard({ user, onLogout }: Props) {
                               <span>Totale conto:</span>
                               <span className="font-semibold">€{bill.total.toFixed(2)}</span>
                             </div>
-                            <Button
-                              size="sm"
-                              className="w-full mt-2"
-                              onClick={() => handleMarkTableAsPaid(table.id)}
-                            >
-                              Segna come Pagato
-                            </Button>
                           </div>
                         )}
                         {isPaid && (
@@ -652,17 +769,17 @@ export default function RestaurantDashboard({ user, onLogout }: Props) {
                             variant="outline"
                             size="sm"
                             onClick={() => handleToggleTable(table.id)}
-                            className="flex-1 px-2"
+                            className="flex-1 px-2 text-xs shadow-sm hover:shadow-gold transition-shadow duration-200"
                           >
-                            {table.isActive ? <EyeSlash size={14} /> : <Eye size={14} />}
+                            {table.isActive ? <EyeSlash size={12} /> : <Eye size={12} />}
                           </Button>
                           <Button
                             variant="destructive"
                             size="sm"
                             onClick={() => handleDeleteTable(table.id)}
-                            className="px-2"
+                            className="px-2 shadow-sm"
                           >
-                            <Trash size={14} />
+                            <Trash size={12} />
                           </Button>
                         </div>
                       </CardContent>
@@ -717,7 +834,7 @@ export default function RestaurantDashboard({ user, onLogout }: Props) {
                   const categoryItemsCount = restaurantMenuItems.filter(item => item.category === category).length
                   
                   return (
-                    <Card key={category}>
+                    <Card key={category} className="shadow-gold bg-card-gradient">
                       <CardContent className="p-4">
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-3">
@@ -727,7 +844,7 @@ export default function RestaurantDashboard({ user, onLogout }: Props) {
                                 size="sm"
                                 onClick={() => handleMoveCategoryUp(index)}
                                 disabled={index === 0}
-                                className="h-6 w-6 p-0"
+                                className="h-6 w-6 p-0 shadow-sm hover:shadow-gold transition-shadow duration-200"
                               >
                                 ↑
                               </Button>
@@ -736,7 +853,7 @@ export default function RestaurantDashboard({ user, onLogout }: Props) {
                                 size="sm"
                                 onClick={() => handleMoveCategoryDown(index)}
                                 disabled={index === (categories || []).length - 1}
-                                className="h-6 w-6 p-0"
+                                className="h-6 w-6 p-0 shadow-sm hover:shadow-gold transition-shadow duration-200"
                               >
                                 ↓
                               </Button>
@@ -749,7 +866,7 @@ export default function RestaurantDashboard({ user, onLogout }: Props) {
                             </div>
                           </div>
                           <div className="flex items-center gap-2">
-                            <Badge variant="secondary">
+                            <Badge variant="secondary" className="bg-primary/20">
                               Posizione {index + 1}
                             </Badge>
                             <Button
@@ -757,6 +874,7 @@ export default function RestaurantDashboard({ user, onLogout }: Props) {
                               size="sm"
                               onClick={() => handleDeleteCategory(category)}
                               disabled={categoryItemsCount > 0}
+                              className="shadow-sm"
                             >
                               <Trash size={14} />
                             </Button>
@@ -860,9 +978,9 @@ export default function RestaurantDashboard({ user, onLogout }: Props) {
                   return (
                     <div key={category} className="space-y-4">
                       <h3 className="text-xl font-semibold text-primary">{category}</h3>
-                      <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-3">
+                      <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
                         {categoryItems.map((item) => (
-                          <Card key={item.id} className={!item.isActive ? 'opacity-50' : ''}>
+                          <Card key={item.id} className={`shadow-gold bg-card-gradient ${!item.isActive ? 'opacity-50' : ''}`}>
                             <CardHeader className="pb-3">
                               <div className="flex items-start justify-between">
                                 <div className="flex-1">
@@ -883,7 +1001,7 @@ export default function RestaurantDashboard({ user, onLogout }: Props) {
                                   variant="outline"
                                   size="sm"
                                   onClick={() => handleToggleMenuItem(item.id)}
-                                  className="flex-1"
+                                  className="flex-1 shadow-sm hover:shadow-gold transition-shadow duration-200"
                                 >
                                   {item.isActive ? <EyeSlash size={14} /> : <Eye size={14} />}
                                 </Button>
@@ -891,6 +1009,7 @@ export default function RestaurantDashboard({ user, onLogout }: Props) {
                                   variant="destructive"
                                   size="sm"
                                   onClick={() => handleDeleteMenuItem(item.id)}
+                                  className="shadow-sm"
                                 >
                                   <Trash size={14} />
                                 </Button>
@@ -927,17 +1046,17 @@ export default function RestaurantDashboard({ user, onLogout }: Props) {
 
               {/* Stats Cards */}
               <div className="grid md:grid-cols-4 gap-6">
-                <Card>
+                <Card className="shadow-gold bg-card-gradient">
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                     <CardTitle className="text-sm font-medium">Ordini in Attesa</CardTitle>
-                    <Bell className="h-4 w-4 text-accent" />
+                    <Bell className="h-4 w-4 text-accent glow-gold" />
                   </CardHeader>
                   <CardContent>
                     <div className="text-2xl font-bold text-accent">{pendingOrdersCount}</div>
                   </CardContent>
                 </Card>
 
-                <Card>
+                <Card className="shadow-gold bg-card-gradient">
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                     <CardTitle className="text-sm font-medium">Ordini Oggi</CardTitle>
                     <ClockCounterClockwise className="h-4 w-4 text-primary" />
@@ -947,7 +1066,7 @@ export default function RestaurantDashboard({ user, onLogout }: Props) {
                   </CardContent>
                 </Card>
 
-                <Card>
+                <Card className="shadow-gold bg-card-gradient">
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                     <CardTitle className="text-sm font-medium">Ricavi Oggi</CardTitle>
                     <Money className="h-4 w-4 text-primary" />
@@ -957,7 +1076,7 @@ export default function RestaurantDashboard({ user, onLogout }: Props) {
                   </CardContent>
                 </Card>
 
-                <Card>
+                <Card className="shadow-gold bg-card-gradient">
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                     <CardTitle className="text-sm font-medium">Scontrino Medio</CardTitle>
                     <Receipt className="h-4 w-4 text-secondary" />
@@ -971,7 +1090,7 @@ export default function RestaurantDashboard({ user, onLogout }: Props) {
               </div>
 
               <div className="grid md:grid-cols-2 gap-6">
-                <Card>
+                <Card className="shadow-gold bg-card-gradient">
                   <CardHeader>
                     <CardTitle>Statistiche Generali</CardTitle>
                   </CardHeader>
@@ -995,7 +1114,7 @@ export default function RestaurantDashboard({ user, onLogout }: Props) {
                   </CardContent>
                 </Card>
 
-                <Card>
+                <Card className="shadow-gold bg-card-gradient">
                   <CardHeader>
                     <CardTitle>Performance</CardTitle>
                   </CardHeader>
@@ -1025,22 +1144,22 @@ export default function RestaurantDashboard({ user, onLogout }: Props) {
               <h2 className="text-2xl font-bold">Impostazioni Ristorante</h2>
 
               <div className="grid md:grid-cols-2 gap-6">
-                <Card>
+                <Card className="shadow-gold bg-card-gradient">
                   <CardHeader>
                     <CardTitle>Informazioni Ristorante</CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-4">
                     <div className="space-y-2">
                       <Label>Nome Ristorante</Label>
-                      <Input value={restaurant?.name || ''} disabled />
+                      <Input value={restaurant?.name || ''} disabled className="shadow-sm" />
                     </div>
                     <div className="space-y-2">
                       <Label>Contatto</Label>
-                      <Input value={restaurant?.contact || ''} disabled />
+                      <Input value={restaurant?.contact || ''} disabled className="shadow-sm" />
                     </div>
                     <div className="space-y-2">
                       <Label>Orari</Label>
-                      <Input value={restaurant?.hours || ''} disabled />
+                      <Input value={restaurant?.hours || ''} disabled className="shadow-sm" />
                     </div>
                     <p className="text-sm text-muted-foreground">
                       Per modificare queste informazioni, contatta l'amministratore del sistema.
@@ -1048,7 +1167,7 @@ export default function RestaurantDashboard({ user, onLogout }: Props) {
                   </CardContent>
                 </Card>
 
-                <Card>
+                <Card className="shadow-gold bg-card-gradient">
                   <CardHeader>
                     <CardTitle>Modalità Speciali</CardTitle>
                   </CardHeader>
@@ -1076,6 +1195,7 @@ export default function RestaurantDashboard({ user, onLogout }: Props) {
                           value={allYouCanEatPrice}
                           onChange={(e) => setAllYouCanEatPrice(parseFloat(e.target.value) || 0)}
                           placeholder="25.00"
+                          className="shadow-sm focus:shadow-gold transition-shadow duration-200"
                         />
                       </div>
                     )}
@@ -1103,6 +1223,7 @@ export default function RestaurantDashboard({ user, onLogout }: Props) {
                           value={coverChargeAmount}
                           onChange={(e) => setCoverChargeAmount(parseFloat(e.target.value) || 0)}
                           placeholder="2.50"
+                          className="shadow-sm focus:shadow-gold transition-shadow duration-200"
                         />
                       </div>
                     )}
@@ -1129,7 +1250,7 @@ export default function RestaurantDashboard({ user, onLogout }: Props) {
 
       {/* QR Code Dialog */}
       <Dialog open={showQRDialog} onOpenChange={setShowQRDialog}>
-        <DialogContent>
+        <DialogContent className="shadow-gold-lg">
           <DialogHeader>
             <DialogTitle>QR Code - {selectedTable?.name}</DialogTitle>
             <DialogDescription>
@@ -1137,13 +1258,13 @@ export default function RestaurantDashboard({ user, onLogout }: Props) {
             </DialogDescription>
           </DialogHeader>
           <div className="flex flex-col items-center space-y-4">
-            <div className="w-48 h-48 border-2 border-dashed border-muted-foreground rounded-lg flex items-center justify-center">
-              <QrCode size={64} className="text-muted-foreground" />
+            <div className="w-48 h-48 border-2 border-dashed border-primary/30 rounded-lg flex items-center justify-center bg-card-gradient shadow-gold">
+              <QrCode size={64} className="text-primary glow-gold" />
             </div>
             <p className="text-sm text-muted-foreground text-center">
-              PIN: {selectedTable?.pin}
+              PIN: <span className="font-semibold text-primary">{selectedTable?.pin}</span>
             </p>
-            <Button className="w-full">
+            <Button className="w-full bg-gold-gradient shadow-gold hover:shadow-gold-lg transition-shadow duration-200">
               <DownloadSimple size={16} className="mr-2" />
               Scarica QR Code
             </Button>
@@ -1153,7 +1274,7 @@ export default function RestaurantDashboard({ user, onLogout }: Props) {
 
       {/* Bill Dialog */}
       <Dialog open={showBillDialog} onOpenChange={setShowBillDialog}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-md shadow-gold-lg">
           <DialogHeader>
             <DialogTitle>Conto - {selectedTable?.name}</DialogTitle>
             <DialogDescription>
@@ -1170,12 +1291,12 @@ export default function RestaurantDashboard({ user, onLogout }: Props) {
                   <>
                     <div className="space-y-3 max-h-60 overflow-y-auto">
                       {bill.orders.map((order) => (
-                        <div key={order.id} className="border rounded-lg p-3">
+                        <div key={order.id} className="border rounded-lg p-3 bg-card-gradient shadow-sm">
                           <div className="flex justify-between items-center mb-2">
                             <span className="text-sm text-muted-foreground">
                               {new Date(order.timestamp).toLocaleTimeString()}
                             </span>
-                            <Badge variant="outline">€{order.total.toFixed(2)}</Badge>
+                            <Badge variant="outline" className="bg-primary/10">€{order.total.toFixed(2)}</Badge>
                           </div>
                           <div className="space-y-1">
                             {order.items.map((item, index) => {
@@ -1203,14 +1324,14 @@ export default function RestaurantDashboard({ user, onLogout }: Props) {
                         <div className="border-t pt-4">
                           <div className="flex justify-between items-center text-lg font-semibold">
                             <span>Totale:</span>
-                            <span>€{bill.total.toFixed(2)}</span>
+                            <span className="text-primary">€{bill.total.toFixed(2)}</span>
                           </div>
                         </div>
                         
                         <div className="space-y-2">
                           {!isPaid ? (
                             <Button 
-                              className="w-full" 
+                              className="w-full bg-gold-gradient shadow-gold hover:shadow-gold-lg transition-shadow duration-200" 
                               onClick={() => {
                                 handleMarkTableAsPaid(selectedTable.id)
                                 setShowBillDialog(false)
@@ -1227,7 +1348,7 @@ export default function RestaurantDashboard({ user, onLogout }: Props) {
                           
                           <Button 
                             variant="destructive" 
-                            className="w-full"
+                            className="w-full shadow-sm"
                             onClick={() => {
                               // Delete all orders for this table
                               setOrders((current) => (current || []).filter(o => o.tableId !== selectedTable.id))
