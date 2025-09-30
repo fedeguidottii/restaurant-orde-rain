@@ -318,7 +318,7 @@ export default function RestaurantDashboard({ user, onLogout }: Props) {
   return (
     <div className="min-h-screen bg-background flex">
       {/* Sidebar */}
-      <div className={`${sidebarExpanded ? 'w-64' : 'w-16'} transition-all duration-500 ease-in-out bg-card-gradient border-r shadow-gold-lg flex flex-col`}>
+      <div className={`${sidebarExpanded ? 'w-64' : 'w-16'} transition-all duration-300 ease-in-out bg-card-gradient border-r shadow-gold-lg flex flex-col backdrop-blur-sm`}>
         <div className="p-4">
           <div className="flex items-center justify-between">
             <div className={`flex items-center space-x-3 transition-all duration-300 ${!sidebarExpanded && 'justify-center'}`}>
@@ -338,7 +338,7 @@ export default function RestaurantDashboard({ user, onLogout }: Props) {
               variant="ghost"
               size="sm"
               onClick={() => setSidebarExpanded(!sidebarExpanded)}
-              className="p-1 hover:bg-primary/20 transition-colors duration-200"
+              className="p-1 hover:bg-primary/20 transition-all duration-200 hover:shadow-gold rounded-lg"
             >
               {sidebarExpanded ? <CaretLeft size={16} /> : <CaretRight size={16} />}
             </Button>
@@ -349,16 +349,20 @@ export default function RestaurantDashboard({ user, onLogout }: Props) {
           <div className="space-y-1">
             <Button
               variant={activeSection === 'orders' ? 'secondary' : 'ghost'}
-              className={`w-full justify-start ${!sidebarExpanded && 'px-2'}`}
+              className={`w-full justify-start ${!sidebarExpanded && 'px-2'} transition-all duration-200 hover:shadow-gold ${activeSection === 'orders' ? 'shadow-gold bg-primary/10' : ''}`}
               onClick={() => {
-                setActiveSection('orders')
-                setSidebarExpanded(false)
+                if (!sidebarExpanded) {
+                  setSidebarExpanded(true)
+                } else {
+                  setActiveSection('orders')
+                  setSidebarExpanded(false)
+                }
               }}
             >
               <Bell size={16} />
-              {sidebarExpanded && <span className="ml-2">Ordini</span>}
+              {sidebarExpanded && <span className="ml-2 transition-all duration-200">Ordini</span>}
               {sidebarExpanded && pendingOrdersCount > 0 && (
-                <Badge variant="destructive" className="ml-auto text-xs">
+                <Badge variant="destructive" className="ml-auto text-xs shadow-gold">
                   {pendingOrdersCount}
                 </Badge>
               )}
@@ -366,70 +370,90 @@ export default function RestaurantDashboard({ user, onLogout }: Props) {
             
             <Button
               variant={activeSection === 'tables' ? 'secondary' : 'ghost'}
-              className={`w-full justify-start ${!sidebarExpanded && 'px-2'}`}
+              className={`w-full justify-start ${!sidebarExpanded && 'px-2'} transition-all duration-200 hover:shadow-gold ${activeSection === 'tables' ? 'shadow-gold bg-primary/10' : ''}`}
               onClick={() => {
-                setActiveSection('tables')
-                setSidebarExpanded(false)
+                if (!sidebarExpanded) {
+                  setSidebarExpanded(true)
+                } else {
+                  setActiveSection('tables')
+                  setSidebarExpanded(false)
+                }
               }}
             >
               <Square size={16} />
-              {sidebarExpanded && <span className="ml-2">Tavoli</span>}
+              {sidebarExpanded && <span className="ml-2 transition-all duration-200">Tavoli</span>}
             </Button>
             
             <Button
               variant={activeSection === 'categories' ? 'secondary' : 'ghost'}
-              className={`w-full justify-start ${!sidebarExpanded && 'px-2'}`}
+              className={`w-full justify-start ${!sidebarExpanded && 'px-2'} transition-all duration-200 hover:shadow-gold ${activeSection === 'categories' ? 'shadow-gold bg-primary/10' : ''}`}
               onClick={() => {
-                setActiveSection('categories')
-                setSidebarExpanded(false)
+                if (!sidebarExpanded) {
+                  setSidebarExpanded(true)
+                } else {
+                  setActiveSection('categories')
+                  setSidebarExpanded(false)
+                }
               }}
             >
               <List size={16} />
-              {sidebarExpanded && <span className="ml-2">Categorie</span>}
+              {sidebarExpanded && <span className="ml-2 transition-all duration-200">Categorie</span>}
             </Button>
             
             <Button
               variant={activeSection === 'menu' ? 'secondary' : 'ghost'}
-              className={`w-full justify-start ${!sidebarExpanded && 'px-2'}`}
+              className={`w-full justify-start ${!sidebarExpanded && 'px-2'} transition-all duration-200 hover:shadow-gold ${activeSection === 'menu' ? 'shadow-gold bg-primary/10' : ''}`}
               onClick={() => {
-                setActiveSection('menu')
-                setSidebarExpanded(false)
+                if (!sidebarExpanded) {
+                  setSidebarExpanded(true)
+                } else {
+                  setActiveSection('menu')
+                  setSidebarExpanded(false)
+                }
               }}
             >
               <List size={16} />
-              {sidebarExpanded && <span className="ml-2">Menù</span>}
+              {sidebarExpanded && <span className="ml-2 transition-all duration-200">Menù</span>}
             </Button>
             
             <Button
               variant={activeSection === 'analytics' ? 'secondary' : 'ghost'}
-              className={`w-full justify-start ${!sidebarExpanded && 'px-2'}`}
+              className={`w-full justify-start ${!sidebarExpanded && 'px-2'} transition-all duration-200 hover:shadow-gold ${activeSection === 'analytics' ? 'shadow-gold bg-primary/10' : ''}`}
               onClick={() => {
-                setActiveSection('analytics')
-                setSidebarExpanded(false)
+                if (!sidebarExpanded) {
+                  setSidebarExpanded(true)
+                } else {
+                  setActiveSection('analytics')
+                  setSidebarExpanded(false)
+                }
               }}
             >
               <ChartBar size={16} />
-              {sidebarExpanded && <span className="ml-2">Analitiche</span>}
+              {sidebarExpanded && <span className="ml-2 transition-all duration-200">Analitiche</span>}
             </Button>
             
             <Button
               variant={activeSection === 'settings' ? 'secondary' : 'ghost'}
-              className={`w-full justify-start ${!sidebarExpanded && 'px-2'}`}
+              className={`w-full justify-start ${!sidebarExpanded && 'px-2'} transition-all duration-200 hover:shadow-gold ${activeSection === 'settings' ? 'shadow-gold bg-primary/10' : ''}`}
               onClick={() => {
-                setActiveSection('settings')
-                setSidebarExpanded(false)
+                if (!sidebarExpanded) {
+                  setSidebarExpanded(true)
+                } else {
+                  setActiveSection('settings')
+                  setSidebarExpanded(false)
+                }
               }}
             >
               <Gear size={16} />
-              {sidebarExpanded && <span className="ml-2">Impostazioni</span>}
+              {sidebarExpanded && <span className="ml-2 transition-all duration-200">Impostazioni</span>}
             </Button>
           </div>
         </nav>
 
         <div className="p-2">
-          <Button variant="outline" onClick={onLogout} className={`w-full ${!sidebarExpanded && 'px-2'}`}>
+          <Button variant="outline" onClick={onLogout} className={`w-full ${!sidebarExpanded && 'px-2'} transition-all duration-200 hover:shadow-gold hover:bg-destructive/5 hover:border-destructive/20`}>
             <SignOut size={16} />
-            {sidebarExpanded && <span className="ml-2">Esci</span>}
+            {sidebarExpanded && <span className="ml-2 transition-all duration-200">Esci</span>}
           </Button>
         </div>
       </div>
@@ -455,7 +479,7 @@ export default function RestaurantDashboard({ user, onLogout }: Props) {
                 </div>
               </div>
 
-              <div className="grid lg:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4">
+              <div className="grid lg:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-3">
                 {restaurantOrders.length === 0 ? (
                   <div className="col-span-full text-center text-muted-foreground py-8">
                     Nessun ordine ricevuto oggi.
@@ -617,7 +641,7 @@ export default function RestaurantDashboard({ user, onLogout }: Props) {
               {restaurantCompletedOrders.length > 0 && (
                 <div className="space-y-4">
                   <h3 className="text-lg font-semibold text-muted-foreground">Ordini Completati</h3>
-                  <div className="grid lg:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4">
+                  <div className="grid lg:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-3">
                     {restaurantCompletedOrders.map((order) => {
                       const table = restaurantTables.find(t => t.id === order.tableId)
                       return (
