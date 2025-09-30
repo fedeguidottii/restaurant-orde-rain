@@ -56,6 +56,17 @@ export interface Restaurant {
   isActive: boolean
 }
 
+export interface Reservation {
+  id: string
+  customerName: string
+  customerPhone: string
+  tableId: string
+  date: string
+  time: string
+  guests: number
+  restaurantId: string
+}
+
 function App() {
   const [currentUser, setCurrentUser] = useKV<User | null>('currentUser', null)
   const [currentTable, setCurrentTable] = useKV<string | null>('currentTable', null)

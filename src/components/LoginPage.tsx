@@ -29,9 +29,13 @@ export default function LoginPage({ onLogin, onTableAccess }: Props) {
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search)
     const tableId = urlParams.get('table')
+    const tablePIN = urlParams.get('pin')
     if (tableId) {
       setTableCode(tableId)
-      // Clear the URL parameter
+      if (tablePIN) {
+        setPin(tablePIN)
+      }
+      // Clear the URL parameters
       window.history.replaceState({}, document.title, window.location.pathname)
     }
   }, [])

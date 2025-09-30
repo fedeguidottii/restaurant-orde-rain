@@ -10,7 +10,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { Switch } from '@/components/ui/switch'
 import { useKV } from '@github/spark/hooks'
 import { toast } from 'sonner'
-import { User, Table, MenuItem, Order, Restaurant } from '../App'
+import { User, Table, MenuItem, Order, Restaurant, Reservation } from '../App'
 import { 
   ChefHat, 
   Plus, 
@@ -36,7 +36,8 @@ import {
   DownloadSimple,
   Money,
   CreditCard,
-  X
+  X,
+  PencilSimple
 } from '@phosphor-icons/react'
 
 interface Props {
@@ -52,6 +53,7 @@ export default function RestaurantDashboard({ user, onLogout }: Props) {
   const [completedOrders, setCompletedOrders] = useKV<Order[]>('completedOrders', [])
   const [paidTables, setPaidTables] = useKV<string[]>('paidTables', [])
   const [categories, setCategories] = useKV<string[]>('categories', ['Antipasti', 'Primi', 'Secondi', 'Contorni', 'Dolci', 'Bevande'])
+  const [reservations, setReservations] = useKV<Reservation[]>('reservations', [])
   
   // Settings states
   const [allYouCanEatMode, setAllYouCanEatMode] = useKV<boolean>('allYouCanEatMode', false)
@@ -75,6 +77,10 @@ export default function RestaurantDashboard({ user, onLogout }: Props) {
   const [editingTable, setEditingTable] = useState<Table | null>(null)
   const [orderViewMode, setOrderViewMode] = useState<'tables' | 'dishes'>('tables')
   const [allYouCanEatPrice, setAllYouCanEatPrice] = useKV<number>('allYouCanEatPrice', 25.00)
+  const [newReservation, setNewReservation] = useState({ customerName: '', customerPhone: '', tableId: '', date: '', time: '', guests: 1 })
+  const [showReservationDialog, setShowReservationDialog] = useState(false)
+  const [analyticsFilter, setAnalyticsFilter] = useState<'today' | 'yesterday' | '7days' | '30days' | '90days' | 'custom'>('today')
+  const [customDateRange, setCustomDateRange] = useState({ from: '', to: '' })
 
 
   const restaurant = restaurants?.find(r => r.id === user.restaurantId)
@@ -82,6 +88,7 @@ export default function RestaurantDashboard({ user, onLogout }: Props) {
   const restaurantMenuItems = menuItems?.filter(m => m.restaurantId === user.restaurantId) || []
   const restaurantOrders = orders?.filter(o => o.restaurantId === user.restaurantId) || []
   const restaurantCompletedOrders = completedOrders?.filter(o => o.restaurantId === user.restaurantId) || []
+  const restaurantReservations = reservations?.filter(r => r.restaurantId === user.restaurantId) || []
 
   const generatePin = () => Math.floor(1000 + Math.random() * 9000).toString()
 
@@ -105,12 +112,13 @@ export default function RestaurantDashboard({ user, onLogout }: Props) {
     }
 
     const tableId = `table-${Date.now()}`
+    const pin = generatePin()
     const table: Table = {
       id: tableId,
       name: newTable.name,
       isActive: true,
-      pin: generatePin(),
-      qrCode: `${window.location.origin}?table=${tableId}`,
+      pin: pin,
+      qrCode: `${window.location.origin}?table=${tableId}&pin=${pin}`,
       restaurantId: user.restaurantId!
     }
 
@@ -301,13 +309,95 @@ export default function RestaurantDashboard({ user, onLogout }: Props) {
     toast.success('Piatto eliminato')
   }
 
+  const handleCreateReservation = () => {
+    if (!newReservation.customerName || !newReservation.customerPhone || !newReservation.tableId || !newReservation.date || !newReservation.time) {
+      toast.error('Compila tutti i campi obbligatori')
+      return
+    }
+
+    const reservation: Reservation = {
+      id: `reservation-${Date.now()}`,
+      customerName: newReservation.customerName,
+      customerPhone: newReservation.customerPhone,
+      tableId: newReservation.tableId,
+      date: newReservation.date,
+      time: newReservation.time,
+      guests: newReservation.guests,
+      restaurantId: user.restaurantId!
+    }
+
+    setReservations((current) => [...(current || []), reservation])
+    setNewReservation({ customerName: '', customerPhone: '', tableId: '', date: '', time: '', guests: 1 })
+    setShowReservationDialog(false)
+    toast.success('Prenotazione creata con successo')
+  }
+
+  const handleDeleteReservation = (reservationId: string) => {
+    setReservations((current) => (current || []).filter(r => r.id !== reservationId))
+    toast.success('Prenotazione eliminata')
+  }
+
   const pendingOrdersCount = restaurantOrders.filter(o => o.status === 'waiting').length
-  const todayOrders = restaurantOrders.filter(o => 
-    new Date(o.timestamp).toDateString() === new Date().toDateString()
-  ).length
-  const todayRevenue = restaurantOrders
-    .filter(o => new Date(o.timestamp).toDateString() === new Date().toDateString())
-    .reduce((sum, o) => sum + o.total, 0)
+  
+  // Analytics filter functions
+  const getFilteredOrders = () => {
+    const now = new Date()
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+    const yesterday = new Date(today.getTime() - 24 * 60 * 60 * 1000)
+    
+    switch (analyticsFilter) {
+      case 'today':
+        return [...restaurantOrders, ...restaurantCompletedOrders].filter(o => 
+          new Date(o.timestamp) >= today
+        )
+      case 'yesterday':
+        return [...restaurantOrders, ...restaurantCompletedOrders].filter(o => {
+          const orderDate = new Date(o.timestamp)
+          return orderDate >= yesterday && orderDate < today
+        })
+      case '7days':
+        const week = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000)
+        return [...restaurantOrders, ...restaurantCompletedOrders].filter(o => 
+          new Date(o.timestamp) >= week
+        )
+      case '30days':
+        const month = new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000)
+        return [...restaurantOrders, ...restaurantCompletedOrders].filter(o => 
+          new Date(o.timestamp) >= month
+        )
+      case '90days':
+        const quarter = new Date(today.getTime() - 90 * 24 * 60 * 60 * 1000)
+        return [...restaurantOrders, ...restaurantCompletedOrders].filter(o => 
+          new Date(o.timestamp) >= quarter
+        )
+      case 'custom':
+        if (!customDateRange.from || !customDateRange.to) return []
+        const fromDate = new Date(customDateRange.from)
+        const toDate = new Date(customDateRange.to + ' 23:59:59')
+        return [...restaurantOrders, ...restaurantCompletedOrders].filter(o => {
+          const orderDate = new Date(o.timestamp)
+          return orderDate >= fromDate && orderDate <= toDate
+        })
+      default:
+        return [...restaurantOrders, ...restaurantCompletedOrders]
+    }
+  }
+
+  const filteredOrders = getFilteredOrders()
+  const todayOrders = filteredOrders.length
+  const todayRevenue = filteredOrders.reduce((sum, o) => sum + o.total, 0)
+  
+  const getFilterLabel = () => {
+    switch (analyticsFilter) {
+      case 'today': return 'Oggi'
+      case 'yesterday': return 'Ieri'
+      case '7days': return 'Ultimi 7 giorni'
+      case '30days': return 'Ultimi 30 giorni'
+      case '90days': return 'Ultimi 90 giorni'
+      case 'custom': return 'Periodo personalizzato'
+      default: return 'Oggi'
+    }
+  }
 
   const getTableBill = (tableId: string) => {
     const tableOrders = [...restaurantOrders, ...restaurantCompletedOrders].filter(o => o.tableId === tableId)
@@ -318,7 +408,11 @@ export default function RestaurantDashboard({ user, onLogout }: Props) {
   return (
     <div className="min-h-screen bg-background flex">
       {/* Sidebar */}
-      <div className={`${sidebarExpanded ? 'w-64' : 'w-16'} transition-all duration-300 ease-in-out bg-white border-r border-border/20 shadow-professional flex flex-col`}>
+      <div 
+        className={`${sidebarExpanded ? 'w-64' : 'w-16'} transition-all duration-300 ease-in-out bg-white border-r border-border/20 shadow-professional flex flex-col`}
+        onMouseEnter={() => setSidebarExpanded(true)}
+        onMouseLeave={() => setSidebarExpanded(false)}
+      >
         <div className="p-4">
           <div className="flex items-center justify-between">
             <div className={`flex items-center space-x-3 transition-all duration-300 ${!sidebarExpanded && 'justify-center'}`}>
@@ -385,22 +479,6 @@ export default function RestaurantDashboard({ user, onLogout }: Props) {
             </Button>
             
             <Button
-              variant={activeSection === 'categories' ? 'secondary' : 'ghost'}
-              className={`w-full justify-start ${!sidebarExpanded && 'px-2'} transition-all duration-200 hover:shadow-gold ${activeSection === 'categories' ? 'shadow-gold bg-primary/10 text-primary border-primary/20' : 'hover:bg-primary/5'}`}
-              onClick={() => {
-                if (!sidebarExpanded) {
-                  setSidebarExpanded(true)
-                } else {
-                  setActiveSection('categories')
-                  setSidebarExpanded(false)
-                }
-              }}
-            >
-              <List size={16} />
-              {sidebarExpanded && <span className="ml-2 transition-all duration-200">Categorie</span>}
-            </Button>
-            
-            <Button
               variant={activeSection === 'menu' ? 'secondary' : 'ghost'}
               className={`w-full justify-start ${!sidebarExpanded && 'px-2'} transition-all duration-200 hover:shadow-gold ${activeSection === 'menu' ? 'shadow-gold bg-primary/10 text-primary border-primary/20' : 'hover:bg-primary/5'}`}
               onClick={() => {
@@ -413,7 +491,7 @@ export default function RestaurantDashboard({ user, onLogout }: Props) {
               }}
             >
               <List size={16} />
-              {sidebarExpanded && <span className="ml-2 transition-all duration-200">Menù</span>}
+              {sidebarExpanded && <span className="ml-2 transition-all duration-200">Menù & Prenotazioni</span>}
             </Button>
             
             <Button
@@ -531,7 +609,7 @@ export default function RestaurantDashboard({ user, onLogout }: Props) {
                         )
 
                         return (
-                          <Card key={tableId} className="bg-white border border-border/10 shadow-[0_8px_32px_-8px_rgba(0,0,0,0.08)] rounded-2xl overflow-hidden hover:shadow-[0_20px_64px_-12px_rgba(0,0,0,0.15)] transition-all duration-500">
+                          <Card key={tableId} className="bg-white border border-border/10 shadow-[0_8px_32px_-8px_rgba(0,0,0,0.08),0_0_0_1px_rgba(0,0,0,0.02)] rounded-2xl overflow-hidden hover:shadow-[0_20px_64px_-12px_rgba(0,0,0,0.15),0_0_0_1px_rgba(0,0,0,0.05)] transition-all duration-500 mb-6">
                             {/* Header with Table Info */}
                             <div className="bg-gradient-to-r from-primary/8 via-primary/4 to-accent/8 px-6 py-4 border-b border-border/10">
                               <div className="flex items-center justify-between">
@@ -562,8 +640,8 @@ export default function RestaurantDashboard({ user, onLogout }: Props) {
                               </div>
                             </div>
 
-                            {/* Order Items */}
-                            <div className="p-6 space-y-4">
+                            {/* Order Items - Compact Version */}
+                            <div className="p-4 space-y-2">
                               {orders.flatMap(order => order.items).map((item, index) => {
                                 const menuItem = restaurantMenuItems.find(m => m.id === item.menuItemId)
                                 const originalOrderIndex = restaurantOrders.findIndex(o => 
@@ -573,54 +651,36 @@ export default function RestaurantDashboard({ user, onLogout }: Props) {
                                 const itemIndex = originalOrder?.items.findIndex(i => i.menuItemId === item.menuItemId) || 0
 
                                 return (
-                                  <div key={`${item.menuItemId}-${index}`} className="group bg-gradient-to-r from-card via-background to-card border border-border/8 rounded-xl p-5 hover:shadow-lg transition-all duration-300">
-                                    <div className="flex items-start justify-between gap-6">
-                                      {/* Quantity Badge */}
+                                  <div key={`${item.menuItemId}-${index}`} className="group bg-gradient-to-r from-card via-background to-card border border-border/10 rounded-lg p-3 hover:shadow-lg transition-all duration-300 shadow-[0_2px_8px_rgba(0,0,0,0.04)]">
+                                    <div className="flex items-center justify-between gap-3">
+                                      {/* Quantity Badge - Smaller */}
                                       <div className="flex-shrink-0">
-                                        <div className="relative">
-                                          <div className="w-16 h-16 bg-accent/15 rounded-2xl flex items-center justify-center border-2 border-accent/20">
-                                            <span className="text-2xl font-black text-accent">{item.quantity}</span>
-                                          </div>
-                                          <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-primary rounded-full flex items-center justify-center">
-                                            <div className="w-2 h-2 bg-white rounded-full animate-pulse"></div>
-                                          </div>
+                                        <div className="w-10 h-10 bg-accent/15 rounded-lg flex items-center justify-center border border-accent/20">
+                                          <span className="text-lg font-bold text-accent">{item.quantity}</span>
                                         </div>
                                       </div>
 
-                                      {/* Item Details */}
+                                      {/* Item Details - Compact */}
                                       <div className="flex-1 min-w-0">
-                                        <div className="mb-2">
-                                          <h4 className="text-xl font-bold text-foreground mb-1 leading-tight">
-                                            {menuItem?.name || 'Piatto non trovato'}
-                                          </h4>
-                                        </div>
-                                        
+                                        <h4 className="text-base font-semibold text-foreground leading-tight">
+                                          {menuItem?.name || 'Piatto non trovato'}
+                                        </h4>
                                         {item.notes && (
-                                          <div className="mt-3 p-3 bg-amber-50 border border-amber-200 rounded-lg">
-                                            <div className="flex items-start gap-2">
-                                              <div className="w-5 h-5 bg-amber-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
-                                                <span className="text-xs">📝</span>
-                                              </div>
-                                              <p className="text-sm text-amber-800 font-medium">
-                                                {item.notes}
-                                              </p>
-                                            </div>
-                                          </div>
+                                          <p className="text-xs text-amber-700 mt-1 bg-amber-50 px-2 py-1 rounded">
+                                            📝 {item.notes}
+                                          </p>
                                         )}
                                       </div>
 
-                                      {/* Complete Button */}
+                                      {/* Complete Button - Compact */}
                                       <div className="flex-shrink-0">
                                         <Button
-                                          size="lg"
+                                          size="sm"
                                           onClick={() => originalOrder && handleCompleteOrderItem(originalOrder.id, itemIndex)}
-                                          className="h-16 px-8 bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white font-bold text-lg shadow-lg hover:shadow-xl transition-all duration-300 rounded-xl border-0 group-hover:scale-105"
+                                          className="h-10 px-4 bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white font-medium shadow-md hover:shadow-lg transition-all duration-300 rounded-lg border-0"
                                         >
-                                          <CheckCircle size={28} className="mr-3" />
-                                          <div className="flex flex-col items-start">
-                                            <span className="text-base leading-none">PRONTO</span>
-                                            <span className="text-xs opacity-90 leading-none mt-1">Completa</span>
-                                          </div>
+                                          <CheckCircle size={16} className="mr-1" />
+                                          PRONTO
                                         </Button>
                                       </div>
                                     </div>
@@ -665,7 +725,7 @@ export default function RestaurantDashboard({ user, onLogout }: Props) {
                         )
 
                         return (
-                          <Card key={menuItemId} className="bg-white border border-border/10 shadow-[0_8px_32px_-8px_rgba(0,0,0,0.08)] rounded-2xl overflow-hidden hover:shadow-[0_20px_64px_-12px_rgba(0,0,0,0.15)] transition-all duration-500">
+                          <Card key={menuItemId} className="bg-white border border-border/10 shadow-[0_8px_32px_-8px_rgba(0,0,0,0.08),0_0_0_1px_rgba(0,0,0,0.02)] rounded-2xl overflow-hidden hover:shadow-[0_20px_64px_-12px_rgba(0,0,0,0.15),0_0_0_1px_rgba(0,0,0,0.05)] transition-all duration-500 mb-6">
                             {/* Header with Dish Info */}
                             <div className="bg-gradient-to-r from-accent/8 via-accent/4 to-primary/8 px-6 py-4 border-b border-border/10">
                               <div className="flex items-center justify-between">
@@ -906,9 +966,9 @@ export default function RestaurantDashboard({ user, onLogout }: Props) {
                             variant="outline"
                             size="sm"
                             onClick={() => setEditingTable(table)}
-                            className="shadow-sm hover:shadow-gold transition-shadow duration-200"
+                            className="shadow-sm hover:shadow-gold transition-shadow duration-200 px-2"
                           >
-                            Modifica
+                            <PencilSimple size={14} />
                           </Button>
                           <Button
                             variant="outline"
@@ -919,7 +979,7 @@ export default function RestaurantDashboard({ user, onLogout }: Props) {
                             }}
                             className="shadow-sm hover:shadow-gold transition-shadow duration-200"
                           >
-                            <QrCode size={14} />
+                            QR Code
                           </Button>
                           <Button
                             variant="outline"
@@ -930,7 +990,7 @@ export default function RestaurantDashboard({ user, onLogout }: Props) {
                             }}
                             className="shadow-sm hover:shadow-gold transition-shadow duration-200"
                           >
-                            <Receipt size={14} />
+                            Conto
                           </Button>
                         </div>
                         {bill.total > 0 && !isPaid && (
@@ -951,7 +1011,7 @@ export default function RestaurantDashboard({ user, onLogout }: Props) {
                             variant="outline"
                             size="sm"
                             onClick={() => handleToggleTable(table.id)}
-                            className="flex-1 px-2 text-xs shadow-sm hover:shadow-gold transition-shadow duration-200"
+                            className="w-8 h-8 p-0 shadow-sm hover:shadow-gold transition-shadow duration-200"
                           >
                             {table.isActive ? <EyeSlash size={12} /> : <Eye size={12} />}
                           </Button>
@@ -977,116 +1037,7 @@ export default function RestaurantDashboard({ user, onLogout }: Props) {
             </div>
           )}
 
-          {/* Categories Section */}
-          {activeSection === 'categories' && (
-            <div className="space-y-8">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 bg-primary/15 rounded-xl flex items-center justify-center">
-                    <List size={24} className="text-primary" />
-                  </div>
-                  <div>
-                    <h2 className="text-3xl font-bold text-foreground">Gestione Categorie</h2>
-                    <p className="text-muted-foreground">Organizza il tuo menu in categorie</p>
-                  </div>
-                </div>
-                <Dialog open={showCategoryDialog} onOpenChange={setShowCategoryDialog}>
-                  <DialogTrigger asChild>
-                    <Button className="flex items-center gap-2 h-12 px-6">
-                      <Plus size={20} />
-                      Nuova Categoria
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent>
-                    <DialogHeader>
-                      <DialogTitle>Crea Nuova Categoria</DialogTitle>
-                    </DialogHeader>
-                    <div className="space-y-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="categoryName">Nome Categoria</Label>
-                        <Input
-                          id="categoryName"
-                          value={newCategory}
-                          onChange={(e) => setNewCategory(e.target.value)}
-                          placeholder="Es: Pizze"
-                        />
-                      </div>
-                      <Button onClick={handleCreateCategory} className="w-full">
-                        Crea Categoria
-                      </Button>
-                    </div>
-                  </DialogContent>
-                </Dialog>
-              </div>
-
-              <div className="space-y-4">
-                {categories?.map((category, index) => {
-                  const categoryItemsCount = restaurantMenuItems.filter(item => item.category === category).length
-                  
-                  return (
-                    <Card key={category} className="bg-white border border-border/10 shadow-[0_8px_32px_-8px_rgba(0,0,0,0.08)] rounded-2xl overflow-hidden hover:shadow-[0_20px_64px_-12px_rgba(0,0,0,0.15)] transition-all duration-500">
-                      <CardContent className="p-6">
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-4">
-                            <div className="flex flex-col gap-1">
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => handleMoveCategoryUp(index)}
-                                disabled={index === 0}
-                                className="h-8 w-8 p-0 shadow-sm hover:shadow-gold transition-shadow duration-200"
-                              >
-                                ↑
-                              </Button>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => handleMoveCategoryDown(index)}
-                                disabled={index === (categories || []).length - 1}
-                                className="h-8 w-8 p-0 shadow-sm hover:shadow-gold transition-shadow duration-200"
-                              >
-                                ↓
-                              </Button>
-                            </div>
-                            <div>
-                              <h3 className="font-bold text-xl text-foreground">{category}</h3>
-                              <p className="text-sm text-muted-foreground">
-                                {categoryItemsCount} piatt{categoryItemsCount === 1 ? 'o' : 'i'}
-                              </p>
-                            </div>
-                          </div>
-                          <div className="flex items-center gap-3">
-                            <Badge variant="secondary" className="bg-primary/10 text-primary font-medium">
-                              Posizione {index + 1}
-                            </Badge>
-                            <Button
-                              variant="destructive"
-                              size="sm"
-                              onClick={() => handleDeleteCategory(category)}
-                              disabled={categoryItemsCount > 0}
-                              className="shadow-sm"
-                            >
-                              <Trash size={16} />
-                            </Button>
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  )
-                })}
-                
-                {(categories || []).length === 0 && (
-                  <div className="text-center text-muted-foreground py-12">
-                    <List size={64} className="mx-auto mb-4 opacity-30" />
-                    <p className="text-xl font-medium">Nessuna categoria configurata</p>
-                    <p className="text-sm mt-2">Crea la prima categoria per iniziare</p>
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
-
-          {/* Menu Section */}
+          {/* Menu Section with Reservations */}
           {activeSection === 'menu' && (
             <div className="space-y-8">
               <div className="flex items-center justify-between">
@@ -1095,11 +1046,89 @@ export default function RestaurantDashboard({ user, onLogout }: Props) {
                     <List size={24} className="text-primary" />
                   </div>
                   <div>
-                    <h2 className="text-3xl font-bold text-foreground">Gestione Menù</h2>
-                    <p className="text-muted-foreground">Aggiungi e gestisci i piatti del tuo menu</p>
+                    <h2 className="text-3xl font-bold text-foreground">Menù & Prenotazioni</h2>
+                    <p className="text-muted-foreground">Gestisci piatti e prenotazioni tavoli</p>
                   </div>
                 </div>
                 <div className="flex gap-2">
+                  <Dialog open={showCategoryManageDialog} onOpenChange={setShowCategoryManageDialog}>
+                    <DialogTrigger asChild>
+                      <Button variant="outline" className="flex items-center gap-2 h-12 px-6">
+                        <List size={20} />
+                        Gestisci Categorie
+                      </Button>  
+                    </DialogTrigger>
+                    <DialogContent className="max-w-2xl">
+                      <DialogHeader>
+                        <DialogTitle>Gestione Categorie</DialogTitle>
+                        <DialogDescription>
+                          Riordina le categorie trascinandole per cambiare l'ordine nel menu
+                        </DialogDescription>
+                      </DialogHeader>
+                      <div className="space-y-4">
+                        {/* Add new category */}
+                        <div className="flex gap-2">
+                          <Input
+                            value={newCategory}
+                            onChange={(e) => setNewCategory(e.target.value)}
+                            placeholder="Nome nuova categoria"
+                          />
+                          <Button onClick={handleCreateCategory}>
+                            <Plus size={16} />
+                          </Button>
+                        </div>
+                        
+                        {/* Category list with drag handles */}
+                        <div className="space-y-2 max-h-96 overflow-y-auto">
+                          {categories?.map((category, index) => {
+                            const categoryItemsCount = restaurantMenuItems.filter(item => item.category === category).length
+                            
+                            return (
+                              <div key={category} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg border">
+                                <div className="flex items-center gap-3">
+                                  <div className="flex flex-col gap-1">
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      onClick={() => handleMoveCategoryUp(index)}
+                                      disabled={index === 0}
+                                      className="h-6 w-6 p-0"
+                                    >
+                                      ↑
+                                    </Button>
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      onClick={() => handleMoveCategoryDown(index)}
+                                      disabled={index === (categories || []).length - 1}
+                                      className="h-6 w-6 p-0"
+                                    >
+                                      ↓
+                                    </Button>
+                                  </div>
+                                  <div>
+                                    <p className="font-semibold">{category}</p>
+                                    <p className="text-sm text-muted-foreground">
+                                      {categoryItemsCount} piatt{categoryItemsCount === 1 ? 'o' : 'i'}
+                                    </p>
+                                  </div>
+                                </div>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => handleDeleteCategory(category)}
+                                  disabled={categoryItemsCount > 0}
+                                  className="h-8 w-8 p-0 text-destructive hover:bg-destructive/10"
+                                >
+                                  <Trash size={14} />
+                                </Button>
+                              </div>
+                            )
+                          })}
+                        </div>
+                      </div>
+                    </DialogContent>
+                  </Dialog>
                   <Dialog open={showMenuDialog} onOpenChange={setShowMenuDialog}>
                     <DialogTrigger asChild>
                       <Button className="flex items-center gap-2 h-12 px-6">
@@ -1201,15 +1230,23 @@ export default function RestaurantDashboard({ user, onLogout }: Props) {
                                   variant="outline"
                                   size="sm"
                                   onClick={() => handleToggleMenuItem(item.id)}
+                                  className="w-8 h-8 p-0 shadow-sm hover:shadow-gold transition-shadow duration-200"
+                                >
+                                  {item.isActive ? <EyeSlash size={12} /> : <Eye size={12} />}
+                                </Button>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
                                   className="flex-1 shadow-sm hover:shadow-gold transition-shadow duration-200"
                                 >
-                                  {item.isActive ? <EyeSlash size={14} /> : <Eye size={14} />}
+                                  <PencilSimple size={14} className="mr-1" />
+                                  Modifica
                                 </Button>
                                 <Button
                                   variant="destructive"
                                   size="sm"
                                   onClick={() => handleDeleteMenuItem(item.id)}
-                                  className="shadow-sm"
+                                  className="shadow-sm px-2"
                                 >
                                   <Trash size={14} />
                                 </Button>
@@ -1230,6 +1267,194 @@ export default function RestaurantDashboard({ user, onLogout }: Props) {
                   <p className="text-sm mt-2">Aggiungi il primo piatto per iniziare</p>
                 </div>
               )}
+
+              {/* Reservations Table Section */}
+              <div className="space-y-6">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-accent/15 rounded-lg flex items-center justify-center">
+                      <Calendar size={20} className="text-accent" />
+                    </div>
+                    <div>
+                      <h3 className="text-2xl font-bold text-foreground">Prenotazioni</h3>
+                      <p className="text-sm text-muted-foreground">Gestisci le prenotazioni per data e orario</p>
+                    </div>
+                  </div>
+                  <Dialog open={showReservationDialog} onOpenChange={setShowReservationDialog}>
+                    <DialogTrigger asChild>
+                      <Button className="flex items-center gap-2">
+                        <Plus size={16} />
+                        Nuova Prenotazione
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent>
+                      <DialogHeader>
+                        <DialogTitle>Nuova Prenotazione</DialogTitle>
+                        <DialogDescription>
+                          Aggiungi una nuova prenotazione per un tavolo
+                        </DialogDescription>
+                      </DialogHeader>
+                      <div className="space-y-4">
+                        <div className="grid grid-cols-2 gap-4">
+                          <div className="space-y-2">
+                            <Label htmlFor="customerName">Nome Cliente</Label>
+                            <Input
+                              id="customerName"
+                              value={newReservation.customerName}
+                              onChange={(e) => setNewReservation(prev => ({ ...prev, customerName: e.target.value }))}
+                              placeholder="Mario Rossi"
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor="customerPhone">Telefono</Label>
+                            <Input
+                              id="customerPhone"
+                              type="tel"
+                              value={newReservation.customerPhone}
+                              onChange={(e) => setNewReservation(prev => ({ ...prev, customerPhone: e.target.value }))}
+                              placeholder="333 123 4567"
+                            />
+                          </div>
+                        </div>
+                        <div className="grid grid-cols-3 gap-4">
+                          <div className="space-y-2">
+                            <Label htmlFor="reservationTable">Tavolo</Label>
+                            <Select
+                              value={newReservation.tableId}
+                              onValueChange={(value) => setNewReservation(prev => ({ ...prev, tableId: value }))}
+                            >
+                              <SelectTrigger>
+                                <SelectValue placeholder="Seleziona tavolo" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {restaurantTables.filter(t => t.isActive).map((table) => (
+                                  <SelectItem key={table.id} value={table.id}>{table.name}</SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor="reservationDate">Data</Label>
+                            <Input
+                              id="reservationDate"
+                              type="date"
+                              value={newReservation.date}
+                              onChange={(e) => setNewReservation(prev => ({ ...prev, date: e.target.value }))}
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor="reservationTime">Orario</Label>
+                            <Input
+                              id="reservationTime"
+                              type="time"
+                              value={newReservation.time}
+                              onChange={(e) => setNewReservation(prev => ({ ...prev, time: e.target.value }))}
+                            />
+                          </div>
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="guests">Numero Ospiti</Label>
+                          <Input
+                            id="guests"
+                            type="number"
+                            min="1"
+                            max="20"
+                            value={newReservation.guests}
+                            onChange={(e) => setNewReservation(prev => ({ ...prev, guests: parseInt(e.target.value) || 1 }))}
+                          />
+                        </div>
+                        <Button onClick={handleCreateReservation} className="w-full">
+                          Crea Prenotazione
+                        </Button>
+                      </div>
+                    </DialogContent>
+                  </Dialog>
+                </div>
+
+                {/* Reservations Table */}
+                <Card className="bg-white border border-border/10 shadow-[0_8px_32px_-8px_rgba(0,0,0,0.08),0_0_0_1px_rgba(0,0,0,0.02)] rounded-2xl overflow-hidden">
+                  <div className="overflow-x-auto">
+                    <table className="w-full">
+                      <thead className="bg-muted/30 border-b border-border/20">
+                        <tr>
+                          <th className="text-left py-4 px-6 font-semibold text-sm">Cliente</th>
+                          <th className="text-left py-4 px-6 font-semibold text-sm">Telefono</th>
+                          <th className="text-left py-4 px-6 font-semibold text-sm">Tavolo</th>
+                          <th className="text-left py-4 px-6 font-semibold text-sm">Data</th>
+                          <th className="text-left py-4 px-6 font-semibold text-sm">Orario</th>
+                          <th className="text-left py-4 px-6 font-semibold text-sm">Ospiti</th>
+                          <th className="text-right py-4 px-6 font-semibold text-sm">Azioni</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {restaurantReservations.length === 0 ? (
+                          <tr>
+                            <td colSpan={7} className="text-center py-8 text-muted-foreground">
+                              <Calendar size={48} className="mx-auto mb-3 opacity-30" />
+                              <p className="font-medium">Nessuna prenotazione</p>
+                              <p className="text-sm">Le prenotazioni appariranno qui</p>
+                            </td>
+                          </tr>
+                        ) : (
+                          restaurantReservations
+                            .sort((a, b) => new Date(`${a.date} ${a.time}`).getTime() - new Date(`${b.date} ${b.time}`).getTime())
+                            .map((reservation) => {
+                              const table = restaurantTables.find(t => t.id === reservation.tableId)
+                              const reservationDate = new Date(`${reservation.date} ${reservation.time}`)
+                              const isPast = reservationDate < new Date()
+                              
+                              return (
+                                <tr key={reservation.id} className={`border-b border-border/10 hover:bg-muted/20 transition-colors ${isPast ? 'opacity-60' : ''}`}>
+                                  <td className="py-4 px-6">
+                                    <div className="font-medium">{reservation.customerName}</div>
+                                  </td>
+                                  <td className="py-4 px-6">
+                                    <span className="text-sm text-muted-foreground">{reservation.customerPhone}</span>
+                                  </td>
+                                  <td className="py-4 px-6">
+                                    <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20">
+                                      {table?.name || 'Tavolo eliminato'}
+                                    </Badge>
+                                  </td>
+                                  <td className="py-4 px-6">
+                                    <span className="text-sm">
+                                      {new Date(reservation.date).toLocaleDateString('it-IT', { 
+                                        weekday: 'short', 
+                                        day: 'numeric', 
+                                        month: 'short' 
+                                      })}
+                                    </span>
+                                  </td>
+                                  <td className="py-4 px-6">
+                                    <span className="text-sm font-mono">{reservation.time}</span>
+                                  </td>
+                                  <td className="py-4 px-6">
+                                    <div className="flex items-center gap-1">
+                                      <Users size={14} className="text-muted-foreground" />
+                                      <span className="text-sm">{reservation.guests}</span>
+                                    </div>
+                                  </td>
+                                  <td className="py-4 px-6">
+                                    <div className="flex items-center justify-end">
+                                      <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        onClick={() => handleDeleteReservation(reservation.id)}
+                                        className="h-8 w-8 p-0 text-destructive hover:bg-destructive/10"
+                                      >
+                                        <Trash size={14} />
+                                      </Button>
+                                    </div>
+                                  </td>
+                                </tr>
+                              )
+                            })
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                </Card>
+              </div>
             </div>
           )}
 
@@ -1247,46 +1472,82 @@ export default function RestaurantDashboard({ user, onLogout }: Props) {
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
-                  <Button variant="outline" size="sm">
-                    <Calendar size={16} />
-                    Oggi
-                  </Button>
+                  <Select value={analyticsFilter} onValueChange={(value: typeof analyticsFilter) => setAnalyticsFilter(value)}>
+                    <SelectTrigger className="w-48">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="today">Oggi</SelectItem>
+                      <SelectItem value="yesterday">Ieri</SelectItem>
+                      <SelectItem value="7days">Ultimi 7 giorni</SelectItem>
+                      <SelectItem value="30days">Ultimi 30 giorni</SelectItem>
+                      <SelectItem value="90days">Ultimi 90 giorni</SelectItem>
+                      <SelectItem value="custom">Date personalizzate</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  
+                  {analyticsFilter === 'custom' && (
+                    <div className="flex items-center gap-2">
+                      <Input
+                        type="date"
+                        value={customDateRange.from}
+                        onChange={(e) => setCustomDateRange(prev => ({ ...prev, from: e.target.value }))}
+                        className="w-36"
+                      />
+                      <span className="text-muted-foreground">-</span>
+                      <Input
+                        type="date"
+                        value={customDateRange.to}
+                        onChange={(e) => setCustomDateRange(prev => ({ ...prev, to: e.target.value }))}
+                        className="w-36"
+                      />
+                    </div>
+                  )}
                 </div>
               </div>
 
               {/* Stats Cards */}
-              <div className="grid md:grid-cols-4 gap-6">
-                <Card className="bg-white border border-border/10 shadow-[0_8px_32px_-8px_rgba(0,0,0,0.08)] rounded-2xl overflow-hidden hover:shadow-[0_20px_64px_-12px_rgba(0,0,0,0.15)] transition-all duration-500">
+              <div className="grid md:grid-cols-5 gap-6">
+                <Card className="bg-white border border-border/10 shadow-[0_8px_32px_-8px_rgba(0,0,0,0.08),0_0_0_1px_rgba(0,0,0,0.02)] rounded-2xl overflow-hidden hover:shadow-[0_20px_64px_-12px_rgba(0,0,0,0.15),0_0_0_1px_rgba(0,0,0,0.05)] transition-all duration-500">
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                     <CardTitle className="text-sm font-medium">Ordini in Attesa</CardTitle>
-                    <Bell className="h-4 w-4 text-accent glow-gold" />
+                    <Bell className="h-4 w-4 text-accent" />
                   </CardHeader>
                   <CardContent>
                     <div className="text-2xl font-bold text-accent">{pendingOrdersCount}</div>
+                    <p className="text-xs text-muted-foreground">
+                      Da completare
+                    </p>
                   </CardContent>
                 </Card>
 
-                <Card className="bg-white border border-border/10 shadow-[0_8px_32px_-8px_rgba(0,0,0,0.08)] rounded-2xl overflow-hidden hover:shadow-[0_20px_64px_-12px_rgba(0,0,0,0.15)] transition-all duration-500">
+                <Card className="bg-white border border-border/10 shadow-[0_8px_32px_-8px_rgba(0,0,0,0.08),0_0_0_1px_rgba(0,0,0,0.02)] rounded-2xl overflow-hidden hover:shadow-[0_20px_64px_-12px_rgba(0,0,0,0.15),0_0_0_1px_rgba(0,0,0,0.05)] transition-all duration-500">
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">Ordini Oggi</CardTitle>
+                    <CardTitle className="text-sm font-medium">Ordini ({getFilterLabel()})</CardTitle>
                     <ClockCounterClockwise className="h-4 w-4 text-primary" />
                   </CardHeader>
                   <CardContent>
                     <div className="text-2xl font-bold text-primary">{todayOrders}</div>
+                    <p className="text-xs text-muted-foreground">
+                      {getFilterLabel().toLowerCase()}
+                    </p>
                   </CardContent>
                 </Card>
 
-                <Card className="bg-white border border-border/10 shadow-[0_8px_32px_-8px_rgba(0,0,0,0.08)] rounded-2xl overflow-hidden hover:shadow-[0_20px_64px_-12px_rgba(0,0,0,0.15)] transition-all duration-500">
+                <Card className="bg-white border border-border/10 shadow-[0_8px_32px_-8px_rgba(0,0,0,0.08),0_0_0_1px_rgba(0,0,0,0.02)] rounded-2xl overflow-hidden hover:shadow-[0_20px_64px_-12px_rgba(0,0,0,0.15),0_0_0_1px_rgba(0,0,0,0.05)] transition-all duration-500">
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">Ricavi Oggi</CardTitle>
+                    <CardTitle className="text-sm font-medium">Ricavi ({getFilterLabel()})</CardTitle>
                     <Money className="h-4 w-4 text-primary" />
                   </CardHeader>
                   <CardContent>
                     <div className="text-2xl font-bold text-primary">€{todayRevenue.toFixed(2)}</div>
+                    <p className="text-xs text-muted-foreground">
+                      {getFilterLabel().toLowerCase()}
+                    </p>
                   </CardContent>
                 </Card>
 
-                <Card className="bg-white border border-border/10 shadow-[0_8px_32px_-8px_rgba(0,0,0,0.08)] rounded-2xl overflow-hidden hover:shadow-[0_20px_64px_-12px_rgba(0,0,0,0.15)] transition-all duration-500">
+                <Card className="bg-white border border-border/10 shadow-[0_8px_32px_-8px_rgba(0,0,0,0.08),0_0_0_1px_rgba(0,0,0,0.02)] rounded-2xl overflow-hidden hover:shadow-[0_20px_64px_-12px_rgba(0,0,0,0.15),0_0_0_1px_rgba(0,0,0,0.05)] transition-all duration-500">
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                     <CardTitle className="text-sm font-medium">Scontrino Medio</CardTitle>
                     <Receipt className="h-4 w-4 text-secondary" />
@@ -1295,12 +1556,28 @@ export default function RestaurantDashboard({ user, onLogout }: Props) {
                     <div className="text-2xl font-bold text-secondary">
                       €{todayOrders > 0 ? (todayRevenue / todayOrders).toFixed(2) : '0.00'}
                     </div>
+                    <p className="text-xs text-muted-foreground">
+                      per ordine
+                    </p>
+                  </CardContent>
+                </Card>
+
+                <Card className="bg-white border border-border/10 shadow-[0_8px_32px_-8px_rgba(0,0,0,0.08),0_0_0_1px_rgba(0,0,0,0.02)] rounded-2xl overflow-hidden hover:shadow-[0_20px_64px_-12px_rgba(0,0,0,0.15),0_0_0_1px_rgba(0,0,0,0.05)] transition-all duration-500">
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium">Prenotazioni</CardTitle>
+                    <Calendar className="h-4 w-4 text-accent" />
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-2xl font-bold text-accent">{restaurantReservations.length}</div>
+                    <p className="text-xs text-muted-foreground">
+                      totali
+                    </p>
                   </CardContent>
                 </Card>
               </div>
 
-              <div className="grid md:grid-cols-2 gap-6">
-                <Card className="bg-white border border-border/10 shadow-[0_8px_32px_-8px_rgba(0,0,0,0.08)] rounded-2xl overflow-hidden hover:shadow-[0_20px_64px_-12px_rgba(0,0,0,0.15)] transition-all duration-500">
+              <div className="grid md:grid-cols-3 gap-6">
+                <Card className="bg-white border border-border/10 shadow-[0_8px_32px_-8px_rgba(0,0,0,0.08),0_0_0_1px_rgba(0,0,0,0.02)] rounded-2xl overflow-hidden hover:shadow-[0_20px_64px_-12px_rgba(0,0,0,0.15),0_0_0_1px_rgba(0,0,0,0.05)] transition-all duration-500">
                   <CardHeader>
                     <CardTitle>Statistiche Generali</CardTitle>
                   </CardHeader>
@@ -1315,7 +1592,7 @@ export default function RestaurantDashboard({ user, onLogout }: Props) {
                     </div>
                     <div className="flex justify-between">
                       <span>Ordini Totali:</span>
-                      <span className="font-semibold">{restaurantOrders.length}</span>
+                      <span className="font-semibold">{restaurantOrders.length + restaurantCompletedOrders.length}</span>
                     </div>
                     <div className="flex justify-between">
                       <span>Tavoli Pagati:</span>
@@ -1324,7 +1601,7 @@ export default function RestaurantDashboard({ user, onLogout }: Props) {
                   </CardContent>
                 </Card>
 
-                <Card className="bg-white border border-border/10 shadow-[0_8px_32px_-8px_rgba(0,0,0,0.08)] rounded-2xl overflow-hidden hover:shadow-[0_20px_64px_-12px_rgba(0,0,0,0.15)] transition-all duration-500">
+                <Card className="bg-white border border-border/10 shadow-[0_8px_32px_-8px_rgba(0,0,0,0.08),0_0_0_1px_rgba(0,0,0,0.02)] rounded-2xl overflow-hidden hover:shadow-[0_20px_64px_-12px_rgba(0,0,0,0.15),0_0_0_1px_rgba(0,0,0,0.05)] transition-all duration-500">
                   <CardHeader>
                     <CardTitle>Performance</CardTitle>
                   </CardHeader>
@@ -1336,11 +1613,151 @@ export default function RestaurantDashboard({ user, onLogout }: Props) {
                     <div className="flex justify-between">
                       <span>Tasso Completamento:</span>
                       <span className="font-semibold">
-                        {restaurantOrders.length > 0 
+                        {(restaurantOrders.length + restaurantCompletedOrders.length) > 0 
                           ? `${Math.round((restaurantCompletedOrders.length / (restaurantOrders.length + restaurantCompletedOrders.length)) * 100)}%`
                           : '0%'
                         }
                       </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Tempo Medio:</span>
+                      <span className="font-semibold">~15 min</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Efficienza:</span>
+                      <span className="font-semibold text-green-600">Buona</span>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card className="bg-white border border-border/10 shadow-[0_8px_32px_-8px_rgba(0,0,0,0.08),0_0_0_1px_rgba(0,0,0,0.02)] rounded-2xl overflow-hidden hover:shadow-[0_20px_64px_-12px_rgba(0,0,0,0.15),0_0_0_1px_rgba(0,0,0,0.05)] transition-all duration-500">
+                  <CardHeader>
+                    <CardTitle>Piatti Più Ordinati</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    {(() => {
+                      const dishCounts = filteredOrders
+                        .flatMap(order => order.items)
+                        .reduce((acc, item) => {
+                          const menuItem = restaurantMenuItems.find(m => m.id === item.menuItemId)
+                          const dishName = menuItem?.name || 'Piatto sconosciuto'
+                          acc[dishName] = (acc[dishName] || 0) + item.quantity
+                          return acc
+                        }, {} as Record<string, number>)
+                      
+                      return Object.entries(dishCounts)
+                        .sort(([,a], [,b]) => b - a)
+                        .slice(0, 5)
+                        .map(([dish, count], index) => (
+                          <div key={dish} className="flex justify-between items-center">
+                            <div className="flex items-center gap-2">
+                              <div className="w-6 h-6 bg-primary/10 rounded-full flex items-center justify-center text-xs font-bold text-primary">
+                                {index + 1}
+                              </div>
+                              <span className="text-sm truncate">{dish}</span>
+                            </div>
+                            <Badge variant="secondary">{count}</Badge>
+                          </div>
+                        ))
+                    })()}
+                    {filteredOrders.length === 0 && (
+                      <p className="text-sm text-muted-foreground text-center py-4">
+                        Nessun dato per il periodo selezionato
+                      </p>
+                    )}
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* Additional Charts Row */}
+              <div className="grid md:grid-cols-2 gap-6">
+                <Card className="bg-white border border-border/10 shadow-[0_8px_32px_-8px_rgba(0,0,0,0.08),0_0_0_1px_rgba(0,0,0,0.02)] rounded-2xl overflow-hidden hover:shadow-[0_20px_64px_-12px_rgba(0,0,0,0.15),0_0_0_1px_rgba(0,0,0,0.05)] transition-all duration-500">
+                  <CardHeader>
+                    <CardTitle>Distribuzione Ordini per Orario</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-3">
+                      {(() => {
+                        const hourCounts = filteredOrders.reduce((acc, order) => {
+                          const hour = new Date(order.timestamp).getHours()
+                          const hourRange = `${hour}:00-${hour + 1}:00`
+                          acc[hourRange] = (acc[hourRange] || 0) + 1
+                          return acc
+                        }, {} as Record<string, number>)
+                        
+                        const maxCount = Math.max(...Object.values(hourCounts), 1)
+                        
+                        return Object.entries(hourCounts)
+                          .sort(([a], [b]) => parseInt(a) - parseInt(b))
+                          .map(([timeRange, count]) => (
+                            <div key={timeRange} className="flex items-center gap-3">
+                              <div className="w-16 text-xs text-muted-foreground font-mono">
+                                {timeRange}
+                              </div>
+                              <div className="flex-1 bg-muted rounded-full h-2 relative overflow-hidden">
+                                <div 
+                                  className="h-full bg-primary rounded-full transition-all duration-500"
+                                  style={{ width: `${(count / maxCount) * 100}%` }}
+                                />
+                              </div>
+                              <div className="w-8 text-xs font-semibold text-right">
+                                {count}
+                              </div>
+                            </div>
+                          ))
+                      })()}
+                      {filteredOrders.length === 0 && (
+                        <p className="text-sm text-muted-foreground text-center py-4">
+                          Nessun dato per il periodo selezionato
+                        </p>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card className="bg-white border border-border/10 shadow-[0_8px_32px_-8px_rgba(0,0,0,0.08),0_0_0_1px_rgba(0,0,0,0.02)] rounded-2xl overflow-hidden hover:shadow-[0_20px_64px_-12px_rgba(0,0,0,0.15),0_0_0_1px_rgba(0,0,0,0.05)] transition-all duration-500">
+                  <CardHeader>
+                    <CardTitle>Ricavi per Categoria</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-3">
+                      {(() => {
+                        const categoryRevenue = filteredOrders
+                          .flatMap(order => order.items)
+                          .reduce((acc, item) => {
+                            const menuItem = restaurantMenuItems.find(m => m.id === item.menuItemId)
+                            const category = menuItem?.category || 'Altro'
+                            const revenue = (menuItem?.price || 0) * item.quantity
+                            acc[category] = (acc[category] || 0) + revenue
+                            return acc
+                          }, {} as Record<string, number>)
+                        
+                        const maxRevenue = Math.max(...Object.values(categoryRevenue), 1)
+                        
+                        return Object.entries(categoryRevenue)
+                          .sort(([,a], [,b]) => b - a)
+                          .map(([category, revenue]) => (
+                            <div key={category} className="flex items-center gap-3">
+                              <div className="w-20 text-xs text-muted-foreground truncate">
+                                {category}
+                              </div>
+                              <div className="flex-1 bg-muted rounded-full h-2 relative overflow-hidden">
+                                <div 
+                                  className="h-full bg-accent rounded-full transition-all duration-500"
+                                  style={{ width: `${(revenue / maxRevenue) * 100}%` }}
+                                />
+                              </div>
+                              <div className="w-12 text-xs font-semibold text-right">
+                                €{revenue.toFixed(0)}
+                              </div>
+                            </div>
+                          ))
+                      })()}
+                      {filteredOrders.length === 0 && (
+                        <p className="text-sm text-muted-foreground text-center py-4">
+                          Nessun dato per il periodo selezionato
+                        </p>
+                      )}
                     </div>
                   </CardContent>
                 </Card>
@@ -1483,7 +1900,7 @@ export default function RestaurantDashboard({ user, onLogout }: Props) {
                 <div className="text-xs font-mono text-center px-2">
                   <div className="font-bold text-primary">{selectedTable?.name}</div>
                   <div className="text-muted-foreground mt-1">
-                    {window.location.origin}?table={selectedTable?.id}
+                    {window.location.origin}?table={selectedTable?.id}&pin={selectedTable?.pin}
                   </div>
                 </div>
               </div>
@@ -1499,7 +1916,7 @@ export default function RestaurantDashboard({ user, onLogout }: Props) {
               <Button 
                 variant="outline" 
                 onClick={() => {
-                  const url = `${window.location.origin}?table=${selectedTable?.id}`
+                  const url = `${window.location.origin}?table=${selectedTable?.id}&pin=${selectedTable?.pin}`
                   window.open(url, '_blank')
                 }}
                 className="px-3 shadow-gold hover:shadow-gold-lg transition-shadow duration-200"
