@@ -81,6 +81,8 @@ export default function RestaurantDashboard({ user, onLogout }: Props) {
   const [showReservationDialog, setShowReservationDialog] = useState(false)
   const [analyticsFilter, setAnalyticsFilter] = useState<'today' | 'yesterday' | '7days' | '30days' | '90days' | 'custom'>('today')
   const [customDateRange, setCustomDateRange] = useState({ from: '', to: '' })
+  const [draggedCategory, setDraggedCategory] = useState<string | null>(null)
+  const [selectedReservationSlot, setSelectedReservationSlot] = useState<{day: string, hour: string, tableId: string} | null>(null)
 
 
   const restaurant = restaurants?.find(r => r.id === user.restaurantId)
@@ -270,28 +272,6 @@ export default function RestaurantDashboard({ user, onLogout }: Props) {
     toast.success('Ordine eliminato')
   }
 
-  const handleMoveCategoryUp = (index: number) => {
-    if (index === 0) return
-    setCategories((current) => {
-      const newCategories = [...(current || [])]
-      const temp = newCategories[index]
-      newCategories[index] = newCategories[index - 1]
-      newCategories[index - 1] = temp
-      return newCategories
-    })
-  }
-
-  const handleMoveCategoryDown = (index: number) => {
-    if (index === (categories || []).length - 1) return
-    setCategories((current) => {
-      const newCategories = [...(current || [])]
-      const temp = newCategories[index]
-      newCategories[index] = newCategories[index + 1]
-      newCategories[index + 1] = temp
-      return newCategories
-    })
-  }
-
   const handleDeleteCategory = (categoryName: string) => {
     // Check if there are items in this category
     const categoryItems = restaurantMenuItems.filter(item => item.category === categoryName)
@@ -335,6 +315,42 @@ export default function RestaurantDashboard({ user, onLogout }: Props) {
   const handleDeleteReservation = (reservationId: string) => {
     setReservations((current) => (current || []).filter(r => r.id !== reservationId))
     toast.success('Prenotazione eliminata')
+  }
+
+  // Drag and drop functions for categories
+  const handleDragStart = (e: React.DragEvent, category: string) => {
+    setDraggedCategory(category)
+    e.dataTransfer.effectAllowed = 'move'
+  }
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault()
+    e.dataTransfer.dropEffect = 'move'
+  }
+
+  const handleDrop = (e: React.DragEvent, targetCategory: string) => {
+    e.preventDefault()
+    
+    if (!draggedCategory || draggedCategory === targetCategory) {
+      setDraggedCategory(null)
+      return
+    }
+
+    const currentCategories = categories || []
+    const draggedIndex = currentCategories.indexOf(draggedCategory)
+    const targetIndex = currentCategories.indexOf(targetCategory)
+    
+    const newCategories = [...currentCategories]
+    newCategories.splice(draggedIndex, 1)
+    newCategories.splice(targetIndex, 0, draggedCategory)
+    
+    setCategories(newCategories)
+    setDraggedCategory(null)
+    toast.success('Ordine categorie aggiornato')
+  }
+
+  const handleDragEnd = () => {
+    setDraggedCategory(null)
   }
 
   const pendingOrdersCount = restaurantOrders.filter(o => o.status === 'waiting').length
@@ -491,7 +507,23 @@ export default function RestaurantDashboard({ user, onLogout }: Props) {
               }}
             >
               <List size={16} />
-              {sidebarExpanded && <span className="ml-2 transition-all duration-200">Menù & Prenotazioni</span>}
+              {sidebarExpanded && <span className="ml-2 transition-all duration-200">Menù</span>}
+            </Button>
+            
+            <Button
+              variant={activeSection === 'reservations' ? 'secondary' : 'ghost'}
+              className={`w-full justify-start ${!sidebarExpanded && 'px-2'} transition-all duration-200 hover:shadow-gold ${activeSection === 'reservations' ? 'shadow-gold bg-primary/10 text-primary border-primary/20' : 'hover:bg-primary/5'}`}
+              onClick={() => {
+                if (!sidebarExpanded) {
+                  setSidebarExpanded(true)
+                } else {
+                  setActiveSection('reservations')
+                  setSidebarExpanded(false)
+                }
+              }}
+            >
+              <Calendar size={16} />
+              {sidebarExpanded && <span className="ml-2 transition-all duration-200">Prenotazioni</span>}
             </Button>
             
             <Button
@@ -1046,8 +1078,8 @@ export default function RestaurantDashboard({ user, onLogout }: Props) {
                     <List size={24} className="text-primary" />
                   </div>
                   <div>
-                    <h2 className="text-3xl font-bold text-foreground">Menù & Prenotazioni</h2>
-                    <p className="text-muted-foreground">Gestisci piatti e prenotazioni tavoli</p>
+                    <h2 className="text-3xl font-bold text-foreground">Gestione Menù</h2>
+                    <p className="text-muted-foreground">Gestisci piatti e categorie del menù</p>
                   </div>
                 </div>
                 <div className="flex gap-2">
@@ -1078,37 +1110,29 @@ export default function RestaurantDashboard({ user, onLogout }: Props) {
                           </Button>
                         </div>
                         
-                        {/* Category list with drag handles */}
-                        <div className="space-y-2 max-h-96 overflow-y-auto">
-                          {categories?.map((category, index) => {
+                        {/* Category list with drag and drop */}
+                        <div className="space-y-1 max-h-96 overflow-y-auto">
+                          {categories?.map((category) => {
                             const categoryItemsCount = restaurantMenuItems.filter(item => item.category === category).length
+                            const isDragging = draggedCategory === category
                             
                             return (
-                              <div key={category} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg border">
-                                <div className="flex items-center gap-3">
-                                  <div className="flex flex-col gap-1">
-                                    <Button
-                                      variant="ghost"
-                                      size="sm"
-                                      onClick={() => handleMoveCategoryUp(index)}
-                                      disabled={index === 0}
-                                      className="h-6 w-6 p-0"
-                                    >
-                                      ↑
-                                    </Button>
-                                    <Button
-                                      variant="ghost"
-                                      size="sm"
-                                      onClick={() => handleMoveCategoryDown(index)}
-                                      disabled={index === (categories || []).length - 1}
-                                      className="h-6 w-6 p-0"
-                                    >
-                                      ↓
-                                    </Button>
-                                  </div>
+                              <div 
+                                key={category} 
+                                className={`flex items-center justify-between p-2 bg-muted/50 rounded-lg border-2 cursor-move transition-all duration-200 ${
+                                  isDragging ? 'border-primary bg-primary/10 scale-105 shadow-lg' : 'border-transparent hover:border-primary/20 hover:bg-muted/70'
+                                }`}
+                                draggable
+                                onDragStart={(e) => handleDragStart(e, category)}
+                                onDragOver={handleDragOver}
+                                onDrop={(e) => handleDrop(e, category)}
+                                onDragEnd={handleDragEnd}
+                              >
+                                <div className="flex items-center gap-2">
+                                  <div className="text-muted-foreground cursor-move">⋮⋮</div>
                                   <div>
-                                    <p className="font-semibold">{category}</p>
-                                    <p className="text-sm text-muted-foreground">
+                                    <p className="font-medium text-sm">{category}</p>
+                                    <p className="text-xs text-muted-foreground">
                                       {categoryItemsCount} piatt{categoryItemsCount === 1 ? 'o' : 'i'}
                                     </p>
                                   </div>
@@ -1118,9 +1142,9 @@ export default function RestaurantDashboard({ user, onLogout }: Props) {
                                   size="sm"
                                   onClick={() => handleDeleteCategory(category)}
                                   disabled={categoryItemsCount > 0}
-                                  className="h-8 w-8 p-0 text-destructive hover:bg-destructive/10"
+                                  className="h-6 w-6 p-0 text-destructive hover:bg-destructive/10"
                                 >
-                                  <Trash size={14} />
+                                  <Trash size={12} />
                                 </Button>
                               </div>
                             )
@@ -1237,10 +1261,9 @@ export default function RestaurantDashboard({ user, onLogout }: Props) {
                                 <Button
                                   variant="outline"
                                   size="sm"
-                                  className="flex-1 shadow-sm hover:shadow-gold transition-shadow duration-200"
+                                  className="shadow-sm hover:shadow-gold transition-shadow duration-200 px-2"
                                 >
-                                  <PencilSimple size={14} className="mr-1" />
-                                  Modifica
+                                  <PencilSimple size={14} />
                                 </Button>
                                 <Button
                                   variant="destructive"
@@ -1832,6 +1855,9 @@ export default function RestaurantDashboard({ user, onLogout }: Props) {
                           placeholder="25.00"
                           className="shadow-sm focus:shadow-gold transition-shadow duration-200"
                         />
+                        <p className="text-xs text-muted-foreground">
+                          Quanto far pagare a persona per il menu all you can eat
+                        </p>
                       </div>
                     )}
 
@@ -1879,6 +1905,173 @@ export default function RestaurantDashboard({ user, onLogout }: Props) {
                 </Card>
               </div>
             </div>
+          )}
+
+          {/* Reservations Section */}
+          {activeSection === 'reservations' && (
+            <div className="space-y-8">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 bg-primary/15 rounded-xl flex items-center justify-center">
+                  <Calendar size={24} className="text-primary" />
+                </div>
+                <div>
+                  <h2 className="text-3xl font-bold text-foreground">Prenotazioni</h2>
+                  <p className="text-muted-foreground">Gestisci le prenotazioni dei tavoli</p>
+                </div>
+              </div>
+
+              {/* Day filter */}
+              <div className="flex gap-2 overflow-x-auto pb-2">
+                <Button variant="outline" size="sm" className="whitespace-nowrap">Oggi</Button>
+                <Button variant="outline" size="sm" className="whitespace-nowrap">Domani</Button>
+                <Button variant="outline" size="sm" className="whitespace-nowrap">Dopodomani</Button>
+                <Button variant="outline" size="sm" className="whitespace-nowrap">Settimana prossima</Button>
+                <Button variant="outline" size="sm" className="whitespace-nowrap">Data personalizzata</Button>
+              </div>
+
+              {/* Reservations Table */}
+              <Card className="bg-white border border-border/10 shadow-[0_8px_32px_-8px_rgba(0,0,0,0.08)] rounded-2xl overflow-hidden">
+                <CardHeader>
+                  <CardTitle>Prenotazioni di Oggi</CardTitle>
+                  <CardDescription>Clicca su una cella per aggiungere o modificare una prenotazione</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="overflow-x-auto">
+                    <div className="min-w-[800px]">
+                      {/* Header with hours */}
+                      <div className="grid gap-1 mb-2" style={{gridTemplateColumns: 'repeat(13, minmax(0, 1fr))'}}>
+                        <div className="p-2 font-medium text-sm text-center">Tavolo</div>
+                        {Array.from({ length: 12 }, (_, i) => {
+                          const hour = i + 12; // 12:00 to 23:00
+                          return (
+                            <div key={hour} className="p-2 font-medium text-xs text-center bg-primary/5 rounded">
+                              {hour}:00
+                            </div>
+                          )
+                        })}
+                      </div>
+                      
+                      {/* Table rows */}
+                      {restaurantTables.filter(t => t.isActive).map(table => (
+                        <div key={table.id} className="grid gap-1 mb-1" style={{gridTemplateColumns: 'repeat(13, minmax(0, 1fr))'}}>
+                          <div className="p-3 font-medium text-sm bg-muted/50 rounded flex items-center">
+                            {table.name}
+                          </div>
+                          {Array.from({ length: 12 }, (_, i) => {
+                            const hour = i + 12;
+                            const timeSlot = `${hour}:00`;
+                            const hasReservation = restaurantReservations.some(r => 
+                              r.tableId === table.id && 
+                              r.time === timeSlot &&
+                              r.date === new Date().toISOString().split('T')[0]
+                            );
+                            
+                            return (
+                              <div
+                                key={`${table.id}-${hour}`}
+                                className={`p-2 h-12 border rounded cursor-pointer transition-colors ${
+                                  hasReservation 
+                                    ? 'bg-primary/20 border-primary/40 hover:bg-primary/30' 
+                                    : 'bg-card hover:bg-primary/5 border-border/20'
+                                }`}
+                                onClick={() => {
+                                  if (hasReservation) {
+                                    // Show existing reservation details
+                                    const reservation = restaurantReservations.find(r => 
+                                      r.tableId === table.id && 
+                                      r.time === timeSlot &&
+                                      r.date === new Date().toISOString().split('T')[0]
+                                    );
+                                    if (reservation) {
+                                      toast.info(`${reservation.customerName} - ${reservation.guests} persone`);
+                                    }
+                                  } else {
+                                    // Open reservation dialog
+                                    setSelectedReservationSlot({
+                                      day: new Date().toISOString().split('T')[0],
+                                      hour: timeSlot,
+                                      tableId: table.id
+                                    });
+                                    setNewReservation({
+                                      customerName: '',
+                                      customerPhone: '',
+                                      tableId: table.id,
+                                      date: new Date().toISOString().split('T')[0],
+                                      time: timeSlot,
+                                      guests: 2
+                                    });
+                                    setShowReservationDialog(true);
+                                  }
+                                }}
+                              >
+                                {hasReservation && (
+                                  <div className="text-xs text-center">
+                                    <div className="w-2 h-2 bg-primary rounded-full mx-auto"></div>
+                                  </div>
+                                )}
+                              </div>
+                            )
+                          })}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          )}
+
+          {/* Reservation Dialog */}
+          {selectedReservationSlot && (
+            <Dialog open={showReservationDialog} onOpenChange={setShowReservationDialog}>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Nuova Prenotazione</DialogTitle>
+                  <DialogDescription>
+                    {restaurantTables.find(t => t.id === selectedReservationSlot.tableId)?.name} - {selectedReservationSlot.hour}
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="customerName">Nome Cliente</Label>
+                    <Input
+                      id="customerName"
+                      value={newReservation.customerName}
+                      onChange={(e) => setNewReservation({ ...newReservation, customerName: e.target.value })}
+                      placeholder="Mario Rossi"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="customerPhone">Telefono</Label>
+                    <Input
+                      id="customerPhone"
+                      value={newReservation.customerPhone}
+                      onChange={(e) => setNewReservation({ ...newReservation, customerPhone: e.target.value })}
+                      placeholder="+39 123 456 7890"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="guests">Numero Persone</Label>
+                    <Input
+                      id="guests"
+                      type="number"
+                      min="1"
+                      max="20"
+                      value={newReservation.guests}
+                      onChange={(e) => setNewReservation({ ...newReservation, guests: parseInt(e.target.value) || 1 })}
+                    />
+                  </div>
+                  <div className="flex gap-2">
+                    <Button onClick={handleCreateReservation} className="flex-1">
+                      Conferma Prenotazione
+                    </Button>
+                    <Button variant="outline" onClick={() => setShowReservationDialog(false)}>
+                      Annulla
+                    </Button>
+                  </div>
+                </div>
+              </DialogContent>
+            </Dialog>
           )}
           </div>
         </div>
