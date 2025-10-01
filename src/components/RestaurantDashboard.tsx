@@ -56,7 +56,7 @@ export default function RestaurantDashboard({ user, onLogout }: RestaurantDashbo
   const [historyFilters, setHistoryFilters] = useState({
     dateFrom: '',
     dateTo: '',
-    tableId: '',
+    tableId: 'all',
     customerName: ''
   })
 
@@ -397,7 +397,7 @@ export default function RestaurantDashboard({ user, onLogout }: RestaurantDashbo
       
       if (historyFilters.dateFrom && orderDate < historyFilters.dateFrom) return false
       if (historyFilters.dateTo && orderDate > historyFilters.dateTo) return false
-      if (historyFilters.tableId && order.tableId !== historyFilters.tableId) return false
+      if (historyFilters.tableId && historyFilters.tableId !== 'all' && order.tableId !== historyFilters.tableId) return false
       if (historyFilters.customerName && 
           (!order.customerName || !order.customerName.toLowerCase().includes(historyFilters.customerName.toLowerCase()))) return false
       
@@ -961,7 +961,7 @@ export default function RestaurantDashboard({ user, onLogout }: RestaurantDashbo
                         <SelectValue placeholder="Tutti i tavoli" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="">Tutti i tavoli</SelectItem>
+                        <SelectItem value="all">Tutti i tavoli</SelectItem>
                         {(tables || []).map(table => (
                           <SelectItem key={table.id} value={table.id}>{table.name}</SelectItem>
                         ))}
@@ -981,7 +981,7 @@ export default function RestaurantDashboard({ user, onLogout }: RestaurantDashbo
                 <div className="flex gap-2 mt-4">
                   <Button 
                     variant="outline" 
-                    onClick={() => setHistoryFilters({ dateFrom: '', dateTo: '', tableId: '', customerName: '' })}
+                    onClick={() => setHistoryFilters({ dateFrom: '', dateTo: '', tableId: 'all', customerName: '' })}
                   >
                     Pulisci Filtri
                   </Button>
