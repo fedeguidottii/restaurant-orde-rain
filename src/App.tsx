@@ -15,6 +15,8 @@ export interface User {
   restaurantId?: string
 }
 
+export type TableStatus = 'available' | 'waiting-order' | 'order-ready' | 'eating' | 'waiting-bill' | 'cleaning'
+
 export interface Table {
   id: string
   name: string
@@ -22,6 +24,10 @@ export interface Table {
   pin: string
   qrCode: string
   restaurantId: string
+  status: TableStatus
+  currentOrderId?: string
+  customerCount?: number
+  reservationId?: string
 }
 
 export interface MenuItem {
@@ -46,6 +52,27 @@ export interface Order {
   status: 'waiting' | 'preparing' | 'served' | 'completed'
   timestamp: number
   total: number
+}
+
+export interface OrderHistory {
+  id: string
+  tableId: string
+  tableName: string
+  restaurantId: string
+  items: Array<{
+    menuItemId: string
+    name: string
+    quantity: number
+    price: number
+    notes?: string
+  }>
+  total: number
+  timestamp: number
+  paidAt: number
+  customerName?: string
+  customerPhone?: string
+  customerCount?: number
+  reservationId?: string
 }
 
 export interface Restaurant {
