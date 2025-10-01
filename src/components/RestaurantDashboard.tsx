@@ -11,8 +11,9 @@ import { Badge } from '@/components/ui/badge'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Separator } from '@/components/ui/separator'
 import { toast } from 'sonner'
-import { Plus, MapPin, BookOpen, Clock, ChartBar, Gear, SignOut, Trash, Eye, QrCode, PencilSimple, Calendar, List, ClockCounterClockwise } from '@phosphor-icons/react'
+import { Plus, MapPin, BookOpen, Clock, ChartBar, Gear, SignOut, Trash, Eye, EyeSlash, QrCode, PencilSimple, Calendar, List, ClockCounterClockwise } from '@phosphor-icons/react'
 import type { User, Table, MenuItem, Order, Restaurant, Reservation, OrderHistory, MenuCategory } from '../App'
+import TimelineReservations from './TimelineReservations'
 
 interface RestaurantDashboardProps {
   user: User
@@ -47,16 +48,6 @@ const RestaurantDashboard = ({ user, onLogout }: RestaurantDashboardProps) => {
   const [selectedTable, setSelectedTable] = useState<Table | null>(null)
   const [showTableDialog, setShowTableDialog] = useState(false)
   const [showQrDialog, setShowQrDialog] = useState(false)
-  const [selectedReservation, setSelectedReservation] = useState<Reservation | null>(null)
-  const [showReservationDialog, setShowReservationDialog] = useState(false)
-  const [newReservation, setNewReservation] = useState({
-    customerName: '',
-    customerPhone: '',
-    tableId: '',
-    date: '',
-    time: '',
-    guests: 1
-  })
   
   const restaurantMenuItems = menuItems?.filter(item => item.restaurantId === user.restaurantId) || []
   const restaurantTables = tables?.filter(table => table.restaurantId === user.restaurantId) || []
@@ -568,8 +559,9 @@ const RestaurantDashboard = ({ user, onLogout }: RestaurantDashboardProps) => {
                           size="sm"
                           onClick={() => handleToggleTable(table.id)}
                           className="h-6 w-6 p-0"
+                          title={table.isActive ? 'Disattiva tavolo' : 'Attiva tavolo'}
                         >
-                          {table.isActive ? '●' : '○'}
+                          {table.isActive ? <Eye size={16} /> : <EyeSlash size={16} />}
                         </Button>
                       </div>
                     </div>
@@ -687,7 +679,7 @@ const RestaurantDashboard = ({ user, onLogout }: RestaurantDashboardProps) => {
                                   className="h-8 w-8 p-0"
                                   title={category.isActive ? 'Disattiva categoria' : 'Attiva categoria'}
                                 >
-                                  {category.isActive ? '●' : '○'}
+                                  {category.isActive ? <Eye size={16} /> : <EyeSlash size={16} />}
                                 </Button>
                                 <Button
                                   variant="ghost"
@@ -802,7 +794,18 @@ const RestaurantDashboard = ({ user, onLogout }: RestaurantDashboardProps) => {
                 
                 return (
                   <div key={category.id} className="space-y-4">
-                    <h3 className="text-xl font-semibold text-primary">{category.name}</h3>
+                    <div className="flex items-center justify-between">
+                      <h3 className="text-xl font-semibold text-primary">{category.name}</h3>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleToggleCategory(category.id)}
+                        className="h-8 w-8 p-0"
+                        title={category.isActive ? 'Disattiva categoria' : 'Attiva categoria'}
+                      >
+                        {category.isActive ? <Eye size={16} /> : <EyeSlash size={16} />}
+                      </Button>
+                    </div>
                     <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
                       {categoryItems.map((item) => (
                         <Card key={item.id} className={`shadow-professional hover:shadow-professional-lg transition-all duration-300 ${!item.isActive ? 'opacity-50' : ''}`}>
@@ -846,8 +849,9 @@ const RestaurantDashboard = ({ user, onLogout }: RestaurantDashboardProps) => {
                                 size="sm"
                                 onClick={() => handleToggleMenuItem(item.id)}
                                 className="h-8 w-8 p-0"
+                                title={item.isActive ? 'Disattiva piatto' : 'Attiva piatto'}
                               >
-                                {item.isActive ? '●' : '○'}
+                                {item.isActive ? <Eye size={14} /> : <EyeSlash size={14} />}
                               </Button>
                               <Button
                                 variant="outline"
@@ -877,149 +881,12 @@ const RestaurantDashboard = ({ user, onLogout }: RestaurantDashboardProps) => {
 
           {/* Reservations Tab */}
           <TabsContent value="reservations" className="space-y-4">
-            <div className="flex items-center justify-between">
-              <h2 className="text-2xl font-bold text-foreground">Prenotazioni</h2>
-              <Dialog open={showReservationDialog} onOpenChange={setShowReservationDialog}>
-                <DialogTrigger asChild>
-                  <Button>
-                    <Plus size={16} className="mr-2" />
-                    Nuova Prenotazione
-                  </Button>
-                </DialogTrigger>
-                <DialogContent>
-                  <DialogHeader>
-                    <DialogTitle>Nuova Prenotazione</DialogTitle>
-                  </DialogHeader>
-                  <div className="space-y-4">
-                    <div>
-                      <Label htmlFor="customerName">Nome Cliente</Label>
-                      <Input
-                        id="customerName"
-                        value={newReservation.customerName}
-                        onChange={(e) => setNewReservation(prev => ({ ...prev, customerName: e.target.value }))}
-                        placeholder="Nome e cognome"
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="customerPhone">Telefono</Label>
-                      <Input
-                        id="customerPhone"
-                        value={newReservation.customerPhone}
-                        onChange={(e) => setNewReservation(prev => ({ ...prev, customerPhone: e.target.value }))}
-                        placeholder="Numero di telefono"
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="tableSelect">Tavolo</Label>
-                      <Select
-                        value={newReservation.tableId}
-                        onValueChange={(value) => setNewReservation(prev => ({ ...prev, tableId: value }))}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Seleziona tavolo" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {restaurantTables.filter(t => t.isActive).map((table) => (
-                            <SelectItem key={table.id} value={table.id}>{table.name}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div>
-                      <Label htmlFor="reservationDate">Data</Label>
-                      <Input
-                        id="reservationDate"
-                        type="date"
-                        value={newReservation.date}
-                        onChange={(e) => setNewReservation(prev => ({ ...prev, date: e.target.value }))}
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="reservationTime">Ora</Label>
-                      <Input
-                        id="reservationTime"
-                        type="time"
-                        value={newReservation.time}
-                        onChange={(e) => setNewReservation(prev => ({ ...prev, time: e.target.value }))}
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="guests">Numero di persone</Label>
-                      <Input
-                        id="guests"
-                        type="number"
-                        min="1"
-                        value={newReservation.guests}
-                        onChange={(e) => setNewReservation(prev => ({ ...prev, guests: parseInt(e.target.value) || 1 }))}
-                      />
-                    </div>
-                    <Button 
-                      onClick={() => {
-                        if (newReservation.customerName && newReservation.customerPhone && newReservation.tableId && newReservation.date && newReservation.time) {
-                          const reservation: Reservation = {
-                            id: Date.now().toString(),
-                            customerName: newReservation.customerName,
-                            customerPhone: newReservation.customerPhone,
-                            tableId: newReservation.tableId,
-                            date: newReservation.date,
-                            time: newReservation.time,
-                            guests: newReservation.guests,
-                            restaurantId: user.restaurantId!
-                          }
-                          setReservations([...(reservations || []), reservation])
-                          setNewReservation({
-                            customerName: '',
-                            customerPhone: '',
-                            tableId: '',
-                            date: '',
-                            time: '',
-                            guests: 1
-                          })
-                          setShowReservationDialog(false)
-                          toast.success('Prenotazione aggiunta')
-                        } else {
-                          toast.error('Compila tutti i campi')
-                        }
-                      }}
-                      className="w-full"
-                    >
-                      Aggiungi Prenotazione
-                    </Button>
-                  </div>
-                </DialogContent>
-              </Dialog>
-            </div>
-            
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-              {restaurantReservations.map(reservation => {
-                const table = restaurantTables.find(t => t.id === reservation.tableId)
-                return (
-                  <Card key={reservation.id} className="shadow-professional">
-                    <CardHeader>
-                      <CardTitle className="text-lg">{reservation.customerName}</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="space-y-2 text-sm">
-                        <p><strong>Tavolo:</strong> {table?.name}</p>
-                        <p><strong>Data:</strong> {reservation.date}</p>
-                        <p><strong>Ora:</strong> {reservation.time}</p>
-                        <p><strong>Persone:</strong> {reservation.guests}</p>
-                        <p><strong>Telefono:</strong> {reservation.customerPhone}</p>
-                      </div>
-                    </CardContent>
-                  </Card>
-                )
-              })}
-              
-              {restaurantReservations.length === 0 && (
-                <Card className="col-span-full">
-                  <CardContent className="text-center py-8">
-                    <Calendar size={48} className="mx-auto text-muted-foreground mb-4" />
-                    <p className="text-muted-foreground">Nessuna prenotazione</p>
-                  </CardContent>
-                </Card>
-              )}
-            </div>
+            <TimelineReservations 
+              user={user}
+              tables={tables || []}
+              reservations={reservations || []}
+              setReservations={setReservations}
+            />
           </TabsContent>
 
           {/* Analytics Tab */}

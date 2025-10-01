@@ -308,6 +308,110 @@ function App() {
     }
   }, [users, setUsers, setRestaurants, setMenuCategories, setMenuItems, setTables])
 
+  // Initialize sample orders after menu items are loaded
+  const [orders, setOrders] = useKV<Order[]>(`orders_restaurant-1`, [])
+  const [reservations, setReservations] = useKV<Reservation[]>(`reservations_restaurant-1`, [])
+  
+  useEffect(() => {
+    if (menuItems && menuItems.length > 0 && (!orders || orders.length === 0)) {
+      const sampleOrders: Order[] = [
+        {
+          id: 'order-1',
+          tableId: 'table-2',
+          restaurantId: 'restaurant-1',
+          items: [
+            { menuItemId: 'item-1', quantity: 2, notes: 'Senza aglio' },
+            { menuItemId: 'item-3', quantity: 1 },
+            { menuItemId: 'item-9', quantity: 1 }
+          ],
+          status: 'preparing',
+          timestamp: Date.now() - 15 * 60 * 1000, // 15 minutes ago
+          total: 42.00
+        },
+        {
+          id: 'order-2',
+          tableId: 'table-3',
+          restaurantId: 'restaurant-1',
+          items: [
+            { menuItemId: 'item-2', quantity: 1 },
+            { menuItemId: 'item-4', quantity: 2 },
+            { menuItemId: 'item-6', quantity: 1 },
+            { menuItemId: 'item-10', quantity: 2 }
+          ],
+          status: 'waiting',
+          timestamp: Date.now() - 8 * 60 * 1000, // 8 minutes ago
+          total: 70.00
+        },
+        {
+          id: 'order-3',
+          tableId: 'table-5',
+          restaurantId: 'restaurant-1',
+          items: [
+            { menuItemId: 'item-5', quantity: 1, notes: 'Cottura media' },
+            { menuItemId: 'item-7', quantity: 2 },
+            { menuItemId: 'item-9', quantity: 1 }
+          ],
+          status: 'preparing',
+          timestamp: Date.now() - 22 * 60 * 1000, // 22 minutes ago
+          total: 77.00
+        }
+      ]
+      
+      setOrders(sampleOrders)
+    }
+    
+    // Add sample reservations
+    if (tables && tables.length > 0 && (!reservations || reservations.length === 0)) {
+      const today = new Date().toISOString().split('T')[0]
+      const tomorrow = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+      
+      const sampleReservations: Reservation[] = [
+        {
+          id: 'res-1',
+          customerName: 'Mario Rossi',
+          customerPhone: '+39 333 1234567',
+          tableId: 'table-1',
+          date: today,
+          time: '19:30',
+          guests: 4,
+          restaurantId: 'restaurant-1'
+        },
+        {
+          id: 'res-2',
+          customerName: 'Anna Bianchi',
+          customerPhone: '+39 333 2345678',
+          tableId: 'table-4',
+          date: today,
+          time: '20:00',
+          guests: 2,
+          restaurantId: 'restaurant-1'
+        },
+        {
+          id: 'res-3',
+          customerName: 'Famiglia Verdi',
+          customerPhone: '+39 333 3456789',
+          tableId: 'table-5',
+          date: today,
+          time: '21:00',
+          guests: 6,
+          restaurantId: 'restaurant-1'
+        },
+        {
+          id: 'res-4',
+          customerName: 'Luca Ferrari',
+          customerPhone: '+39 333 4567890',
+          tableId: 'table-2',
+          date: tomorrow,
+          time: '19:00',
+          guests: 3,
+          restaurantId: 'restaurant-1'
+        }
+      ]
+      
+      setReservations(sampleReservations)
+    }
+  }, [menuItems, orders, setOrders, tables, reservations, setReservations])
+
   const handleLogin = (user: User) => {
     setCurrentUser(user)
   }
