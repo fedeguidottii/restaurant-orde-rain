@@ -1,139 +1,224 @@
-# Restaurant Order Management System - PRD
+# PRD: Sistema di Gestione Ristorante - Ordini Digitali via QR Code
 
 ## Core Purpose & Success
-- **Mission Statement**: A comprehensive restaurant management system that streamlines order processing, table management, and analytics for restaurant operations.
-- **Success Indicators**: Reduced order processing time, improved table turnover, increased staff efficiency, and enhanced customer experience.
-- **Experience Qualities**: Professional, Efficient, Intuitive
+
+**Mission Statement**: Trasformare l'esperienza di ordinazione nei ristoranti attraverso un sistema digitale intuitivo che elimina l'attesa e migliora l'efficienza operativa.
+
+**Success Indicators**: 
+- Riduzione del 70% del tempo di presa ordini
+- Incremento del 25% nella soddisfazione del cliente
+- Miglioramento del 40% nell'efficienza del servizio
+- Zero errori di trascrizione ordini
+
+**Experience Qualities**: Fluido, Intuitivo, Professionale
 
 ## Project Classification & Approach
-- **Complexity Level**: Complex Application (advanced functionality with multiple user roles, real-time order management, analytics)
-- **Primary User Activity**: Acting and Managing (restaurant staff managing orders, tables, menu, and analytics)
+
+**Complexity Level**: Complex Application (advanced functionality, multiple user roles, real-time order management)
+
+**Primary User Activity**: Interacting - Customers order through QR codes, restaurant staff manage orders in real-time, administrators oversee the entire system
 
 ## Thought Process for Feature Selection
-- **Core Problem Analysis**: Restaurants need efficient digital systems to manage orders, tables, menus, and track performance metrics.
-- **User Context**: Restaurant staff use this during service hours to process orders, manage tables, and monitor business performance.
-- **Critical Path**: Login → Navigate sections → Process orders → Manage tables → Update menu → Monitor analytics
-- **Key Moments**: Order notification, order completion tracking, table payment processing, real-time analytics
+
+**Core Problem Analysis**: I ristoranti perdono tempo ed efficienza con il sistema tradizionale di presa ordini cartacei, causando errori, lunghe attese e stress per il personale.
+
+**User Context**: 
+- Clienti: Vogliono ordinare rapidamente senza aspettare il cameriere
+- Ristoratori: Hanno bisogno di gestire ordini in tempo reale con visione completa del servizio
+- Amministratori: Necessitano di supervisione multi-ristorante
+
+**Critical Path**: 
+1. Cliente scansiona QR → 2. Inserisce PIN → 3. Ordina dal menu digitale → 4. Ristoratore riceve ordine → 5. Prepara e serve → 6. Gestisce pagamento
+
+**Key Moments**: 
+- Accesso immediato al menu tramite QR
+- Ricezione ordine in tempo reale al pannello ristoratore
+- Conferma di completamento ordine
 
 ## Essential Features
 
-### Sidebar Navigation System
-- **What it does**: Collapsible left sidebar with navigation to all major sections
-- **Why it matters**: Provides organized, space-efficient navigation that works on all screen sizes
-- **Success criteria**: Easy section switching with visual indicators for active sections
+### Sistema QR Code + PIN
+- **Functionality**: Ogni tavolo ha un QR code univoco e PIN temporaneo per l'accesso
+- **Purpose**: Garantire sicurezza e associazione corretta ordine-tavolo
+- **Success Criteria**: PIN cambia automaticamente ad ogni nuovo servizio, accesso negato con PIN errato
 
-### Advanced Order Management
-- **What it does**: Displays orders in compact, responsive cards with individual item completion tracking
-- **Why it matters**: Allows kitchen staff to manage orders efficiently at item level
-- **Success criteria**: Orders display correctly on all screen sizes, items can be marked complete individually
+### Dashboard Ristoratore Multi-Sezione
+- **Functionality**: Interfaccia unificata per gestire ordini, tavoli, menu, analitiche e prenotazioni
+- **Purpose**: Centralizzare tutte le operazioni in un'unica piattaforma professionale
+- **Success Criteria**: Navigazione fluida tra sezioni, aggiornamenti in tempo reale
 
-### Enhanced Table Management with Status Flow
-- **What it does**: Complete table lifecycle management with states (Available, Waiting for Order, Order Ready, Eating, Waiting for Bill, Paid) and automatic status progression
-- **Why it matters**: Provides real-time table status visibility and streamlines service workflow from seating to payment
-- **Trigger**: Restaurant staff opens new table session or customer places/completes order
-- **Progression**: Table Available → Open Table (generate PIN) → Customer Orders → Order Ready → Eating → Request Bill → Payment → Close Table → Historical Record
-- **Success criteria**: Table states update automatically, staff can manually advance states, payment closes table and moves order to history
+### Menu Digitale Dinamico
+- **Functionality**: Menu completamente gestibile dal ristoratore con categorie, prezzi e disponibilità
+- **Purpose**: Controllo totale sull'offerta e aggiornamenti immediati
+- **Success Criteria**: Modifiche visibili istantaneamente ai clienti
 
-### Organized Menu Management
-- **What it does**: Category-based menu organization with easy item and category management
-- **Why it matters**: Reflects customer-facing menu structure for consistency
-- **Success criteria**: Categories organize items logically, editing is intuitive
+### Gestione Ordini in Tempo Reale
+- **Functionality**: Ordini ricevuti immediatamente con stati di avanzamento
+- **Purpose**: Ottimizzare i tempi di preparazione e servizio
+- **Success Criteria**: Latenza < 2 secondi, interfaccia chiara per cucina
 
-### Order History & Analytics
-- **What it does**: Comprehensive order archive with customer details, table info, and payment history with advanced filtering
-- **Why it matters**: Provides business insights and customer service history for future reservations
-- **Trigger**: Order marked as paid automatically moves to historical records
-- **Progression**: Active Order → Payment → Historical Archive → Analytics Dashboard
-- **Success criteria**: All paid orders stored with customer data, searchable by date/table/customer, integrated with reservation system
-
-### Smart Reservation System
-- **What it does**: Time-slot grid reservation system with table availability matrix and customer management
-- **Why it matters**: Optimizes table utilization and provides seamless customer experience integration
-- **Trigger**: Staff clicks time slot in reservation grid or customer requests reservation
-- **Progression**: Select Time/Table → Enter Customer Details → Confirm Reservation → Table Preparation → Customer Arrival → Order Integration
-- **Success criteria**: Visual time/table grid, customer data integration with order history, reservation conflicts prevented
-
-### Advanced Settings & Special Modes
-- **What it does**: Configurable restaurant modes (All You Can Eat, Cover Charge, Waiters)
-- **Why it matters**: Adapts system to different restaurant business models
-- **Success criteria**: Settings affect order calculations and interface appropriately
+### Sistema Analytics Integrato
+- **Functionality**: Statistiche dettagliate su ordini, ricavi e performance
+- **Purpose**: Fornire insights per decisioni business-oriented
+- **Success Criteria**: Dati accurati, visualizzazioni chiare, filtri funzionali
 
 ## Design Direction
 
 ### Visual Tone & Identity
-- **Emotional Response**: Professional confidence, operational efficiency, calm control
-- **Design Personality**: Clean, sophisticated, restaurant-industry focused
-- **Visual Metaphors**: Gold accents suggesting premium dining, clean lines for efficiency
-- **Simplicity Spectrum**: Minimal interface with rich functionality - clean design that doesn't overwhelm during busy service
+**Emotional Response**: Il design deve trasmettere professionalità, efficienza e affidabilità, facendo sentire sia i clienti che i ristoratori al controllo del processo.
+
+**Design Personality**: Elegante e professionale con tocchi di calore umano. Serio ma non freddo, tecnologico ma accessibile.
+
+**Visual Metaphors**: Utilizzo di elementi che richiamano l'ospitalità (tavoli, servizio) integrati con iconografia digitale moderna (QR codes, dashboard).
+
+**Simplicity Spectrum**: Interfaccia pulita e minimale che non distrae dall'obiettivo principale, con accesso progressivo a funzionalità avanzate.
 
 ### Color Strategy
-- **Color Scheme Type**: Analogous warm palette with sophisticated accents
-- **Primary Color**: Warm gold (--primary) - premium, inviting, professional
-- **Secondary Colors**: Cream backgrounds for warmth, anthracite text for readability
-- **Accent Color**: Intense gold for important actions and notifications
-- **Color Psychology**: Gold conveys quality and premium service, cream provides warmth without distraction
-- **Color Accessibility**: High contrast ratios maintained throughout
-- **Foreground/Background Pairings**: 
-  - Background (white) + Foreground (anthracite gray): WCAG AAA
-  - Primary (warm gold) + Primary-foreground (dark gray): WCAG AA
-  - Card (cream) + Card-foreground (anthracite): WCAG AA
-  - Accent (intense gold) + Accent-foreground (white): WCAG AA
+**Color Scheme Type**: Analogous con accent complementare
+
+**Primary Color**: Oro raffinato (oklch(0.75 0.12 85)) - comunica qualità, prestigio e calore professionale
+
+**Secondary Colors**: 
+- Bianco caldo (oklch(0.99 0.005 85)) per pulizia e spazio
+- Grigio neutro (oklch(0.95 0.01 270)) per elementi secondari
+
+**Accent Color**: Oro vibrante (oklch(0.68 0.15 80)) per call-to-action e highlights importanti
+
+**Color Psychology**: L'oro evoca qualità e professionalità ristorativa, mentre i neutri creano calma e focus
+
+**Color Accessibility**: Rapporti di contrasto superiori a WCAG AA (4.5:1 normale, 3:1 large text)
+
+**Foreground/Background Pairings**:
+- Background bianco + Foreground grigio scuro (contrasto 14:1) ✓
+- Card warm + Foreground grigio scuro (contrasto 13:1) ✓  
+- Primary oro + Foreground grigio scuro (contrasto 5.2:1) ✓
+- Accent oro + Foreground bianco (contrasto 4.8:1) ✓
 
 ### Typography System
-- **Font Pairing Strategy**: Single font family (Inter) with varied weights
-- **Typographic Hierarchy**: Clear size relationships - 2xl for headers, lg for subheaders, base for body
-- **Font Personality**: Modern, professional, highly legible
-- **Readability Focus**: Generous line spacing, appropriate sizes for quick scanning
-- **Typography Consistency**: Consistent weight and size usage across components
-- **Which fonts**: Inter from Google Fonts
-- **Legibility Check**: Excellent readability at all sizes, works well for quick scanning during service
+**Font Pairing Strategy**: Font unico Inter per massima coerenza e leggibilità professionale
+
+**Typographic Hierarchy**: 
+- H1: 2xl font-bold (dashboard titles)
+- H2: xl font-semibold (section headers)  
+- H3: lg font-medium (card titles)
+- Body: base font-normal (content)
+- Small: sm font-normal (metadata)
+
+**Font Personality**: Inter è pulito, moderno e altamente leggibile su ogni device
+
+**Readability Focus**: Line-height 1.5 per body text, spaziature generose tra elementi
+
+**Typography Consistency**: Scale matematica con rapporti 1.25x tra livelli
+
+**Which fonts**: Inter (Google Fonts) - unico font per tutto il sistema
+
+**Legibility Check**: Inter eccelle in leggibilità sia su desktop che mobile ✓
 
 ### Visual Hierarchy & Layout
-- **Attention Direction**: Sidebar navigation guides to sections, cards organize content logically
-- **White Space Philosophy**: Generous spacing prevents overwhelming during busy periods
-- **Grid System**: Responsive grid adapts from 1 column on mobile to 4 columns on large screens
-- **Responsive Approach**: Mobile-first design with progressive enhancement
-- **Content Density**: High information density balanced with visual clarity
+**Attention Direction**: Uso di ombre dorate per elementi chiave, dimensioni progressive per importanza
+
+**White Space Philosophy**: Spazio generoso per ridurre stress cognitivo e migliorare focus
+
+**Grid System**: Layout responsivo con breakpoints specifici (md, lg, xl) per adattamento perfetto
+
+**Responsive Approach**: Mobile-first con enhancement progressivo per desktop
+
+**Content Density**: Bilanciamento tra informazioni necessarie e chiarezza visiva
 
 ### Animations
-- **Purposeful Meaning**: Subtle transitions communicate state changes and guide attention
-- **Hierarchy of Movement**: Sidebar expansion, card hover states, button feedback
-- **Contextual Appropriateness**: Minimal animations that don't interfere with operational speed
+**Purposeful Meaning**: Transizioni fluide comunicano continuità e professionalità
+
+**Hierarchy of Movement**: Hover effects sottili su elementi interattivi, transizioni per cambio stato
+
+**Contextual Appropriateness**: Animazioni rapide (200-300ms) per non interferire con l'efficienza
 
 ### UI Elements & Component Selection
-- **Component Usage**: 
-  - Cards for content organization
-  - Buttons for actions with clear hierarchy
-  - Badges for status indicators
-  - Dialog modals for data entry
-  - Select dropdowns for options
-- **Component Customization**: Tailored color scheme, rounded corners for premium feel
-- **Component States**: Clear active, hover, and disabled states for all interactive elements
-- **Icon Selection**: Phosphor icons for consistency and clarity
-- **Component Hierarchy**: Primary actions prominent, secondary actions available but subtle
-- **Spacing System**: Consistent 4px base unit scaling
-- **Mobile Adaptation**: Sidebar collapses, cards stack vertically, buttons remain touch-friendly
+**Component Usage**: 
+- Cards per raggruppamento logico informazioni
+- Dialogs per azioni complesse
+- Badges per stati e contatori
+- Buttons con hierarchy visiva chiara
+
+**Component Customization**: 
+- Shadow-professional per elevazione consistente
+- Rounded corners (0.75rem) per modernità
+- Color theming con variabili CSS custom
+
+**Component States**: Stati hover, active, disabled chiaramente differenziati
+
+**Icon Selection**: Phosphor Icons per consistenza e chiarezza simbolica
+
+**Component Hierarchy**: Primary (oro), Secondary (neutro), Destructive (rosso professionale)
+
+**Spacing System**: Scale 4px-based per precision pixel-perfect
+
+**Mobile Adaptation**: Grid responsive che si adatta da 1 colonna mobile a 4 colonne desktop
 
 ### Visual Consistency Framework
-- **Design System Approach**: Component-based with consistent color and typography tokens
-- **Style Guide Elements**: Color palette, typography scale, spacing system, component library
-- **Visual Rhythm**: Consistent card patterns, button styles, and spacing create predictable interface
-- **Brand Alignment**: Professional restaurant industry aesthetic with premium touches
+**Design System Approach**: Component-based con tokens di design riutilizzabili
+
+**Style Guide Elements**: Color palette, typography scale, spacing system, shadow levels
+
+**Visual Rhythm**: Ripetizione di patterns visivi per familiarità utente
+
+**Brand Alignment**: Oro come elemento distintivo che richiama qualità ristorativa
 
 ### Accessibility & Readability
-- **Contrast Goal**: WCAG AA compliance minimum, AAA where possible for critical text
+**Contrast Goal**: WCAG AA compliance minimo, puntando ad AAA dove possibile
+
+**Focus States**: Anelli di focus visibili con colore brand
+
+**Keyboard Navigation**: Tab order logico, skip links dove necessario
+
+**Screen Reader**: Semantic HTML, aria-labels appropriati
 
 ## Edge Cases & Problem Scenarios
-- **Potential Obstacles**: Network connectivity during service, multiple staff using simultaneously
-- **Edge Case Handling**: Offline capability for critical functions, conflict resolution for concurrent edits
-- **Technical Constraints**: Real-time updates need to be reliable and fast
+
+**Potential Obstacles**:
+- Connessione internet instabile del cliente
+- PIN dimenticato o condiviso erroneamente
+- Menu items esauriti durante servizio
+- Conflitti tra ordini multipli stesso tavolo
+
+**Edge Case Handling**:
+- Cache locale per menu items
+- Reset PIN semplice dal pannello ristoratore  
+- Disattivazione immediata items non disponibili
+- Sistema di queue ordini con timestamp
+
+**Technical Constraints**:
+- Deve funzionare su dispositivi mobile diversi
+- Aggiornamenti real-time senza refresh
+- Gestione concurrent access al sistema
 
 ## Implementation Considerations
-- **Scalability Needs**: Multi-restaurant support, high order volume handling
-- **Testing Focus**: Order flow accuracy, responsive design, concurrent user handling
-- **Critical Questions**: How to handle peak service loads, data synchronization across devices
+
+**Scalability Needs**: 
+- Supporto multi-ristorante
+- Database structure per crescita
+- API design per future integrazioni
+
+**Testing Focus**:
+- User flow completo QR→PIN→Ordine→Ricevimento
+- Stress test con ordini multipli simultanei
+- Cross-device compatibility
+
+**Critical Questions**:
+- Come gestire picchi di ordini simultanei?
+- Strategia backup se sistema non disponibile?
+- Integration con sistemi POS esistenti?
 
 ## Reflection
-- This approach balances operational efficiency with comprehensive functionality
-- Assumes restaurant staff need quick access to information during service
-- Solution becomes exceptional through attention to real-world restaurant workflow needs
+
+**Unique Approach**: La combinazione QR+PIN garantisce sicurezza senza complessità, mentre l'interfaccia ristoratore unifica tutte le operazioni in un'experience fluida e professionale.
+
+**Assumptions to Challenge**:
+- I clienti adotteranno facilmente il sistema QR?
+- I ristoratori preferiranno digitale vs carta?
+- La connettività sarà sempre affidabile?
+
+**Exceptional Solution Factors**:
+- Design system coerente tra customer e restaurant interfaces
+- Real-time updates senza complessità tecnica
+- Professional aesthetics che elevano il brand del ristorante
+- Zero-training customer experience

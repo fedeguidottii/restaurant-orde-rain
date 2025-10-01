@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useKV } from '@github/spark/hooks'
 import LoginPage from './components/LoginPage'
 import AdminDashboard from './components/AdminDashboard'
@@ -97,6 +97,39 @@ export interface Reservation {
 function App() {
   const [currentUser, setCurrentUser] = useKV<User | null>('currentUser', null)
   const [currentTable, setCurrentTable] = useKV<string | null>('currentTable', null)
+
+  // Initialize default data
+  const [users, setUsers] = useKV<User[]>('users', [])
+  const [restaurants, setRestaurants] = useKV<Restaurant[]>('restaurants', [])
+
+  // Set up initial admin user and default restaurant
+  useEffect(() => {
+    if (!users || users.length === 0) {
+      const adminUser: User = {
+        id: 'admin-1',
+        username: 'admin',
+        role: 'admin'
+      }
+      
+      const defaultRestaurant: Restaurant = {
+        id: 'restaurant-1',
+        name: 'Ristorante Demo',
+        contact: 'demo@restaurant.com',
+        hours: '12:00-23:00',
+        isActive: true
+      }
+      
+      const restaurantUser: User = {
+        id: 'restaurant-user-1',
+        username: 'demo',
+        role: 'restaurant',
+        restaurantId: 'restaurant-1'
+      }
+
+      setUsers([adminUser, restaurantUser])
+      setRestaurants([defaultRestaurant])
+    }
+  }, [users, setUsers, setRestaurants])
 
   const handleLogin = (user: User) => {
     setCurrentUser(user)

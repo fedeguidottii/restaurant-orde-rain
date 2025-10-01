@@ -32,6 +32,30 @@
     box-shadow: 0 8px 32px -8px rgba(201, 161, 82, 0.2), 0 4px 16px -4px rgba(201, 161, 82, 0.15);
   }
 
+  /* Liquid shadows and effects for enhanced professional feel */
+  .shadow-liquid {
+    box-shadow: 0 8px 32px -8px rgba(201, 161, 82, 0.15), 0 4px 16px -4px rgba(0, 0, 0, 0.08);
+  }
+  
+  .shadow-liquid-lg {
+    box-shadow: 0 20px 64px -12px rgba(201, 161, 82, 0.2), 0 8px 32px -8px rgba(0, 0, 0, 0.12);
+  }
+
+  /* Liquid gradient background */
+  .bg-liquid-gradient {
+    background: linear-gradient(135deg, oklch(0.75 0.12 85) 0%, oklch(0.68 0.15 80) 50%, oklch(0.72 0.13 85) 100%);
+  }
+
+  /* Order card background */
+  .bg-order-card {
+    background: linear-gradient(145deg, oklch(1 0 0) 0%, oklch(0.99 0.005 85) 50%, oklch(0.98 0.01 85) 100%);
+  }
+
+  /* Liquid border effects */
+  .border-liquid {
+    border-color: oklch(0.75 0.12 85 / 0.2);
+  }
+
   /* Hover states for interactive elements */
   .hover-lift {
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
