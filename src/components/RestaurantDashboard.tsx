@@ -328,7 +328,7 @@ export default function RestaurantDashboard({ user, onLogout }: RestaurantDashbo
     '19:00', '19:30', '20:00', '20:30', '21:00', '21:30', '22:00'
   ]
 
-  const [newReservation, setNewReservation] = useState({
+  const [quickReservation, setQuickReservation] = useState({
     customerName: '',
     customerPhone: '',
     guests: 2,
@@ -337,7 +337,29 @@ export default function RestaurantDashboard({ user, onLogout }: RestaurantDashbo
   })
 
   const addReservation = (date: string, time: string, tableId: string) => {
-    setNewReservation({ ...newReservation, time, tableId })
+    setQuickReservation({ ...quickReservation, time, tableId })
+  }
+
+  const saveQuickReservation = () => {
+    if (!quickReservation.customerName || !quickReservation.customerPhone || !quickReservation.tableId || !quickReservation.time) {
+      toast.error('Compila tutti i campi obbligatori')
+      return
+    }
+
+    const reservation: Reservation = {
+      id: Date.now().toString(),
+      customerName: quickReservation.customerName,
+      customerPhone: quickReservation.customerPhone,
+      tableId: quickReservation.tableId,
+      date: selectedDate,
+      time: quickReservation.time,
+      guests: quickReservation.guests,
+      restaurantId: user.restaurantId || 'restaurant1'
+    }
+
+    setReservations(current => [...(current || []), reservation])
+    setQuickReservation({ customerName: '', customerPhone: '', guests: 2, time: '', tableId: '' })
+    toast.success('Prenotazione salvata')
   }
 
   const handleToggleMenuItem = (menuId: string) => {
@@ -2114,7 +2136,7 @@ export default function RestaurantDashboard({ user, onLogout }: RestaurantDashbo
             </Card>
 
             {/* Reservation Dialog */}
-            <Dialog open={!!newReservation.time} onOpenChange={() => setNewReservation({ ...newReservation, time: '', tableId: '' })}>
+            <Dialog open={!!quickReservation.time} onOpenChange={() => setQuickReservation({ ...quickReservation, time: '', tableId: '' })}>
               <DialogContent>
                 <DialogHeader>
                   <DialogTitle>Nuova Prenotazione</DialogTitle>
@@ -2122,15 +2144,15 @@ export default function RestaurantDashboard({ user, onLogout }: RestaurantDashbo
                 <div className="space-y-4">
                   <div>
                     <p className="text-sm text-muted-foreground">
-                      {(tables || []).find(t => t.id === newReservation.tableId)?.name} - {newReservation.time}
+                      {(tables || []).find(t => t.id === quickReservation.tableId)?.name} - {quickReservation.time}
                     </p>
                   </div>
                   <div>
                     <Label htmlFor="customer-name">Nome Cliente</Label>
                     <Input
                       id="customer-name"
-                      value={newReservation.customerName}
-                      onChange={(e) => setNewReservation({ ...newReservation, customerName: e.target.value })}
+                      value={quickReservation.customerName}
+                      onChange={(e) => setQuickReservation({ ...quickReservation, customerName: e.target.value })}
                       placeholder="Mario Rossi"
                     />
                   </div>
@@ -2139,8 +2161,8 @@ export default function RestaurantDashboard({ user, onLogout }: RestaurantDashbo
                     <Input
                       id="customer-phone"
                       type="tel"
-                      value={newReservation.customerPhone}
-                      onChange={(e) => setNewReservation({ ...newReservation, customerPhone: e.target.value })}
+                      value={quickReservation.customerPhone}
+                      onChange={(e) => setQuickReservation({ ...quickReservation, customerPhone: e.target.value })}
                       placeholder="+39 123 456 7890"
                     />
                   </div>
@@ -2151,15 +2173,15 @@ export default function RestaurantDashboard({ user, onLogout }: RestaurantDashbo
                       type="number"
                       min="1"
                       max="20"
-                      value={newReservation.guests}
-                      onChange={(e) => setNewReservation({ ...newReservation, guests: parseInt(e.target.value) || 2 })}
+                      value={quickReservation.guests}
+                      onChange={(e) => setQuickReservation({ ...quickReservation, guests: parseInt(e.target.value) || 2 })}
                     />
                   </div>
                   <div className="flex gap-2">
-                    <Button onClick={saveReservation} className="flex-1">Salva Prenotazione</Button>
+                    <Button onClick={saveQuickReservation} className="flex-1">Salva Prenotazione</Button>
                     <Button 
                       variant="outline" 
-                      onClick={() => setNewReservation({ ...newReservation, time: '', tableId: '' })}
+                      onClick={() => setQuickReservation({ ...quickReservation, time: '', tableId: '' })}
                     >
                       Annulla
                     </Button>
