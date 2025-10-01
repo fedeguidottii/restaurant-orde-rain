@@ -786,122 +786,63 @@ export default function RestaurantDashboard({ user, onLogout }: RestaurantDashbo
                         <CardTitle className="text-base">{table?.name || 'Tavolo sconosciuto'}</CardTitle>
                         <Badge className="text-xs">{order.status}</Badge>
                       </div>
-                      <Button onClick={handleCreateTable} className="w-full">
-                        Crea Tavolo
-                      </Button>
-                    </div>
-                  </DialogContent>
-                </Dialog>
-              </div>
-
-              <div className="grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                {restaurantTables.map((table) => {
-                  const bill = getTableBill(table.id)
-                  const isPaid = (paidTables || []).includes(table.id)
-                  
-                  return (
-                    <Card key={table.id} className={`bg-white border border-border/10 shadow-[0_8px_32px_-8px_rgba(0,0,0,0.08)] rounded-2xl overflow-hidden hover:shadow-[0_20px_64px_-12px_rgba(0,0,0,0.15)] transition-all duration-500 ${!table.isActive ? 'opacity-50' : ''} ${isPaid ? 'bg-green-50 border-green-200' : ''}`}>
-                      <CardHeader className="pb-3">
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-2">
-                            <Square size={20} weight={table.isActive ? 'fill' : 'regular'} className="text-primary" />
-                            <CardTitle className="text-lg">{table.name}</CardTitle>
-                          </div>
-                        </div>
-                        <p className="text-sm text-muted-foreground">PIN: {table.pin}</p>
-                      </CardHeader>
-                      <CardContent className="space-y-3">
-                        <div className="flex flex-wrap gap-1">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => setEditingTable(table)}
-                            className="shadow-sm hover:shadow-gold transition-shadow duration-200 px-2"
-                          >
-                            <PencilSimple size={14} />
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => {
-                              setSelectedTable(table)
-                              setShowQRDialog(true)
-                            }}
-                            className="shadow-sm hover:shadow-gold transition-shadow duration-200"
-                          >
-                            QR Code
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => {
-                              setSelectedTable(table)
-                              setShowBillDialog(true)
-                            }}
-                            className="shadow-sm hover:shadow-gold transition-shadow duration-200"
-                          >
-                            Conto
-                          </Button>
-                        </div>
-                        {bill.total > 0 && !isPaid && (
-                          <div className="pt-2 border-t">
-                            <div className="flex justify-between items-center text-sm">
-                              <span>Totale conto:</span>
-                              <span className="font-semibold">€{bill.total.toFixed(2)}</span>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-2">
+                        {order.items.map((item, index) => {
+                          const menuItem = (menuItems || []).find(m => m.id === item.menuItemId)
+                          return (
+                            <div key={index} className="flex items-center justify-between text-sm">
+                              <span>{item.quantity}x {menuItem?.name || 'Unknown'}</span>
+                              <span>€{((menuItem?.price || 0) * item.quantity).toFixed(2)}</span>
                             </div>
-                          </div>
-                        )}
-                        {isPaid && (
-                          <div className="text-center text-sm text-green-600 font-medium">
-                            ✓ Pagato
-                          </div>
-                        )}
-                        <div className="flex gap-1">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleToggleTable(table.id)}
-                            className="w-8 h-8 p-0 shadow-sm hover:shadow-gold transition-shadow duration-200"
-                          >
-                            {table.isActive ? <EyeSlash size={12} /> : <Eye size={12} />}
-                          </Button>
-                          <Button
-                            variant="destructive"
-                            size="sm"
-                            onClick={() => handleDeleteTable(table.id)}
-                            className="px-2 shadow-sm"
-                          >
-                            <Trash size={12} />
-                          </Button>
+                          )
+                        })}
+                        <Separator />
+                        <div className="flex items-center justify-between font-medium">
+                          <span>Totale</span>
+                          <span>€{order.total.toFixed(2)}</span>
                         </div>
-                      </CardContent>
-                    </Card>
-                  )
-                })}
-                {restaurantTables.length === 0 && (
-                  <div className="col-span-full text-center text-muted-foreground py-8">
-                    Nessun tavolo configurato. Crea il primo tavolo per iniziare.
-                  </div>
-                )}
-              </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                )
+              })}
             </div>
-          )}
+          </TabsContent>
 
-          {/* Menu Section with Reservations */}
-          {activeSection === 'menu' && (
-            <div className="space-y-8">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 bg-primary/15 rounded-xl flex items-center justify-center">
-                    <List size={24} className="text-primary" />
+          {/* Tables Tab */}
+          <TabsContent value="tables" className="space-y-4">
+            <div className="flex items-center justify-between">
+              <h2 className="text-lg font-semibold">Gestione Tavoli</h2>
+              <Dialog>
+                <DialogTrigger asChild>
+                  <Button>
+                    <Plus size={16} className="mr-2" />
+                    Aggiungi Tavolo
+                  </Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Nuovo Tavolo</DialogTitle>
+                  </DialogHeader>
+                  <div className="space-y-4">
+                    <div>
+                      <Label htmlFor="table-name">Nome Tavolo</Label>
+                      <Input
+                        id="table-name"
+                        value={newTableName}
+                        onChange={(e) => setNewTableName(e.target.value)}
+                        placeholder="es. Tavolo 1"
+                      />
+                    </div>
+                    <Button onClick={handleCreateTable} className="w-full">
+                      Crea Tavolo
+                    </Button>
                   </div>
-                  <div>
-                    <h2 className="text-3xl font-bold text-foreground">Gestione Menù</h2>
-                    <p className="text-muted-foreground">Gestisci piatti e categorie del menù</p>
-                  </div>
-                </div>
-                <div className="flex gap-2">
-                  <Dialog open={showCategoryManageDialog} onOpenChange={setShowCategoryManageDialog}>
+                </DialogContent>
+              </Dialog>
+            </div>
                     <DialogTrigger asChild>
                       <Button variant="outline" className="flex items-center gap-2 h-12 px-6">
                         <List size={20} />
@@ -1505,48 +1446,20 @@ export default function RestaurantDashboard({ user, onLogout }: RestaurantDashbo
                       <p className="text-sm text-muted-foreground text-center py-4">
                         Nessun dato per il periodo selezionato
                       </p>
-                    </CardHeader>
-                    <CardContent className="space-y-2">
-                      {order.items.map(item => {
-                        const menuItem = (menuItems || []).find(m => m.id === item.menuItemId)
-                        return (
-                          <div key={item.menuItemId} className="flex items-center justify-between text-sm">
-                            <span>{item.quantity}x {menuItem?.name || 'Item sconosciuto'}</span>
-                            <span>€{((menuItem?.price || 0) * item.quantity).toFixed(2)}</span>
-                          </div>
-                        )
-                      })}
-                      <Separator />
-                      <div className="flex items-center justify-between font-medium">
-                        <span>Totale</span>
-                        <span>€{order.total.toFixed(2)}</span>
-                      </div>
-                      <div className="flex gap-2 pt-2">
-                        <Button 
-                          size="sm" 
-                          onClick={() => advanceOrderStatus(order.id)}
-                          disabled={order.status === 'completed'}
-                        >
-                          {order.status === 'waiting' && 'Inizia Preparazione'}
-                          {order.status === 'preparing' && 'Pronto da Servire'}
-                          {order.status === 'served' && 'Consegnato'}
-                          {order.status === 'completed' && 'Completato'}
-                        </Button>
-                      </div>
-                    </CardContent>
-                  </Card>
-                )
-              })}
-            </div>
+                    )}
+                  </CardContent>
+                </Card>
+              </div>
 
-            {(orders || []).length === 0 && (
-              <Card>
-                <CardContent className="py-8 text-center">
-                  <Clock size={48} className="mx-auto text-muted-foreground mb-4" />
-                  <p className="text-muted-foreground">Nessun ordine attivo</p>
-                </CardContent>
-              </Card>
-            )}
+              {(orders || []).length === 0 && (
+                <Card>
+                  <CardContent className="py-8 text-center">
+                    <Clock size={48} className="mx-auto text-muted-foreground mb-4" />
+                    <p className="text-muted-foreground">Nessun ordine attivo</p>
+                  </CardContent>
+                </Card>
+              )}
+            </div>
           </TabsContent>
 
           {/* Tables Tab */}
