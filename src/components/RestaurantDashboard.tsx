@@ -12,7 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Separator } from '@/components/ui/separator'
 import { toast } from 'sonner'
 import { Plus, MapPin, BookOpen, Clock, ChartBar, Gear, SignOut, Trash, Eye, QrCode, PencilSimple, Calendar, List, ClockCounterClockwise } from '@phosphor-icons/react'
-import type { User, Table, MenuItem, Order, Restaurant, Reservation, OrderHistory } from '../App'
+import type { User, Table, MenuItem, Order, Restaurant, Reservation, OrderHistory, MenuCategory } from '../App'
 
 interface RestaurantDashboardProps {
   user: User
@@ -24,23 +24,24 @@ const RestaurantDashboard = ({ user, onLogout }: RestaurantDashboardProps) => {
   const [sidebarExpanded, setSidebarExpanded] = useState(false)
   const [activeTab, setActiveTab] = useState('orders')
   
-  const [tables, setTables] = useKV<Table[]>(`tables_${user.restaurantId}`, [])
-  const [menuItems, setMenuItems] = useKV<MenuItem[]>(`menuItems_${user.restaurantId}`, [])
+  const [tables, setTables] = useKV<Table[]>('tables', [])
+  const [menuItems, setMenuItems] = useKV<MenuItem[]>('menuItems', [])
   const [orders, setOrders] = useKV<Order[]>(`orders_${user.restaurantId}`, [])
   const [completedOrders, setCompletedOrders] = useKV<Order[]>(`completedOrders_${user.restaurantId}`, [])
   const [reservations, setReservations] = useKV<Reservation[]>(`reservations_${user.restaurantId}`, [])
   const [orderHistory, setOrderHistory] = useKV<OrderHistory[]>(`orderHistory_${user.restaurantId}`, [])
-  const [categories, setCategories] = useKV<string[]>(`categories_${user.restaurantId}`, ['Antipasti', 'Primi', 'Secondi', 'Dolci', 'Bevande'])
+  const [categories, setCategories] = useKV<MenuCategory[]>('menuCategories', [])
   
   const [newTableName, setNewTableName] = useState('')
   const [newMenuItem, setNewMenuItem] = useState({
     name: '',
     description: '',
     price: '',
-    category: ''
+    category: '',
+    image: ''
   })
   const [newCategory, setNewCategory] = useState('')
-  const [draggedCategory, setDraggedCategory] = useState<string | null>(null)
+  const [draggedCategory, setDraggedCategory] = useState<MenuCategory | null>(null)
   const [showCategoryDialog, setShowCategoryDialog] = useState(false)
   const [showMenuDialog, setShowMenuDialog] = useState(false)
   const [selectedTable, setSelectedTable] = useState<Table | null>(null)
@@ -63,6 +64,7 @@ const RestaurantDashboard = ({ user, onLogout }: RestaurantDashboardProps) => {
   const restaurantCompletedOrders = completedOrders?.filter(order => order.restaurantId === user.restaurantId) || []
   const restaurantReservations = reservations?.filter(reservation => reservation.restaurantId === user.restaurantId) || []
   const restaurantOrderHistory = orderHistory?.filter(history => history.restaurantId === user.restaurantId) || []
+  const restaurantCategories = categories?.filter(cat => cat.restaurantId === user.restaurantId) || []
 
   const generatePin = () => Math.floor(1000 + Math.random() * 9000).toString()
   const generateQrCode = (tableId: string) => `${window.location.origin}?table=${tableId}`
@@ -114,7 +116,8 @@ const RestaurantDashboard = ({ user, onLogout }: RestaurantDashboardProps) => {
       price: parseFloat(newMenuItem.price),
       category: newMenuItem.category,
       isActive: true,
-      restaurantId: user.restaurantId!
+      restaurantId: user.restaurantId!,
+      image: newMenuItem.image || undefined
     }
 
     setMenuItems([...(menuItems || []), menuItem])
@@ -122,7 +125,8 @@ const RestaurantDashboard = ({ user, onLogout }: RestaurantDashboardProps) => {
       name: '',
       description: '',
       price: '',
-      category: ''
+      category: '',
+      image: ''
     })
     setShowMenuDialog(false)
     toast.success('Piatto aggiunto al menù')
@@ -165,12 +169,20 @@ const RestaurantDashboard = ({ user, onLogout }: RestaurantDashboardProps) => {
       return
     }
     
-    if (categories?.includes(newCategory)) {
+    if (categories?.some(cat => cat.name === newCategory)) {
       toast.error('Categoria già esistente')
       return
     }
 
-    setCategories([...(categories || []), newCategory])
+    const newCategoryObj: MenuCategory = {
+      id: Date.now().toString(),
+      name: newCategory,
+      isActive: true,
+      restaurantId: user.restaurantId!,
+      order: (restaurantCategories?.length || 0) + 1
+    }
+
+    setCategories([...(categories || []), newCategoryObj])
     setNewCategory('')
     toast.success('Categoria aggiunta')
   }
@@ -182,11 +194,19 @@ const RestaurantDashboard = ({ user, onLogout }: RestaurantDashboardProps) => {
       return
     }
     
-    setCategories(categories?.filter(cat => cat !== categoryName) || [])
+    setCategories(categories?.filter(cat => cat.name !== categoryName) || [])
     toast.success('Categoria eliminata')
   }
 
-  const handleDragStart = (e: React.DragEvent, category: string) => {
+  const handleToggleCategory = (categoryId: string) => {
+    setCategories(categories?.map(cat => 
+      cat.id === categoryId 
+        ? { ...cat, isActive: !cat.isActive }
+        : cat
+    ) || [])
+  }
+
+  const handleDragStart = (e: React.DragEvent, category: MenuCategory) => {
     setDraggedCategory(category)
   }
 
@@ -194,20 +214,26 @@ const RestaurantDashboard = ({ user, onLogout }: RestaurantDashboardProps) => {
     e.preventDefault()
   }
 
-  const handleDrop = (e: React.DragEvent, targetCategory: string) => {
+  const handleDrop = (e: React.DragEvent, targetCategory: MenuCategory) => {
     e.preventDefault()
     
-    if (!draggedCategory || draggedCategory === targetCategory) return
+    if (!draggedCategory || draggedCategory.id === targetCategory.id) return
     
     const newCategories = [...(categories || [])]
-    const draggedIndex = newCategories.indexOf(draggedCategory)
-    const targetIndex = newCategories.indexOf(targetCategory)
+    const draggedIndex = newCategories.findIndex(cat => cat.id === draggedCategory.id)
+    const targetIndex = newCategories.findIndex(cat => cat.id === targetCategory.id)
     
     // Remove dragged item and insert at target position
-    newCategories.splice(draggedIndex, 1)
-    newCategories.splice(targetIndex, 0, draggedCategory)
+    const [draggedItem] = newCategories.splice(draggedIndex, 1)
+    newCategories.splice(targetIndex, 0, draggedItem)
     
-    setCategories(newCategories)
+    // Update order values
+    const updatedCategories = newCategories.map((cat, index) => ({
+      ...cat,
+      order: index + 1
+    }))
+    
+    setCategories(updatedCategories)
     setDraggedCategory(null)
     toast.success('Ordine categorie aggiornato')
   }
@@ -628,13 +654,13 @@ const RestaurantDashboard = ({ user, onLogout }: RestaurantDashboardProps) => {
                       </div>
                       
                       <div className="space-y-2 max-h-96 overflow-y-auto">
-                        {categories?.map((category) => {
-                          const categoryItemsCount = restaurantMenuItems.filter(item => item.category === category).length
-                          const isDragging = draggedCategory === category
+                        {restaurantCategories?.sort((a, b) => a.order - b.order).map((category) => {
+                          const categoryItemsCount = restaurantMenuItems.filter(item => item.category === category.name).length
+                          const isDragging = draggedCategory?.id === category.id
                           
                           return (
                             <div 
-                              key={category} 
+                              key={category.id} 
                               className={`flex items-center justify-between p-3 bg-muted/50 rounded-lg border-2 cursor-move transition-all duration-200 ${
                                 isDragging ? 'border-primary bg-primary/10 scale-105 shadow-lg' : 'border-transparent hover:border-primary/20 hover:bg-muted/70'
                               }`}
@@ -647,21 +673,32 @@ const RestaurantDashboard = ({ user, onLogout }: RestaurantDashboardProps) => {
                               <div className="flex items-center gap-3">
                                 <div className="text-muted-foreground cursor-move">⋮⋮</div>
                                 <div>
-                                  <p className="font-medium">{category}</p>
+                                  <p className="font-medium">{category.name}</p>
                                   <p className="text-sm text-muted-foreground">
                                     {categoryItemsCount} piatt{categoryItemsCount === 1 ? 'o' : 'i'}
                                   </p>
                                 </div>
                               </div>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => handleDeleteCategory(category)}
-                                disabled={categoryItemsCount > 0}
-                                className="h-8 w-8 p-0 text-destructive hover:bg-destructive/10"
-                              >
-                                <Trash size={16} />
-                              </Button>
+                              <div className="flex gap-2">
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => handleToggleCategory(category.id)}
+                                  className="h-8 w-8 p-0"
+                                  title={category.isActive ? 'Disattiva categoria' : 'Attiva categoria'}
+                                >
+                                  {category.isActive ? '●' : '○'}
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => handleDeleteCategory(category.name)}
+                                  disabled={categoryItemsCount > 0}
+                                  className="h-8 w-8 p-0 text-destructive hover:bg-destructive/10"
+                                >
+                                  <Trash size={16} />
+                                </Button>
+                              </div>
                             </div>
                           )
                         })}
@@ -721,11 +758,32 @@ const RestaurantDashboard = ({ user, onLogout }: RestaurantDashboardProps) => {
                             <SelectValue placeholder="Seleziona categoria" />
                           </SelectTrigger>
                           <SelectContent>
-                            {categories?.map((category) => (
-                              <SelectItem key={category} value={category}>{category}</SelectItem>
+                            {restaurantCategories?.filter(cat => cat.isActive).map((category) => (
+                              <SelectItem key={category.id} value={category.name}>{category.name}</SelectItem>
                             ))}
                           </SelectContent>
                         </Select>
+                      </div>
+                      <div>
+                        <Label htmlFor="dishImage">URL Immagine (opzionale)</Label>
+                        <Input
+                          id="dishImage"
+                          value={newMenuItem.image}
+                          onChange={(e) => setNewMenuItem(prev => ({ ...prev, image: e.target.value }))}
+                          placeholder="https://esempio.com/immagine.jpg"
+                        />
+                        {newMenuItem.image && (
+                          <div className="mt-2">
+                            <img 
+                              src={newMenuItem.image} 
+                              alt="Anteprima" 
+                              className="w-full h-32 object-cover rounded-lg"
+                              onError={(e) => {
+                                (e.target as HTMLImageElement).style.display = 'none'
+                              }}
+                            />
+                          </div>
+                        )}
                       </div>
                       <Button onClick={handleCreateMenuItem} className="w-full">
                         Aggiungi Piatto
@@ -737,28 +795,47 @@ const RestaurantDashboard = ({ user, onLogout }: RestaurantDashboardProps) => {
             </div>
 
             <div className="space-y-8">
-              {categories?.map((category) => {
-                const categoryItems = restaurantMenuItems.filter(item => item.category === category)
+              {restaurantCategories?.filter(cat => cat.isActive).sort((a, b) => a.order - b.order).map((category) => {
+                const categoryItems = restaurantMenuItems.filter(item => item.category === category.name)
                 
                 if (categoryItems.length === 0) return null
                 
                 return (
-                  <div key={category} className="space-y-4">
-                    <h3 className="text-xl font-semibold text-primary">{category}</h3>
+                  <div key={category.id} className="space-y-4">
+                    <h3 className="text-xl font-semibold text-primary">{category.name}</h3>
                     <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
                       {categoryItems.map((item) => (
                         <Card key={item.id} className={`shadow-professional hover:shadow-professional-lg transition-all duration-300 ${!item.isActive ? 'opacity-50' : ''}`}>
+                          {item.image && (
+                            <div className="relative">
+                              <img 
+                                src={item.image} 
+                                alt={item.name}
+                                className="w-full h-48 object-cover rounded-t-lg"
+                                onError={(e) => {
+                                  (e.target as HTMLImageElement).style.display = 'none'
+                                }}
+                              />
+                              {!item.isActive && (
+                                <div className="absolute inset-0 bg-black/50 rounded-t-lg flex items-center justify-center">
+                                  <Badge variant="secondary">Non Disponibile</Badge>
+                                </div>
+                              )}
+                            </div>
+                          )}
                           <CardHeader className="pb-3">
                             <div className="flex items-start justify-between">
                               <div className="flex-1">
                                 <CardTitle className="text-lg">{item.name}</CardTitle>
                                 <p className="text-sm text-muted-foreground mt-1">{item.description}</p>
                               </div>
-                              <div className="text-right">
+                              <div className="text-right ml-4">
                                 <div className="font-bold text-primary text-lg">€{item.price.toFixed(2)}</div>
-                                <Badge variant={item.isActive ? "default" : "secondary"} className="text-xs">
-                                  {item.isActive ? "Disponibile" : "Non Disponibile"}
-                                </Badge>
+                                {!item.image && (
+                                  <Badge variant={item.isActive ? "default" : "secondary"} className="text-xs">
+                                    {item.isActive ? "Disponibile" : "Non Disponibile"}
+                                  </Badge>
+                                )}
                               </div>
                             </div>
                           </CardHeader>

@@ -8,7 +8,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
 import { useKV } from '@github/spark/hooks'
 import { toast } from 'sonner'
-import { Table, MenuItem, Order } from '../App'
+import { Table, MenuItem, Order, MenuCategory } from '../App'
 import { 
   ChefHat, 
   Plus, 
@@ -36,6 +36,7 @@ interface CartItem {
 export default function CustomerMenu({ tableId, onExit }: Props) {
   const [tables] = useKV<Table[]>('tables', [])
   const [menuItems] = useKV<MenuItem[]>('menuItems', [])
+  const [categories] = useKV<MenuCategory[]>('menuCategories', [])
   const [orders, setOrders] = useKV<Order[]>('orders', [])
   
   const [cart, setCart] = useState<CartItem[]>([])
@@ -52,7 +53,10 @@ export default function CustomerMenu({ tableId, onExit }: Props) {
     m.restaurantId === table?.restaurantId && m.isActive
   ) || []
 
-  const categories = ['all', ...new Set(restaurantMenuItems.map(item => item.category))]
+  const restaurantCategories = categories?.filter(cat => 
+    cat.restaurantId === table?.restaurantId && cat.isActive
+  ).sort((a, b) => a.order - b.order) || []
+  
   const filteredItems = selectedCategory === 'all' 
     ? restaurantMenuItems 
     : restaurantMenuItems.filter(item => item.category === selectedCategory)
@@ -334,16 +338,25 @@ export default function CustomerMenu({ tableId, onExit }: Props) {
           <div className="container mx-auto px-4 py-8">
             {/* Category Filter */}
             <div className="flex gap-2 mb-8 overflow-x-auto pb-2">
-              {categories.map((category) => (
+              <Button
+                variant={selectedCategory === 'all' ? "default" : "outline"}
+                onClick={() => setSelectedCategory('all')}
+                className={`whitespace-nowrap flex-shrink-0 shadow-liquid transition-all duration-300 ${
+                  selectedCategory === 'all' ? 'bg-liquid-gradient shadow-liquid-lg' : ''
+                }`}
+              >
+                Tutto
+              </Button>
+              {restaurantCategories?.map((category) => (
                 <Button
-                  key={category}
-                  variant={selectedCategory === category ? "default" : "outline"}
-                  onClick={() => setSelectedCategory(category)}
+                  key={category.id}
+                  variant={selectedCategory === category.name ? "default" : "outline"}
+                  onClick={() => setSelectedCategory(category.name)}
                   className={`whitespace-nowrap flex-shrink-0 shadow-liquid transition-all duration-300 ${
-                    selectedCategory === category ? 'bg-liquid-gradient shadow-liquid-lg' : ''
+                    selectedCategory === category.name ? 'bg-liquid-gradient shadow-liquid-lg' : ''
                   }`}
                 >
-                  {category === 'all' ? 'Tutto' : category}
+                  {category.name}
                 </Button>
               ))}
             </div>
@@ -363,6 +376,19 @@ export default function CustomerMenu({ tableId, onExit }: Props) {
                   return (
                     <Card key={item.id} className="shadow-liquid-lg bg-order-card border-liquid overflow-hidden hover:shadow-liquid-lg transition-all duration-300">
                       <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-accent/5 pointer-events-none"></div>
+                      {item.image && (
+                        <div className="relative">
+                          <img 
+                            src={item.image} 
+                            alt={item.name}
+                            className="w-full h-48 object-cover"
+                            onError={(e) => {
+                              (e.target as HTMLImageElement).style.display = 'none'
+                            }}
+                          />
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent"></div>
+                        </div>
+                      )}
                       <CardContent className="p-6 relative">
                         <div className="flex justify-between items-start gap-4">
                           <div className="flex-1">
