@@ -14,6 +14,8 @@ import { toast } from 'sonner'
 import { Plus, MapPin, BookOpen, Clock, ChartBar, Gear, SignOut, Trash, Eye, EyeSlash, QrCode, PencilSimple, Calendar, List, ClockCounterClockwise, Check, X } from '@phosphor-icons/react'
 import type { User, Table, MenuItem, Order, Restaurant, Reservation, OrderHistory, MenuCategory } from '../App'
 import TimelineReservations from './TimelineReservations'
+import ReservationsManager from './ReservationsManager'
+import AnalyticsCharts from './AnalyticsCharts'
 
 interface RestaurantDashboardProps {
   user: User
@@ -639,6 +641,67 @@ const RestaurantDashboard = ({ user, onLogout }: RestaurantDashboardProps) => {
                 </div>
               </>
             )}
+
+            {/* Order History Section */}
+            {restaurantOrderHistory.length > 0 && (
+              <>
+                <Separator className="my-6" />
+                <div className="flex items-center justify-between">
+                  <h3 className="text-xl font-semibold text-foreground">Storico Ordini</h3>
+                  <Badge variant="secondary" className="text-sm">
+                    {restaurantOrderHistory.length} {restaurantOrderHistory.length === 1 ? 'storico' : 'storici'}
+                  </Badge>
+                </div>
+                
+                <div className="grid gap-4 md:grid-cols-1 lg:grid-cols-2">
+                  {restaurantOrderHistory
+                    .sort((a, b) => b.paidAt - a.paidAt)
+                    .slice(0, 10)
+                    .map(order => {
+                      return (
+                        <Card key={order.id} className="bg-gray-50 border-l-4 border-l-gray-400 shadow-professional">
+                          <CardHeader className="pb-3">
+                            <div className="flex items-center justify-between">
+                              <CardTitle className="text-lg font-semibold">{order.tableName}</CardTitle>
+                              <div className="text-right">
+                                <Badge variant="outline" className="text-xs bg-gray-100">
+                                  Pagato
+                                </Badge>
+                                <p className="text-xs text-muted-foreground mt-1">
+                                  {new Date(order.paidAt).toLocaleDateString('it-IT')}
+                                </p>
+                              </div>
+                            </div>
+                          </CardHeader>
+                          <CardContent className="space-y-3">
+                            <div className="space-y-2">
+                              {order.items.slice(0, 3).map((item, index) => (
+                                <div key={index} className="flex items-center justify-between text-sm">
+                                  <span className="font-medium">{item.quantity}x {item.name}</span>
+                                  <span className="text-muted-foreground">€{(item.price * item.quantity).toFixed(2)}</span>
+                                </div>
+                              ))}
+                              {order.items.length > 3 && (
+                                <p className="text-xs text-muted-foreground">
+                                  ...e altri {order.items.length - 3} piatti
+                                </p>
+                              )}
+                            </div>
+                            <Separator />
+                            <div className="flex justify-between items-center">
+                              <span className="font-bold text-primary">Totale: €{order.total.toFixed(2)}</span>
+                              <span className="text-xs text-muted-foreground">
+                                {formatTime(order.timestamp)}
+                              </span>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      )
+                    })
+                  }
+                </div>
+              </>
+            )}
           </TabsContent>
 
           {/* Tables Tab */}
@@ -1053,7 +1116,7 @@ const RestaurantDashboard = ({ user, onLogout }: RestaurantDashboardProps) => {
 
           {/* Reservations Tab */}
           <TabsContent value="reservations" className="space-y-4">
-            <TimelineReservations 
+            <ReservationsManager
               user={user}
               tables={tables || []}
               reservations={reservations || []}
@@ -1063,41 +1126,13 @@ const RestaurantDashboard = ({ user, onLogout }: RestaurantDashboardProps) => {
 
           {/* Analytics Tab */}
           <TabsContent value="analytics" className="space-y-4">
-            <div className="flex items-center justify-between">
-              <h2 className="text-2xl font-bold text-foreground">Analitiche</h2>
-            </div>
-            
-            <div className="grid gap-4 md:grid-cols-3">
-              <Card className="shadow-professional">
-                <CardContent className="p-6">
-                  <div className="text-center">
-                    <div className="text-2xl font-bold text-primary">{restaurantOrders.length}</div>
-                    <p className="text-sm text-muted-foreground">Ordini in Attesa</p>
-                  </div>
-                </CardContent>
-              </Card>
-              
-              <Card className="shadow-professional">
-                <CardContent className="p-6">
-                  <div className="text-center">
-                    <div className="text-2xl font-bold text-primary">{restaurantCompletedOrders.length}</div>
-                    <p className="text-sm text-muted-foreground">Ordini Oggi</p>
-                  </div>
-                </CardContent>
-              </Card>
-              
-              <Card className="shadow-professional">
-                <CardContent className="p-6">
-                  <div className="text-center">
-                    <div className="text-2xl font-bold text-primary">
-                      €{(restaurantOrders.reduce((sum, order) => sum + order.total, 0) + 
-                          restaurantCompletedOrders.reduce((sum, order) => sum + order.total, 0)).toFixed(2)}
-                    </div>
-                    <p className="text-sm text-muted-foreground">Ricavi Oggi</p>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
+            <AnalyticsCharts
+              orders={restaurantOrders}
+              completedOrders={restaurantCompletedOrders}
+              orderHistory={restaurantOrderHistory}
+              menuItems={restaurantMenuItems}
+              categories={restaurantCategories}
+            />
           </TabsContent>
 
           {/* Settings Tab */}
