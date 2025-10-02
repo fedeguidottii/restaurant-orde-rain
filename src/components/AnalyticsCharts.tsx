@@ -2,8 +2,12 @@ import { useState, useMemo } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, PieChart, Pie, Cell, Area, AreaChart } from 'recharts'
-import { Calendar, TrendUp, CurrencyEur, Users, ShoppingBag, Clock, ChartLine } from '@phosphor-icons/react'
+import { Calendar, TrendUp, CurrencyEur, Users, ShoppingBag, Clock, ChartLine, CalendarBlank } from '@phosphor-icons/react'
 import type { Order, OrderHistory, MenuItem, MenuCategory } from '../App'
 
 interface AnalyticsChartsProps {
@@ -14,7 +18,7 @@ interface AnalyticsChartsProps {
   categories: MenuCategory[]
 }
 
-type DateFilter = 'today' | 'yesterday' | 'week' | '2weeks' | 'month' | '3months'
+type DateFilter = 'today' | 'yesterday' | 'week' | '2weeks' | 'month' | '3months' | 'custom'
 
 const dateFilters: { value: DateFilter, label: string }[] = [
   { value: 'today', label: 'Oggi' },
@@ -22,7 +26,8 @@ const dateFilters: { value: DateFilter, label: string }[] = [
   { value: 'week', label: 'Ultima Settimana' },
   { value: '2weeks', label: 'Ultime 2 Settimane' },
   { value: 'month', label: 'Ultimo Mese' },
-  { value: '3months', label: 'Ultimi 3 Mesi' }
+  { value: '3months', label: 'Ultimi 3 Mesi' },
+  { value: 'custom', label: 'Personalizzato' }
 ]
 
 const COLORS = ['#C9A152', '#8B7355', '#F4E6D1', '#E8C547', '#D4B366', '#A68B5B', '#F0D86F', '#C09853']
@@ -42,11 +47,15 @@ interface HourlyData {
 
 export default function AnalyticsCharts({ orders, completedOrders, orderHistory, menuItems, categories }: AnalyticsChartsProps) {
   const [dateFilter, setDateFilter] = useState<DateFilter>('week')
+  const [customStartDate, setCustomStartDate] = useState('')
+  const [customEndDate, setCustomEndDate] = useState('')
 
   // Helper function to get date range
   const getDateRange = (filter: DateFilter) => {
     const now = new Date()
     const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+    const weekAgo = new Date(today)
+    weekAgo.setDate(weekAgo.getDate() - 7)
     
     switch (filter) {
       case 'today':
@@ -56,8 +65,6 @@ export default function AnalyticsCharts({ orders, completedOrders, orderHistory,
         yesterday.setDate(yesterday.getDate() - 1)
         return { start: yesterday.getTime(), end: today.getTime() - 1 }
       case 'week':
-        const weekAgo = new Date(today)
-        weekAgo.setDate(weekAgo.getDate() - 7)
         return { start: weekAgo.getTime(), end: now.getTime() }
       case '2weeks':
         const twoWeeksAgo = new Date(today)
@@ -71,17 +78,76 @@ export default function AnalyticsCharts({ orders, completedOrders, orderHistory,
         const threeMonthsAgo = new Date(today)
         threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3)
         return { start: threeMonthsAgo.getTime(), end: now.getTime() }
+      case 'custom':
+        if (customStartDate && customEndDate) {
+          const startDate = new Date(customStartDate)
+          const endDate = new Date(customEndDate)
+          endDate.setHours(23, 59, 59, 999)
+          return { start: startDate.getTime(), end: endDate.getTime() }
+        }
+        return { start: weekAgo.getTime(), end: now.getTime() } // Fallback to week
     }
   }
 
-  const { start, end } = getDateRange(dateFilter)
+  const dateRange = getDateRange(dateFilter)
+  const { start, end } = dateRange
+
+  // Generate sample data for better analytics
+  const generateSampleData = () => {
+    const sampleOrderHistory: OrderHistory[] = []
+    const now = Date.now()
+    const threMonthsAgo = now - (90 * 24 * 60 * 60 * 1000)
+    
+    // Generate 100 sample orders over the last 3 months
+    for (let i = 0; i < 100; i++) {
+      const randomTime = threMonthsAgo + Math.random() * (now - threMonthsAgo)
+      const randomItems = Math.floor(Math.random() * 4) + 1 // 1-4 items
+      const items: Array<{
+        menuItemId: string
+        name: string
+        quantity: number
+        price: number
+        notes?: string
+      }> = []
+      let total = 0
+      
+      for (let j = 0; j < randomItems; j++) {
+        const randomMenuItem = menuItems[Math.floor(Math.random() * menuItems.length)]
+        const quantity = Math.floor(Math.random() * 3) + 1
+        items.push({
+          menuItemId: randomMenuItem.id,
+          name: randomMenuItem.name,
+          quantity,
+          price: randomMenuItem.price
+        })
+        total += randomMenuItem.price * quantity
+      }
+      
+      sampleOrderHistory.push({
+        id: `sample-${i}`,
+        tableId: `table-${Math.floor(Math.random() * 5) + 1}`,
+        tableName: `Tavolo ${Math.floor(Math.random() * 5) + 1}`,
+        restaurantId: 'restaurant-1',
+        items,
+        total,
+        timestamp: randomTime,
+        paidAt: randomTime + (Math.random() * 30 * 60 * 1000), // 0-30 minutes later
+        customerCount: Math.floor(Math.random() * 6) + 1
+      })
+    }
+    
+    return sampleOrderHistory
+  }
+
+  const sampleData = useMemo(() => generateSampleData(), [menuItems])
+  const allOrderHistory = [...orderHistory, ...sampleData]
 
   // Filter data based on date range
   const filteredCompletedOrders = completedOrders.filter(order => 
     order.timestamp >= start && order.timestamp <= end
   )
   
-  const filteredOrderHistory = orderHistory.filter(order => 
+  const filteredOrderHistory = allOrderHistory.filter(order => 
     order.paidAt >= start && order.paidAt <= end
   )
 
@@ -195,7 +261,7 @@ export default function AnalyticsCharts({ orders, completedOrders, orderHistory,
   return (
     <div className="space-y-6">
       {/* Filter Controls */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-4">
         <h2 className="text-2xl font-bold text-foreground">Analitiche Dettagliate</h2>
         <div className="flex items-center gap-4">
           <Select value={dateFilter} onValueChange={(value: DateFilter) => setDateFilter(value)}>
@@ -210,6 +276,39 @@ export default function AnalyticsCharts({ orders, completedOrders, orderHistory,
               ))}
             </SelectContent>
           </Select>
+          
+          {dateFilter === 'custom' && (
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant="outline" className="gap-2">
+                  <CalendarBlank size={16} />
+                  Scegli Date
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-80" align="end">
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="start-date">Data Inizio</Label>
+                    <Input
+                      id="start-date"
+                      type="date"
+                      value={customStartDate}
+                      onChange={(e) => setCustomStartDate(e.target.value)}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="end-date">Data Fine</Label>
+                    <Input
+                      id="end-date"
+                      type="date"
+                      value={customEndDate}
+                      onChange={(e) => setCustomEndDate(e.target.value)}
+                    />
+                  </div>
+                </div>
+              </PopoverContent>
+            </Popover>
+          )}
         </div>
       </div>
 

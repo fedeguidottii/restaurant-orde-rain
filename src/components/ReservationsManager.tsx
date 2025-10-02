@@ -8,8 +8,9 @@ import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { toast } from 'sonner'
-import { Calendar, Clock, Users, PencilSimple, Trash, Plus, Phone, User as UserIcon } from '@phosphor-icons/react'
+import { Calendar, Clock, Users, PencilSimple, Trash, Plus, Phone, User as UserIcon, CalendarBlank, Funnel } from '@phosphor-icons/react'
 import type { User, Reservation, Table } from '../App'
 import TimelineReservations from './TimelineReservations'
 
@@ -25,6 +26,15 @@ export default function ReservationsManager({ user, tables, reservations, setRes
   const [showEditDialog, setShowEditDialog] = useState(false)
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
   const [showHistoryDialog, setShowHistoryDialog] = useState(false)
+  
+  // Filter states for future reservations
+  const [futureFilter, setFutureFilter] = useState<string>('all')
+  const [customFutureDate, setCustomFutureDate] = useState('')
+  
+  // Filter states for history
+  const [historyFilter, setHistoryFilter] = useState<string>('all')
+  const [customHistoryStartDate, setCustomHistoryStartDate] = useState('')
+  const [customHistoryEndDate, setCustomHistoryEndDate] = useState('')
   
   // Form states for editing
   const [editForm, setEditForm] = useState({
@@ -125,6 +135,164 @@ export default function ReservationsManager({ user, tables, reservations, setRes
     return dateStr === today
   }
 
+  // Get suggested future dates
+  const getFutureDateSuggestions = () => {
+    const today = new Date()
+    const suggestions: Array<{ value: string; label: string }> = []
+    
+    // Today
+    suggestions.push({
+      value: today.toISOString().split('T')[0],
+      label: 'Oggi'
+    })
+    
+    // Tomorrow
+    const tomorrow = new Date(today)
+    tomorrow.setDate(tomorrow.getDate() + 1)
+    suggestions.push({
+      value: tomorrow.toISOString().split('T')[0],
+      label: 'Domani'
+    })
+    
+    // Day after tomorrow
+    const dayAfterTomorrow = new Date(today)
+    dayAfterTomorrow.setDate(dayAfterTomorrow.getDate() + 2)
+    suggestions.push({
+      value: dayAfterTomorrow.toISOString().split('T')[0],
+      label: 'Dopodomani'
+    })
+    
+    // Next 7 days
+    for (let i = 3; i <= 7; i++) {
+      const date = new Date(today)
+      date.setDate(date.getDate() + i)
+      suggestions.push({
+        value: date.toISOString().split('T')[0],
+        label: date.toLocaleDateString('it-IT', { weekday: 'long', day: 'numeric', month: 'short' })
+      })
+    }
+    
+    return suggestions
+  }
+
+  // Get history date filters
+  const getHistoryDateFilters = () => {
+    const filters: Array<{ value: string; label: string }> = []
+    
+    // Today
+    filters.push({
+      value: 'today',
+      label: 'Oggi'
+    })
+    
+    // Yesterday
+    filters.push({
+      value: 'yesterday',
+      label: 'Ieri'
+    })
+    
+    // Day before yesterday
+    filters.push({
+      value: 'dayBeforeYesterday',
+      label: 'Ieri l\'altro'
+    })
+    
+    // Last week
+    filters.push({
+      value: 'lastWeek',
+      label: 'Ultima settimana'
+    })
+    
+    // Last month
+    filters.push({
+      value: 'lastMonth',
+      label: 'Ultimo mese'
+    })
+    
+    // Custom
+    filters.push({
+      value: 'custom',
+      label: 'Personalizzato'
+    })
+    
+    return filters
+  }
+
+  // Filter future reservations
+  const getFilteredFutureReservations = () => {
+    let filtered = restaurantReservations
+    
+    if (futureFilter !== 'all') {
+      if (futureFilter === 'custom' && customFutureDate) {
+        filtered = filtered.filter(res => res.date === customFutureDate)
+      } else {
+        filtered = filtered.filter(res => res.date === futureFilter)
+      }
+    }
+    
+    return filtered
+  }
+
+  // Filter history reservations
+  const getFilteredHistoryReservations = () => {
+    let filtered = restaurantReservationHistory
+    const today = new Date()
+    
+    if (historyFilter !== 'all') {
+      switch (historyFilter) {
+        case 'today':
+          const todayStr = today.toISOString().split('T')[0]
+          filtered = filtered.filter(res => res.date === todayStr)
+          break
+        case 'yesterday':
+          const yesterday = new Date(today)
+          yesterday.setDate(yesterday.getDate() - 1)
+          const yesterdayStr = yesterday.toISOString().split('T')[0]
+          filtered = filtered.filter(res => res.date === yesterdayStr)
+          break
+        case 'dayBeforeYesterday':
+          const dayBefore = new Date(today)
+          dayBefore.setDate(dayBefore.getDate() - 2)
+          const dayBeforeStr = dayBefore.toISOString().split('T')[0]
+          filtered = filtered.filter(res => res.date === dayBeforeStr)
+          break
+        case 'lastWeek':
+          const weekAgo = new Date(today)
+          weekAgo.setDate(weekAgo.getDate() - 7)
+          filtered = filtered.filter(res => {
+            const resDate = new Date(res.date)
+            return resDate >= weekAgo && resDate <= today
+          })
+          break
+        case 'lastMonth':
+          const monthAgo = new Date(today)
+          monthAgo.setMonth(monthAgo.getMonth() - 1)
+          filtered = filtered.filter(res => {
+            const resDate = new Date(res.date)
+            return resDate >= monthAgo && resDate <= today
+          })
+          break
+        case 'custom':
+          if (customHistoryStartDate && customHistoryEndDate) {
+            const startDate = new Date(customHistoryStartDate)
+            const endDate = new Date(customHistoryEndDate)
+            filtered = filtered.filter(res => {
+              const resDate = new Date(res.date)
+              return resDate >= startDate && resDate <= endDate
+            })
+          }
+          break
+      }
+    }
+    
+    return filtered
+  }
+
+  const futureDateSuggestions = getFutureDateSuggestions()
+  const historyDateFilters = getHistoryDateFilters()
+  const filteredFutureReservations = getFilteredFutureReservations()
+  const filteredHistoryReservations = getFilteredHistoryReservations()
+
   // Check if reservation is past
   const isPast = (dateStr: string, timeStr: string) => {
     const now = new Date()
@@ -136,9 +304,9 @@ export default function ReservationsManager({ user, tables, reservations, setRes
     <div className="space-y-6">
       {/* Header with Timeline */}
       <div className="space-y-4">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between flex-wrap gap-4">
           <h2 className="text-2xl font-bold text-foreground">Prenotazioni</h2>
-          <div className="flex gap-2">
+          <div className="flex gap-2 flex-wrap">
             <Button
               variant="outline"
               onClick={() => setShowHistoryDialog(true)}
@@ -159,18 +327,62 @@ export default function ReservationsManager({ user, tables, reservations, setRes
 
       {/* Reservations List */}
       <div className="space-y-4">
-        <h3 className="text-xl font-semibold text-foreground">Lista Prenotazioni</h3>
+        <div className="flex items-center justify-between flex-wrap gap-4">
+          <h3 className="text-xl font-semibold text-foreground">Lista Prenotazioni</h3>
+          
+          {/* Future Reservations Filter */}
+          <div className="flex items-center gap-4">
+            <Select value={futureFilter} onValueChange={setFutureFilter}>
+              <SelectTrigger className="w-48">
+                <SelectValue placeholder="Filtra per data" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Tutte le date</SelectItem>
+                {futureDateSuggestions.map(suggestion => (
+                  <SelectItem key={suggestion.value} value={suggestion.value}>
+                    {suggestion.label}
+                  </SelectItem>
+                ))}
+                <SelectItem value="custom">Personalizzato</SelectItem>
+              </SelectContent>
+            </Select>
+            
+            {futureFilter === 'custom' && (
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" className="gap-2">
+                    <CalendarBlank size={16} />
+                    Scegli Data
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto" align="end">
+                  <div className="space-y-2">
+                    <Label htmlFor="custom-future-date">Data personalizzata</Label>
+                    <Input
+                      id="custom-future-date"
+                      type="date"
+                      value={customFutureDate}
+                      onChange={(e) => setCustomFutureDate(e.target.value)}
+                    />
+                  </div>
+                </PopoverContent>
+              </Popover>
+            )}
+          </div>
+        </div>
         
-        {restaurantReservations.length === 0 ? (
+        {filteredFutureReservations.length === 0 ? (
           <Card className="shadow-professional">
             <CardContent className="text-center py-8">
               <Calendar size={48} className="mx-auto text-muted-foreground mb-4" />
-              <p className="text-muted-foreground">Nessuna prenotazione attiva</p>
+              <p className="text-muted-foreground">
+                {futureFilter === 'all' ? 'Nessuna prenotazione attiva' : 'Nessuna prenotazione per la data selezionata'}
+              </p>
             </CardContent>
           </Card>
         ) : (
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {restaurantReservations
+            {filteredFutureReservations
               .sort((a, b) => {
                 const dateA = new Date(`${a.date}T${a.time}`)
                 const dateB = new Date(`${b.date}T${b.time}`)
@@ -416,14 +628,65 @@ export default function ReservationsManager({ user, tables, reservations, setRes
               Tutte le prenotazioni completate
             </DialogDescription>
           </DialogHeader>
+          
+          {/* History Filter */}
+          <div className="flex items-center gap-4 mb-4 flex-wrap">
+            <Select value={historyFilter} onValueChange={setHistoryFilter}>
+              <SelectTrigger className="w-48">
+                <SelectValue placeholder="Filtra storico" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Tutte le prenotazioni</SelectItem>
+                {historyDateFilters.map(filter => (
+                  <SelectItem key={filter.value} value={filter.value}>
+                    {filter.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            
+            {historyFilter === 'custom' && (
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" className="gap-2">
+                    <CalendarBlank size={16} />
+                    Periodo Personalizzato
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-80" align="end">
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="custom-history-start">Data Inizio</Label>
+                      <Input
+                        id="custom-history-start"
+                        type="date"
+                        value={customHistoryStartDate}
+                        onChange={(e) => setCustomHistoryStartDate(e.target.value)}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="custom-history-end">Data Fine</Label>
+                      <Input
+                        id="custom-history-end"
+                        type="date"
+                        value={customHistoryEndDate}
+                        onChange={(e) => setCustomHistoryEndDate(e.target.value)}
+                      />
+                    </div>
+                  </div>
+                </PopoverContent>
+              </Popover>
+            )}
+          </div>
+          
           <div className="max-h-96 overflow-y-auto">
-            {restaurantReservationHistory.length === 0 ? (
+            {filteredHistoryReservations.length === 0 ? (
               <p className="text-center text-muted-foreground py-8">
-                Nessuna prenotazione nello storico
+                {historyFilter === 'all' ? 'Nessuna prenotazione nello storico' : 'Nessuna prenotazione per il periodo selezionato'}
               </p>
             ) : (
               <div className="space-y-3">
-                {restaurantReservationHistory
+                {filteredHistoryReservations
                   .sort((a, b) => {
                     const dateA = new Date(`${a.date}T${a.time}`)
                     const dateB = new Date(`${b.date}T${b.time}`)

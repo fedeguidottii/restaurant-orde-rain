@@ -394,12 +394,12 @@ const RestaurantDashboard = ({ user, onLogout }: RestaurantDashboardProps) => {
 
   return (
     <div className="min-h-screen bg-subtle-gradient flex">
-      {/* Sidebar */}
+      {/* Fixed Sidebar */}
       <div
         id="sidebar"
         className={`${
           sidebarExpanded ? 'w-64' : 'w-16'
-        } bg-white shadow-professional-lg transition-all duration-300 ease-in-out border-r border-border/20 flex flex-col`}
+        } bg-white shadow-professional-lg transition-all duration-300 ease-in-out border-r border-border/20 flex flex-col fixed h-full z-50`}
       >
         <div className="p-4 border-b border-border/10">
           <h1 className={`font-bold text-primary transition-all duration-300 ${
@@ -504,7 +504,9 @@ const RestaurantDashboard = ({ user, onLogout }: RestaurantDashboardProps) => {
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 p-6">
+      <div className={`flex-1 p-6 transition-all duration-300 ${
+        sidebarExpanded ? 'ml-64' : 'ml-16'
+      }`}>
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
           {/* Orders Tab */}
           <TabsContent value="orders" className="space-y-4">
