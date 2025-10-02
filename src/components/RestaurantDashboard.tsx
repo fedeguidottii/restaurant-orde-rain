@@ -11,7 +11,7 @@ import { Badge } from '@/components/ui/badge'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Separator } from '@/components/ui/separator'
 import { toast } from 'sonner'
-import { Plus, MapPin, BookOpen, Clock, ChartBar, Gear, SignOut, Trash, Eye, EyeSlash, QrCode, PencilSimple, Calendar, List, ClockCounterClockwise } from '@phosphor-icons/react'
+import { Plus, MapPin, BookOpen, Clock, ChartBar, Gear, SignOut, Trash, Eye, EyeSlash, QrCode, PencilSimple, Calendar, List, ClockCounterClockwise, Check, X } from '@phosphor-icons/react'
 import type { User, Table, MenuItem, Order, Restaurant, Reservation, OrderHistory, MenuCategory } from '../App'
 import TimelineReservations from './TimelineReservations'
 
@@ -43,6 +43,8 @@ const RestaurantDashboard = ({ user, onLogout }: RestaurantDashboardProps) => {
   })
   const [newCategory, setNewCategory] = useState('')
   const [draggedCategory, setDraggedCategory] = useState<MenuCategory | null>(null)
+  const [editingCategory, setEditingCategory] = useState<MenuCategory | null>(null)
+  const [editCategoryName, setEditCategoryName] = useState('')
   const [showCategoryDialog, setShowCategoryDialog] = useState(false)
   const [showMenuDialog, setShowMenuDialog] = useState(false)
   const [selectedTable, setSelectedTable] = useState<Table | null>(null)
@@ -250,6 +252,49 @@ const RestaurantDashboard = ({ user, onLogout }: RestaurantDashboardProps) => {
         ? { ...cat, isActive: !cat.isActive }
         : cat
     ) || [])
+  }
+
+  const handleEditCategory = (category: MenuCategory) => {
+    setEditingCategory(category)
+    setEditCategoryName(category.name)
+  }
+
+  const handleSaveCategory = () => {
+    if (!editingCategory || !editCategoryName.trim()) return
+    
+    // Check if new name already exists (excluding current category)
+    const nameExists = categories?.some(cat => 
+      cat.name.toLowerCase() === editCategoryName.trim().toLowerCase() && 
+      cat.id !== editingCategory.id
+    )
+    
+    if (nameExists) {
+      toast.error('Esiste già una categoria con questo nome')
+      return
+    }
+    
+    // Update category name
+    setCategories(categories?.map(cat => 
+      cat.id === editingCategory.id 
+        ? { ...cat, name: editCategoryName.trim() }
+        : cat
+    ) || [])
+    
+    // Update menu items with the new category name
+    setMenuItems(menuItems?.map(item => 
+      item.category === editingCategory.name && item.restaurantId === user.restaurantId
+        ? { ...item, category: editCategoryName.trim() }
+        : item
+    ) || [])
+    
+    setEditingCategory(null)
+    setEditCategoryName('')
+    toast.success('Categoria modificata')
+  }
+
+  const handleCancelEdit = () => {
+    setEditingCategory(null)
+    setEditCategoryName('')
   }
 
   const handleDragStart = (e: React.DragEvent, category: MenuCategory) => {
@@ -747,13 +792,58 @@ const RestaurantDashboard = ({ user, onLogout }: RestaurantDashboardProps) => {
                               <div className="flex items-center gap-3">
                                 <div className="text-muted-foreground cursor-move">⋮⋮</div>
                                 <div>
-                                  <p className="font-medium">{category.name}</p>
-                                  <p className="text-sm text-muted-foreground">
-                                    {categoryItemsCount} piatt{categoryItemsCount === 1 ? 'o' : 'i'}
-                                  </p>
+                                  {editingCategory?.id === category.id ? (
+                                    <div className="flex gap-2">
+                                      <Input
+                                        value={editCategoryName}
+                                        onChange={(e) => setEditCategoryName(e.target.value)}
+                                        className="h-8 text-sm"
+                                        placeholder="Nome categoria"
+                                        onKeyDown={(e) => {
+                                          if (e.key === 'Enter') handleSaveCategory()
+                                          if (e.key === 'Escape') handleCancelEdit()
+                                        }}
+                                        autoFocus
+                                      />
+                                      <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        onClick={handleSaveCategory}
+                                        className="h-8 w-8 p-0 text-green-600 hover:bg-green-600/10"
+                                      >
+                                        <Check size={14} />
+                                      </Button>
+                                      <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        onClick={handleCancelEdit}
+                                        className="h-8 w-8 p-0 text-red-600 hover:bg-red-600/10"
+                                      >
+                                        <X size={14} />
+                                      </Button>
+                                    </div>
+                                  ) : (
+                                    <>
+                                      <p className="font-medium">{category.name}</p>
+                                      <p className="text-sm text-muted-foreground">
+                                        {categoryItemsCount} piatt{categoryItemsCount === 1 ? 'o' : 'i'}
+                                      </p>
+                                    </>
+                                  )}
                                 </div>
                               </div>
                               <div className="flex gap-2">
+                                {editingCategory?.id !== category.id && (
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => handleEditCategory(category)}
+                                    className="h-8 w-8 p-0 text-primary hover:bg-primary/10"
+                                    title="Modifica categoria"
+                                  >
+                                    <PencilSimple size={16} />
+                                  </Button>
+                                )}
                                 <Button
                                   variant="ghost"
                                   size="sm"
