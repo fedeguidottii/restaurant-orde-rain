@@ -145,6 +145,61 @@ const RestaurantDashboard = ({ user, onLogout }: RestaurantDashboardProps) => {
     }
   }
 
+  const handleCompleteDish = (orderId: string, itemId: string) => {
+    setOrders(orders?.map(order => {
+      if (order.id === orderId) {
+        const updatedItems = order.items.map(item => {
+          if (item.id === itemId) {
+            const newCompletedQuantity = (item.completedQuantity || 0) + 1
+            return {
+              ...item,
+              completedQuantity: Math.min(newCompletedQuantity, item.quantity)
+            }
+          }
+          return item
+        })
+        
+        // Check if all items in the order are fully completed
+        const allCompleted = updatedItems.every(item => (item.completedQuantity || 0) >= item.quantity)
+        
+        return {
+          ...order,
+          items: updatedItems,
+          status: allCompleted ? 'completed' as const : order.status
+        }
+      }
+      return order
+    }) || [])
+
+    // Move fully completed orders to completed orders list
+    const orderToCheck = orders?.find(o => o.id === orderId)
+    if (orderToCheck) {
+      const updatedOrder = {
+        ...orderToCheck,
+        items: orderToCheck.items.map(item => {
+          if (item.id === itemId) {
+            const newCompletedQuantity = (item.completedQuantity || 0) + 1
+            return {
+              ...item,
+              completedQuantity: Math.min(newCompletedQuantity, item.quantity)
+            }
+          }
+          return item
+        })
+      }
+      
+      const allCompleted = updatedOrder.items.every(item => (item.completedQuantity || 0) >= item.quantity)
+      
+      if (allCompleted) {
+        setOrders(orders?.filter(o => o.id !== orderId) || [])
+        setCompletedOrders([...(completedOrders || []), { ...updatedOrder, status: 'completed' }])
+        toast.success('Ordine completato')
+      } else {
+        toast.success('Piatto pronto')
+      }
+    }
+  }
+
   const handleUncompleteOrder = (orderId: string) => {
     const order = restaurantCompletedOrders.find(o => o.id === orderId)
     if (order) {
@@ -413,12 +468,12 @@ const RestaurantDashboard = ({ user, onLogout }: RestaurantDashboardProps) => {
               </Badge>
             </div>
             
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
               {restaurantOrders.map(order => {
                 const table = restaurantTables.find(t => t.id === order.tableId)
                 
                 return (
-                  <Card key={order.id} className="bg-white border-l-4 border-l-yellow-400 shadow-professional hover:shadow-professional-lg transition-all duration-300">
+                  <Card key={order.id} className="bg-white border-l-4 border-l-yellow-400 shadow-professional hover:shadow-professional-lg transition-all duration-300 hover-lift">
                     <CardHeader className="pb-3">
                       <div className="flex items-center justify-between">
                         <CardTitle className="text-lg font-semibold">{table?.name || 'Tavolo sconosciuto'}</CardTitle>
@@ -427,32 +482,59 @@ const RestaurantDashboard = ({ user, onLogout }: RestaurantDashboardProps) => {
                         </Badge>
                       </div>
                     </CardHeader>
-                    <CardContent className="space-y-3">
-                      <div className="space-y-2">
-                        {order.items.map((item, index) => {
+                    <CardContent className="space-y-4">
+                      <div className="space-y-3">
+                        {order.items.map((item) => {
                           const menuItem = restaurantMenuItems.find(m => m.id === item.menuItemId)
+                          const completedQuantity = item.completedQuantity || 0
+                          const remainingQuantity = item.quantity - completedQuantity
+                          
                           return (
-                            <div key={index} className="flex items-center justify-between text-sm">
-                              <span className="font-medium">{item.quantity}x {menuItem?.name || 'Unknown'}</span>
-                              {item.notes && <span className="text-xs text-muted-foreground italic">({item.notes})</span>}
+                            <div key={item.id} className="p-3 bg-card-gradient rounded-lg border border-liquid shadow-sm">
+                              <div className="flex items-start justify-between mb-2">
+                                <div className="flex-1">
+                                  <div className="font-medium text-sm">
+                                    {item.quantity}x {menuItem?.name || 'Piatto sconosciuto'}
+                                  </div>
+                                  {item.notes && (
+                                    <div className="text-xs text-muted-foreground italic mt-1">
+                                      {item.notes}
+                                    </div>
+                                  )}
+                                  {completedQuantity > 0 && (
+                                    <div className="text-xs text-green-600 font-medium mt-1">
+                                      ✓ {completedQuantity} pronti
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                              
+                              {remainingQuantity > 0 && (
+                                <Button 
+                                  onClick={() => handleCompleteDish(order.id, item.id)}
+                                  size="sm"
+                                  className="w-full bg-green-600 hover:bg-green-700 text-white shadow-md hover:shadow-lg transition-all duration-200 text-xs py-1.5"
+                                >
+                                  Pronto ({remainingQuantity} da fare)
+                                </Button>
+                              )}
+                              
+                              {remainingQuantity === 0 && (
+                                <div className="w-full py-1.5 text-center bg-green-100 text-green-700 rounded text-xs font-medium">
+                                  ✓ Completato
+                                </div>
+                              )}
                             </div>
                           )
                         })}
                       </div>
-                      <Separator />
-                      <Button 
-                        onClick={() => handleCompleteOrder(order.id)}
-                        className="w-full bg-green-600 hover:bg-green-700 text-white shadow-md hover:shadow-lg transition-all duration-200"
-                      >
-                        Pronto
-                      </Button>
                     </CardContent>
                   </Card>
                 )
               })}
               
               {restaurantOrders.length === 0 && (
-                <Card className="col-span-full">
+                <Card className="col-span-full shadow-professional">
                   <CardContent className="text-center py-8">
                     <Clock size={48} className="mx-auto text-muted-foreground mb-4" />
                     <p className="text-muted-foreground">Nessun ordine attivo</p>
@@ -472,12 +554,12 @@ const RestaurantDashboard = ({ user, onLogout }: RestaurantDashboardProps) => {
                   </Badge>
                 </div>
                 
-                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                   {restaurantCompletedOrders.map(order => {
                     const table = restaurantTables.find(t => t.id === order.tableId)
                     
                     return (
-                      <Card key={order.id} className="bg-green-50 border-l-4 border-l-green-400 shadow-professional">
+                      <Card key={order.id} className="bg-green-50 border-l-4 border-l-green-400 shadow-professional hover:shadow-professional-lg transition-all duration-300 hover-lift">
                         <CardHeader className="pb-3">
                           <div className="flex items-center justify-between">
                             <CardTitle className="text-lg font-semibold">{table?.name || 'Tavolo sconosciuto'}</CardTitle>
@@ -492,7 +574,7 @@ const RestaurantDashboard = ({ user, onLogout }: RestaurantDashboardProps) => {
                               const menuItem = restaurantMenuItems.find(m => m.id === item.menuItemId)
                               return (
                                 <div key={index} className="flex items-center justify-between text-sm">
-                                  <span className="font-medium">{item.quantity}x {menuItem?.name || 'Unknown'}</span>
+                                  <span className="font-medium">{item.quantity}x {menuItem?.name || 'Piatto sconosciuto'}</span>
                                 </div>
                               )
                             })}
@@ -501,9 +583,9 @@ const RestaurantDashboard = ({ user, onLogout }: RestaurantDashboardProps) => {
                           <Button 
                             variant="outline"
                             onClick={() => handleUncompleteOrder(order.id)}
-                            className="w-full"
+                            className="w-full text-sm shadow-sm hover:shadow-md transition-all duration-200"
                           >
-                            Annulla Completamento
+                            Riporta in Attesa
                           </Button>
                         </CardContent>
                       </Card>

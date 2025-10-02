@@ -10,17 +10,26 @@
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   }
 
-  /* Professional subtle shadows */
+  /* Professional subtle shadows with enhanced depth and smoothness */
   .shadow-professional {
-    box-shadow: 0 4px 16px -2px rgba(0, 0, 0, 0.08), 0 2px 8px -1px rgba(0, 0, 0, 0.06);
+    box-shadow: 
+      0 1px 3px 0 rgba(0, 0, 0, 0.08),
+      0 4px 12px -2px rgba(0, 0, 0, 0.04),
+      0 8px 24px -4px rgba(0, 0, 0, 0.03);
   }
   
   .shadow-professional-lg {
-    box-shadow: 0 8px 32px -8px rgba(0, 0, 0, 0.12), 0 4px 16px -4px rgba(0, 0, 0, 0.08);
+    box-shadow: 
+      0 2px 6px -1px rgba(0, 0, 0, 0.1),
+      0 8px 24px -4px rgba(0, 0, 0, 0.06),
+      0 16px 48px -8px rgba(0, 0, 0, 0.04);
   }
   
   .shadow-professional-xl {
-    box-shadow: 0 20px 64px -12px rgba(0, 0, 0, 0.15), 0 8px 32px -8px rgba(0, 0, 0, 0.1);
+    box-shadow: 
+      0 4px 12px -2px rgba(0, 0, 0, 0.12),
+      0 12px 32px -8px rgba(0, 0, 0, 0.08),
+      0 24px 64px -12px rgba(0, 0, 0, 0.06);
   }
 
   /* Gold accent shadows for important elements */

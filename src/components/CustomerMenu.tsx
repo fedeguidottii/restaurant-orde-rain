@@ -135,7 +135,13 @@ export default function CustomerMenu({ tableId, onExit }: Props) {
       id: `order-${Date.now()}`,
       tableId,
       restaurantId: table!.restaurantId,
-      items: cart,
+      items: cart.map((item, index) => ({
+        id: `${Date.now()}-${index}`,
+        menuItemId: item.menuItemId,
+        quantity: item.quantity,
+        notes: item.notes,
+        completedQuantity: 0
+      })),
       status: 'waiting',
       timestamp: Date.now(),
       total: cartTotal

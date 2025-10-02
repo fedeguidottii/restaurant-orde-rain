@@ -54,9 +54,11 @@ export interface Order {
   tableId: string
   restaurantId: string
   items: Array<{
+    id: string // Add unique ID for each dish
     menuItemId: string
     quantity: number
     notes?: string
+    completedQuantity?: number // Track how many of this item are completed
   }>
   status: 'waiting' | 'preparing' | 'served' | 'completed'
   timestamp: number
@@ -320,9 +322,9 @@ function App() {
           tableId: 'table-2',
           restaurantId: 'restaurant-1',
           items: [
-            { menuItemId: 'item-1', quantity: 2, notes: 'Senza aglio' },
-            { menuItemId: 'item-3', quantity: 1 },
-            { menuItemId: 'item-9', quantity: 1 }
+            { id: 'item-1-1', menuItemId: 'item-1', quantity: 2, notes: 'Senza aglio', completedQuantity: 0 },
+            { id: 'item-1-2', menuItemId: 'item-3', quantity: 1, completedQuantity: 0 },
+            { id: 'item-1-3', menuItemId: 'item-9', quantity: 1, completedQuantity: 0 }
           ],
           status: 'preparing',
           timestamp: Date.now() - 15 * 60 * 1000, // 15 minutes ago
@@ -333,10 +335,10 @@ function App() {
           tableId: 'table-3',
           restaurantId: 'restaurant-1',
           items: [
-            { menuItemId: 'item-2', quantity: 1 },
-            { menuItemId: 'item-4', quantity: 2 },
-            { menuItemId: 'item-6', quantity: 1 },
-            { menuItemId: 'item-10', quantity: 2 }
+            { id: 'item-2-1', menuItemId: 'item-2', quantity: 1, completedQuantity: 0 },
+            { id: 'item-2-2', menuItemId: 'item-4', quantity: 2, completedQuantity: 0 },
+            { id: 'item-2-3', menuItemId: 'item-6', quantity: 1, completedQuantity: 0 },
+            { id: 'item-2-4', menuItemId: 'item-10', quantity: 2, completedQuantity: 0 }
           ],
           status: 'waiting',
           timestamp: Date.now() - 8 * 60 * 1000, // 8 minutes ago
@@ -347,9 +349,9 @@ function App() {
           tableId: 'table-5',
           restaurantId: 'restaurant-1',
           items: [
-            { menuItemId: 'item-5', quantity: 1, notes: 'Cottura media' },
-            { menuItemId: 'item-7', quantity: 2 },
-            { menuItemId: 'item-9', quantity: 1 }
+            { id: 'item-3-1', menuItemId: 'item-5', quantity: 1, notes: 'Cottura media', completedQuantity: 0 },
+            { id: 'item-3-2', menuItemId: 'item-7', quantity: 2, completedQuantity: 0 },
+            { id: 'item-3-3', menuItemId: 'item-9', quantity: 1, completedQuantity: 0 }
           ],
           status: 'preparing',
           timestamp: Date.now() - 22 * 60 * 1000, // 22 minutes ago
