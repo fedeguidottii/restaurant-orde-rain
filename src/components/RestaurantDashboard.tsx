@@ -51,6 +51,8 @@ const RestaurantDashboard = ({ user, onLogout }: RestaurantDashboardProps) => {
   const [showMenuDialog, setShowMenuDialog] = useState(false)
   const [selectedTable, setSelectedTable] = useState<Table | null>(null)
   const [showTableDialog, setShowTableDialog] = useState(false)
+  const [orderViewMode, setOrderViewMode] = useState<'table' | 'dish'>('table')
+  const [showCompletedOrders, setShowCompletedOrders] = useState(false)
   const [showQrDialog, setShowQrDialog] = useState(false)
   
   const restaurantMenuItems = menuItems?.filter(item => item.restaurantId === user.restaurantId) || []
@@ -70,12 +72,13 @@ const RestaurantDashboard = ({ user, onLogout }: RestaurantDashboardProps) => {
       return
     }
 
+    const tableId = Date.now().toString()
     const newTable: Table = {
-      id: Date.now().toString(),
+      id: tableId,
       name: newTableName,
-      isActive: true,
+      isActive: false, // Start as empty/inactive
       pin: generatePin(),
-      qrCode: generateQrCode(Date.now().toString()),
+      qrCode: generateQrCode(tableId),
       restaurantId: user.restaurantId!,
       status: 'available'
     }
@@ -86,11 +89,26 @@ const RestaurantDashboard = ({ user, onLogout }: RestaurantDashboardProps) => {
   }
 
   const handleToggleTable = (tableId: string) => {
-    setTables(tables?.map(table => 
-      table.id === tableId 
-        ? { ...table, isActive: !table.isActive }
-        : table
-    ) || [])
+    const table = tables?.find(t => t.id === tableId)
+    if (!table) return
+    
+    if (table.isActive) {
+      // Deactivate table - just mark as inactive, don't change PIN
+      setTables(tables?.map(t => 
+        t.id === tableId 
+          ? { ...t, isActive: false, status: 'available' }
+          : t
+      ) || [])
+      toast.success('Tavolo disattivato')
+    } else {
+      // Activate table - generate new PIN
+      setTables(tables?.map(t => 
+        t.id === tableId 
+          ? { ...t, isActive: true, pin: generatePin(), status: 'waiting-order' }
+          : t
+      ) || [])
+      toast.success('Tavolo attivato con nuovo PIN')
+    }
   }
 
   const handleDeleteTable = (tableId: string) => {
@@ -341,8 +359,12 @@ const RestaurantDashboard = ({ user, onLogout }: RestaurantDashboardProps) => {
     const minutes = Math.floor(diff / 60000)
     const hours = Math.floor(minutes / 60)
     
-    if (hours > 0) {
+    if (hours >= 1) {
       return `${hours}h ${minutes % 60}min fa`
+    } else if (minutes >= 60) {
+      return `1h fa`
+    } else if (minutes < 1) {
+      return 'Appena ora'
     }
     return `${minutes}min fa`
   }
@@ -511,13 +533,24 @@ const RestaurantDashboard = ({ user, onLogout }: RestaurantDashboardProps) => {
           {/* Orders Tab */}
           <TabsContent value="orders" className="space-y-4">
             <div className="flex items-center justify-between">
-              <h2 className="text-2xl font-bold text-foreground">Ordini Attivi</h2>
-              <Badge variant="secondary" className="text-sm">
-                {restaurantOrders.length} {restaurantOrders.length === 1 ? 'ordine' : 'ordini'}
-              </Badge>
+              <h2 className="text-2xl font-bold text-foreground">Gestione Ordini</h2>
+              <div className="flex gap-2">
+                <Select value={orderViewMode} onValueChange={(value: 'table' | 'dish') => setOrderViewMode(value)}>
+                  <SelectTrigger className="w-36">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="table">Per Tavoli</SelectItem>
+                    <SelectItem value="dish">Per Piatti</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Badge variant="secondary" className="text-sm">
+                  {restaurantOrders.length} {restaurantOrders.length === 1 ? 'ordine' : 'ordini'} attivo
+                </Badge>
+              </div>
             </div>
             
-            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
               {restaurantOrders.map(order => {
                 const table = restaurantTables.find(t => t.id === order.tableId)
                 
@@ -603,7 +636,7 @@ const RestaurantDashboard = ({ user, onLogout }: RestaurantDashboardProps) => {
                   </Badge>
                 </div>
                 
-                <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                   {restaurantCompletedOrders.map(order => {
                     const table = restaurantTables.find(t => t.id === order.tableId)
                     
@@ -741,65 +774,113 @@ const RestaurantDashboard = ({ user, onLogout }: RestaurantDashboardProps) => {
             
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
               {restaurantTables.map(table => (
-                <Card key={table.id} className={`shadow-professional hover:shadow-professional-lg transition-all duration-300 ${!table.isActive ? 'opacity-50' : ''}`}>
-                  <CardHeader>
+                <Card key={table.id} className={`shadow-professional hover:shadow-professional-lg transition-all duration-300 ${!table.isActive ? 'opacity-50 bg-gray-50' : 'bg-white'}`}>
+                  <CardHeader className="pb-3">
                     <div className="flex items-center justify-between">
-                      <CardTitle className="text-lg">{table.name}</CardTitle>
-                      <div className="flex gap-1">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleToggleTable(table.id)}
-                          className="h-6 w-6 p-0"
-                          title={table.isActive ? 'Disattiva tavolo' : 'Attiva tavolo'}
-                        >
-                          {table.isActive ? <Eye size={16} /> : <EyeSlash size={16} />}
-                        </Button>
-                      </div>
+                      <CardTitle className="text-lg flex items-center gap-2">
+                        <div className={`w-8 h-8 rounded border-2 flex items-center justify-center text-xs font-bold ${
+                          table.isActive ? 'bg-green-100 border-green-400 text-green-700' : 'bg-gray-100 border-gray-400 text-gray-500'
+                        }`}>
+                          {table.name.slice(-1)}
+                        </div>
+                        {table.name}
+                      </CardTitle>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleToggleTable(table.id)}
+                        className="h-6 w-6 p-0"
+                        title={table.isActive ? 'Disattiva tavolo' : 'Attiva tavolo'}
+                      >
+                        {table.isActive ? <EyeSlash size={12} /> : <Eye size={12} />}
+                      </Button>
                     </div>
                   </CardHeader>
-                  <CardContent className="space-y-2">
-                    <div className="flex flex-wrap gap-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => {
-                          setSelectedTable(table)
-                          setShowQrDialog(true)
-                        }}
-                        className="text-xs"
-                      >
-                        <QrCode size={14} className="mr-1" />
-                        QR Code
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => {
-                          setSelectedTable(table)
-                          setShowTableDialog(true)
-                        }}
-                        className="text-xs"
-                      >
-                        Conto
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="text-xs"
-                      >
-                        <PencilSimple size={14} />
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleDeleteTable(table.id)}
-                        className="text-xs text-destructive hover:bg-destructive/10"
-                      >
-                        <Trash size={14} />
-                      </Button>
-                    </div>
-                    <p className="text-xs text-muted-foreground">PIN: {table.pin}</p>
+                  <CardContent className="space-y-3">
+                    {table.isActive ? (
+                      <>
+                        <div className="bg-primary/10 border border-primary/20 rounded-lg p-3 text-center">
+                          <div className="text-xs text-muted-foreground mb-1">PIN Temporaneo</div>
+                          <div className="text-2xl font-bold text-primary tracking-wider">{table.pin}</div>
+                        </div>
+                        <div className="flex flex-wrap gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              setSelectedTable(table)
+                              setShowQrDialog(true)
+                            }}
+                            className="text-xs flex-1"
+                          >
+                            QR Code
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              setSelectedTable(table)
+                              setShowTableDialog(true)
+                            }}
+                            className="text-xs flex-1"
+                          >
+                            Conto
+                          </Button>
+                        </div>
+                        <div className="flex gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="text-xs h-8 w-8 p-0"
+                            title="Modifica tavolo"
+                          >
+                            <PencilSimple size={14} />
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleDeleteTable(table.id)}
+                            className="text-xs text-destructive hover:bg-destructive/10 h-8 w-8 p-0"
+                            title="Elimina tavolo"
+                          >
+                            <Trash size={14} />
+                          </Button>
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        <div className="bg-gray-100 border border-gray-200 rounded-lg p-3 text-center">
+                          <div className="text-sm text-gray-500">Tavolo Vuoto</div>
+                          <div className="text-xs text-gray-400 mt-1">Clicca "Attiva" per iniziare</div>
+                        </div>
+                        <Button
+                          onClick={() => handleToggleTable(table.id)}
+                          className="w-full bg-green-600 hover:bg-green-700 text-white"
+                          size="sm"
+                        >
+                          Attiva Tavolo
+                        </Button>
+                        <div className="flex gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="text-xs h-8 w-8 p-0"
+                            title="Modifica tavolo"
+                          >
+                            <PencilSimple size={14} />
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleDeleteTable(table.id)}
+                            className="text-xs text-destructive hover:bg-destructive/10 h-8 w-8 p-0"
+                            title="Elimina tavolo"
+                          >
+                            <Trash size={14} />
+                          </Button>
+                        </div>
+                      </>
+                    )}
                   </CardContent>
                 </Card>
               ))}
@@ -1033,15 +1114,26 @@ const RestaurantDashboard = ({ user, onLogout }: RestaurantDashboardProps) => {
                   <div key={category.id} className="space-y-4">
                     <div className="flex items-center justify-between">
                       <h3 className="text-xl font-semibold text-primary">{category.name}</h3>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleToggleCategory(category.id)}
-                        className="h-8 w-8 p-0"
-                        title={category.isActive ? 'Disattiva categoria' : 'Attiva categoria'}
-                      >
-                        {category.isActive ? <Eye size={16} /> : <EyeSlash size={16} />}
-                      </Button>
+                      <div className="flex items-center gap-2">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleEditCategory(category)}
+                          className="h-8 w-8 p-0"
+                          title="Modifica nome categoria"
+                        >
+                          <PencilSimple size={16} />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleToggleCategory(category.id)}
+                          className="h-8 w-8 p-0"
+                          title={category.isActive ? 'Disattiva categoria' : 'Attiva categoria'}
+                        >
+                          {category.isActive ? <Eye size={16} /> : <EyeSlash size={16} />}
+                        </Button>
+                      </div>
                     </div>
                     <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
                       {categoryItems.map((item) => (
@@ -1207,28 +1299,52 @@ const RestaurantDashboard = ({ user, onLogout }: RestaurantDashboardProps) => {
             <div className="mx-auto w-64 h-64 bg-white border-2 border-primary rounded-lg flex items-center justify-center mb-4">
               <div className="text-center">
                 <QrCode size={120} className="mx-auto mb-4 text-primary" />
-                <p className="text-sm font-mono text-muted-foreground break-all px-4">
+                <p className="text-xs font-mono text-muted-foreground break-all px-4">
                   {selectedTable?.qrCode}
                 </p>
               </div>
             </div>
             <div className="space-y-2">
               <p className="text-sm text-muted-foreground">
-                URL per test: <strong className="font-mono text-primary">{selectedTable?.qrCode}</strong>
+                URL per test: <button 
+                  onClick={() => {
+                    if (selectedTable?.qrCode) {
+                      navigator.clipboard.writeText(selectedTable.qrCode)
+                      toast.success('Link copiato!')
+                    }
+                  }}
+                  className="font-mono text-primary hover:underline cursor-pointer"
+                >
+                  {selectedTable?.qrCode}
+                </button>
               </p>
               <p className="text-sm text-muted-foreground">
                 PIN attuale: <strong className="text-2xl font-bold text-primary">{selectedTable?.pin}</strong>
               </p>
-              <Button 
-                onClick={() => {
-                  if (selectedTable?.qrCode) {
-                    window.open(selectedTable.qrCode, '_blank')
-                  }
-                }}
-                className="w-full mt-4"
-              >
-                Testa QR Code
-              </Button>
+              <div className="flex gap-2 mt-4">
+                <Button 
+                  onClick={() => {
+                    if (selectedTable?.qrCode) {
+                      window.open(selectedTable.qrCode, '_blank')
+                    }
+                  }}
+                  className="flex-1"
+                >
+                  Testa QR Code
+                </Button>
+                <Button 
+                  variant="outline"
+                  onClick={() => {
+                    if (selectedTable?.qrCode) {
+                      navigator.clipboard.writeText(selectedTable.qrCode)
+                      toast.success('Link copiato negli appunti!')
+                    }
+                  }}
+                  className="flex-1"
+                >
+                  Copia Link
+                </Button>
+              </div>
             </div>
           </div>
         </DialogContent>
@@ -1350,6 +1466,41 @@ const RestaurantDashboard = ({ user, onLogout }: RestaurantDashboardProps) => {
                 </>
               )
             })()}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Category Dialog */}
+      <Dialog open={!!editingCategory} onOpenChange={(open) => !open && handleCancelEdit()}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Modifica Categoria</DialogTitle>
+            <DialogDescription>
+              Modifica il nome della categoria
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="categoryName">Nome Categoria</Label>
+              <Input
+                id="categoryName"
+                value={editCategoryName}
+                onChange={(e) => setEditCategoryName(e.target.value)}
+                placeholder="Nome categoria"
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') handleSaveCategory()
+                  if (e.key === 'Escape') handleCancelEdit()
+                }}
+              />
+            </div>
+            <div className="flex gap-2">
+              <Button onClick={handleSaveCategory} className="flex-1">
+                Salva
+              </Button>
+              <Button variant="outline" onClick={handleCancelEdit} className="flex-1">
+                Annulla
+              </Button>
+            </div>
           </div>
         </DialogContent>
       </Dialog>

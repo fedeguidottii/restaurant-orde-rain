@@ -256,9 +256,9 @@ function App() {
         {
           id: 'table-1',
           name: 'Tavolo 1',
-          isActive: true,
+          isActive: false,
           pin: '1234',
-          qrCode: 'QR-table-1',
+          qrCode: `${window.location.origin}?table=table-1`,
           restaurantId: 'restaurant-1',
           status: 'available'
         },
@@ -267,7 +267,7 @@ function App() {
           name: 'Tavolo 2',
           isActive: true,
           pin: '5678',
-          qrCode: 'QR-table-2',
+          qrCode: `${window.location.origin}?table=table-2`,
           restaurantId: 'restaurant-1',
           status: 'waiting-order',
           customerCount: 2
@@ -277,7 +277,7 @@ function App() {
           name: 'Tavolo 3',
           isActive: true,
           pin: '9012',
-          qrCode: 'QR-table-3',
+          qrCode: `${window.location.origin}?table=table-3`,
           restaurantId: 'restaurant-1',
           status: 'eating',
           customerCount: 4
@@ -285,9 +285,9 @@ function App() {
         {
           id: 'table-4',
           name: 'Tavolo 4',
-          isActive: true,
+          isActive: false,
           pin: '3456',
-          qrCode: 'QR-table-4',
+          qrCode: `${window.location.origin}?table=table-4`,
           restaurantId: 'restaurant-1',
           status: 'available'
         },
@@ -296,7 +296,7 @@ function App() {
           name: 'Tavolo VIP',
           isActive: true,
           pin: '7890',
-          qrCode: 'QR-table-5',
+          qrCode: `${window.location.origin}?table=table-5`,
           restaurantId: 'restaurant-1',
           status: 'available'
         }
