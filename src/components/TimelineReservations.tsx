@@ -188,7 +188,6 @@ const TimelineReservations = ({ user, tables, reservations, setReservations }: T
       .map(reservation => {
         const table = restaurantTables.find(t => t.id === reservation.tableId)
         if (!table) return null // Skip if table not found
-        
         const startMinutes = timeToMinutes(reservation.time)
         const duration = 120 // Default 2 hours
         
