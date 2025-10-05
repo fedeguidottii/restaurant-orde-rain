@@ -1469,41 +1469,6 @@ const RestaurantDashboard = ({ user, onLogout }: RestaurantDashboardProps) => {
           </div>
         </DialogContent>
       </Dialog>
-
-      {/* Edit Category Dialog */}
-      <Dialog open={!!editingCategory} onOpenChange={(open) => !open && handleCancelEdit()}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Modifica Categoria</DialogTitle>
-            <DialogDescription>
-              Modifica il nome della categoria
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div>
-              <Label htmlFor="categoryName">Nome Categoria</Label>
-              <Input
-                id="categoryName"
-                value={editCategoryName}
-                onChange={(e) => setEditCategoryName(e.target.value)}
-                placeholder="Nome categoria"
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') handleSaveCategory()
-                  if (e.key === 'Escape') handleCancelEdit()
-                }}
-              />
-            </div>
-            <div className="flex gap-2">
-              <Button onClick={handleSaveCategory} className="flex-1">
-                Salva
-              </Button>
-              <Button variant="outline" onClick={handleCancelEdit} className="flex-1">
-                Annulla
-              </Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
     </div>
   )
 }
