@@ -35,7 +35,13 @@ export default function AdminDashboard({ user, onLogout }: Props) {
       name: newRestaurant.name,
       contact: newRestaurant.contact,
       hours: newRestaurant.hours || '09:00-23:00',
-      isActive: true
+      isActive: true,
+      coverChargePerPerson: 2.00,
+      allYouCanEat: {
+        enabled: false,
+        pricePerPerson: 25.00,
+        maxOrders: 3
+      }
     }
 
     setRestaurants((current) => [...(current || []), restaurant])

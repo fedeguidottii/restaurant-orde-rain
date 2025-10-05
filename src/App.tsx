@@ -28,6 +28,7 @@ export interface Table {
   currentOrderId?: string
   customerCount?: number
   reservationId?: string
+  remainingOrders?: number
 }
 
 export interface MenuItem {
@@ -39,6 +40,7 @@ export interface MenuItem {
   isActive: boolean
   restaurantId: string
   image?: string
+  excludeFromAllYouCanEat?: boolean
 }
 
 export interface MenuCategory {
@@ -59,10 +61,14 @@ export interface Order {
     quantity: number
     notes?: string
     completedQuantity?: number // Track how many of this item are completed
+    excludedFromAllYouCanEat?: boolean // Track if this item is excluded
   }>
   status: 'waiting' | 'preparing' | 'served' | 'completed'
   timestamp: number
   total: number
+  coverCharge?: number
+  allYouCanEatCharge?: number
+  remainingOrders?: number // For all you can eat mode
 }
 
 export interface OrderHistory {
@@ -92,6 +98,12 @@ export interface Restaurant {
   contact: string
   hours: string
   isActive: boolean
+  coverChargePerPerson: number
+  allYouCanEat: {
+    enabled: boolean
+    pricePerPerson: number
+    maxOrders: number
+  }
 }
 
 export interface Reservation {
@@ -130,7 +142,13 @@ function App() {
         name: 'Ristorante Demo',
         contact: 'demo@restaurant.com',
         hours: '12:00-23:00',
-        isActive: true
+        isActive: true,
+        coverChargePerPerson: 2.00,
+        allYouCanEat: {
+          enabled: false,
+          pricePerPerson: 25.00,
+          maxOrders: 3
+        }
       }
       
       const restaurantUser: User = {

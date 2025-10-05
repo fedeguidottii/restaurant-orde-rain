@@ -8,7 +8,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
 import { useKV } from '@github/spark/hooks'
 import { toast } from 'sonner'
-import { Table, MenuItem, Order, MenuCategory } from '../App'
+import { Table, MenuItem, Order, MenuCategory, Restaurant } from '../App'
 import { 
   ChefHat, 
   Plus, 
@@ -33,12 +33,14 @@ interface CartItem {
 }
 
 export default function CustomerMenu({ tableId, onExit }: Props) {
-  const [tables] = useKV<Table[]>('tables', [])
+  const [tables, setTables] = useKV<Table[]>('tables', [])
   const [menuItems] = useKV<MenuItem[]>('menuItems', [])
   const [categories] = useKV<MenuCategory[]>('menuCategories', [])
+  const [restaurants] = useKV<Restaurant[]>('restaurants', [])
   
   // Find the table first to get the restaurant ID
   const table = tables?.find(t => t.id === tableId)
+  const restaurant = restaurants?.find(r => r.id === table?.restaurantId)
   
   // Use restaurant-specific key for orders
   const [orders, setOrders] = useKV<Order[]>(
@@ -66,10 +68,36 @@ export default function CustomerMenu({ tableId, onExit }: Props) {
     ? restaurantMenuItems 
     : restaurantMenuItems.filter(item => item.category === selectedCategory)
 
-  const cartTotal = cart.reduce((total, cartItem) => {
-    const menuItem = restaurantMenuItems.find(m => m.id === cartItem.menuItemId)
-    return total + (menuItem?.price || 0) * cartItem.quantity
-  }, 0)
+  // Calculate different totals for display
+  const cartCalculations = {
+    // Items that are charged normally (excluded from AYCE or AYCE disabled)
+    regularTotal: cart.reduce((total, cartItem) => {
+      const menuItem = restaurantMenuItems.find(m => m.id === cartItem.menuItemId)
+      if (menuItem && (!restaurant?.allYouCanEat.enabled || menuItem.excludeFromAllYouCanEat)) {
+        return total + menuItem.price * cartItem.quantity
+      }
+      return total
+    }, 0),
+    
+    // Cover charge
+    coverCharge: table?.customerCount && restaurant?.coverChargePerPerson 
+      ? restaurant.coverChargePerPerson * table.customerCount 
+      : 0,
+    
+    // All you can eat charge (only for first order typically)
+    allYouCanEatCharge: restaurant?.allYouCanEat.enabled && table?.customerCount 
+      ? restaurant.allYouCanEat.pricePerPerson * table.customerCount 
+      : 0,
+    
+    // Free items (included in AYCE)
+    freeItems: cart.filter(cartItem => {
+      const menuItem = restaurantMenuItems.find(m => m.id === cartItem.menuItemId)
+      return menuItem && restaurant?.allYouCanEat.enabled && !menuItem.excludeFromAllYouCanEat
+    })
+  }
+
+  // Legacy cart total for compatibility
+  const cartTotal = cartCalculations.regularTotal
 
   // Check PIN on mount
   useEffect(() => {
@@ -136,23 +164,69 @@ export default function CustomerMenu({ tableId, onExit }: Props) {
       return
     }
 
+    // Check all-you-can-eat limits
+    if (restaurant?.allYouCanEat.enabled && table?.remainingOrders !== undefined && table.remainingOrders <= 0) {
+      toast.error('Hai raggiunto il limite massimo di ordini per All You Can Eat')
+      return
+    }
+
+    // Calculate costs based on restaurant settings
+    let coverCharge = 0
+    let allYouCanEatCharge = 0
+    let regularTotal = 0
+
+    if (table?.customerCount && restaurant?.coverChargePerPerson) {
+      coverCharge = restaurant.coverChargePerPerson * table.customerCount
+    }
+
+    if (restaurant?.allYouCanEat.enabled && table?.customerCount) {
+      allYouCanEatCharge = restaurant.allYouCanEat.pricePerPerson * table.customerCount
+    }
+
+    // Calculate regular items (items not excluded from all you can eat or when AYCE is disabled)
+    cart.forEach(cartItem => {
+      const menuItem = restaurantMenuItems.find(m => m.id === cartItem.menuItemId)
+      if (menuItem) {
+        if (!restaurant?.allYouCanEat.enabled || menuItem.excludeFromAllYouCanEat) {
+          regularTotal += menuItem.price * cartItem.quantity
+        }
+      }
+    })
+
     const order: Order = {
       id: `order-${Date.now()}`,
       tableId,
       restaurantId: table!.restaurantId,
-      items: cart.map((item, index) => ({
-        id: `${Date.now()}-${index}`,
-        menuItemId: item.menuItemId,
-        quantity: item.quantity,
-        notes: item.notes,
-        completedQuantity: 0
-      })),
+      items: cart.map((item, index) => {
+        const menuItem = restaurantMenuItems.find(m => m.id === item.menuItemId)
+        return {
+          id: `${Date.now()}-${index}`,
+          menuItemId: item.menuItemId,
+          quantity: item.quantity,
+          notes: item.notes,
+          completedQuantity: 0,
+          excludedFromAllYouCanEat: menuItem?.excludeFromAllYouCanEat || false
+        }
+      }),
       status: 'waiting',
       timestamp: Date.now(),
-      total: cartTotal
+      total: regularTotal,
+      coverCharge: coverCharge > 0 ? coverCharge : undefined,
+      allYouCanEatCharge: allYouCanEatCharge > 0 ? allYouCanEatCharge : undefined,
+      remainingOrders: table?.remainingOrders
     }
 
     setOrders((current) => [...(current || []), order])
+    
+    // Decrease remaining orders for all-you-can-eat
+    if (restaurant?.allYouCanEat.enabled && table?.remainingOrders !== undefined) {
+      setTables(tables?.map(t => 
+        t.id === tableId 
+          ? { ...t, remainingOrders: t.remainingOrders! - 1 }
+          : t
+      ) || [])
+    }
+
     setCart([])
     setShowCart(false)
     toast.success('Ordine inviato con successo!')
@@ -329,7 +403,19 @@ export default function CustomerMenu({ tableId, onExit }: Props) {
                     </div>
                     
                     <div className="flex items-center justify-between">
-                      <span className="text-2xl font-bold text-primary">€{item.price.toFixed(2)}</span>
+                      <div className="flex items-center gap-2">
+                        <span className="text-2xl font-bold text-primary">
+                          {restaurant?.allYouCanEat.enabled && !item.excludeFromAllYouCanEat 
+                            ? 'Incluso' 
+                            : `€${item.price.toFixed(2)}`
+                          }
+                        </span>
+                        {restaurant?.allYouCanEat.enabled && !item.excludeFromAllYouCanEat && (
+                          <Badge variant="secondary" className="text-xs bg-green-100 text-green-800">
+                            All You Can Eat
+                          </Badge>
+                        )}
+                      </div>
                       <Badge variant="outline" className="text-xs">{item.category}</Badge>
                     </div>
                     
@@ -442,15 +528,69 @@ export default function CustomerMenu({ tableId, onExit }: Props) {
                   })}
                 </div>
                 <div className="border-t pt-4">
+                  <div className="space-y-2 mb-4">
+                    {/* All You Can Eat Summary */}
+                    {restaurant?.allYouCanEat.enabled && cartCalculations.freeItems.length > 0 && (
+                      <div className="bg-green-50 p-3 rounded-lg">
+                        <div className="text-sm font-medium text-green-800 mb-1">All You Can Eat</div>
+                        {cartCalculations.freeItems.map(cartItem => {
+                          const menuItem = restaurantMenuItems.find(m => m.id === cartItem.menuItemId)
+                          return menuItem ? (
+                            <div key={cartItem.menuItemId} className="text-sm text-green-700">
+                              {cartItem.quantity}x {menuItem.name} - Incluso
+                            </div>
+                          ) : null
+                        })}
+                      </div>
+                    )}
+                    
+                    {/* Regular items */}
+                    {cartCalculations.regularTotal > 0 && (
+                      <div className="flex justify-between text-sm">
+                        <span>Piatti:</span>
+                        <span>€{cartCalculations.regularTotal.toFixed(2)}</span>
+                      </div>
+                    )}
+                    
+                    {/* Cover charge */}
+                    {cartCalculations.coverCharge > 0 && (
+                      <div className="flex justify-between text-sm">
+                        <span>Coperto ({table?.customerCount} persone):</span>
+                        <span>€{cartCalculations.coverCharge.toFixed(2)}</span>
+                      </div>
+                    )}
+                    
+                    {/* All You Can Eat charge (shown only on first order or if no orders placed yet) */}
+                    {cartCalculations.allYouCanEatCharge > 0 && (
+                      <div className="flex justify-between text-sm">
+                        <span>All You Can Eat ({table?.customerCount} persone):</span>
+                        <span>€{cartCalculations.allYouCanEatCharge.toFixed(2)}</span>
+                      </div>
+                    )}
+                    
+                    {restaurant?.allYouCanEat.enabled && table?.remainingOrders !== undefined && (
+                      <div className="text-sm text-center p-2 bg-blue-50 rounded">
+                        Ordini rimasti: {table.remainingOrders}
+                      </div>
+                    )}
+                  </div>
+                  
                   <div className="flex justify-between items-center mb-4">
                     <span className="font-bold text-xl">Totale:</span>
                     <span className="font-bold text-primary text-2xl">
-                      €{cartTotal.toFixed(2)}
+                      €{(cartCalculations.regularTotal + cartCalculations.coverCharge + cartCalculations.allYouCanEatCharge).toFixed(2)}
                     </span>
                   </div>
-                  <Button onClick={handlePlaceOrder} className="w-full bg-green-500 hover:bg-green-600 text-white font-bold text-lg py-3 shadow-liquid-lg">
+                  <Button 
+                    onClick={handlePlaceOrder} 
+                    className="w-full bg-green-500 hover:bg-green-600 text-white font-bold text-lg py-3 shadow-liquid-lg"
+                    disabled={restaurant?.allYouCanEat.enabled && table?.remainingOrders !== undefined && table.remainingOrders <= 0}
+                  >
                     <Check size={20} className="mr-2" />
-                    Invia Ordine
+                    {restaurant?.allYouCanEat.enabled && table?.remainingOrders !== undefined && table.remainingOrders <= 0 
+                      ? 'Limite ordini raggiunto' 
+                      : 'Invia Ordine'
+                    }
                   </Button>
                 </div>
               </>

@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Badge } from '@/components/ui/badge'
@@ -49,6 +49,12 @@ export default function AnalyticsCharts({ orders, completedOrders, orderHistory,
   const [dateFilter, setDateFilter] = useState<DateFilter>('week')
   const [customStartDate, setCustomStartDate] = useState('')
   const [customEndDate, setCustomEndDate] = useState('')
+  const [selectedCategories, setSelectedCategories] = useState<string[]>([])
+
+  // Update selected categories when categories change
+  useEffect(() => {
+    setSelectedCategories(categories.map(c => c.name))
+  }, [categories])
 
   // Helper function to get date range
   const getDateRange = (filter: DateFilter) => {
@@ -227,24 +233,26 @@ export default function AnalyticsCharts({ orders, completedOrders, orderHistory,
       }
     }).filter(cat => cat.quantity > 0)
 
-    // Most ordered dishes
-    const dishStats = menuItems.map(dish => {
-      const dishOrders = allFilteredOrders.flatMap(order => 
-        order.items.filter(item => item.menuItemId === dish.id)
-      )
-      
-      const totalQuantity = dishOrders.reduce((sum, item) => sum + item.quantity, 0)
-      const totalRevenue = totalQuantity * dish.price
-      
-      return {
-        name: dish.name,
-        category: dish.category,
-        quantity: totalQuantity,
-        revenue: totalRevenue
-      }
-    }).filter(dish => dish.quantity > 0)
-      .sort((a, b) => b.quantity - a.quantity)
-      .slice(0, 10)
+    // Most ordered dishes (filtered by selected categories)
+    const dishStats = menuItems
+      .filter(dish => selectedCategories.includes(dish.category))
+      .map(dish => {
+        const dishOrders = allFilteredOrders.flatMap(order => 
+          order.items.filter(item => item.menuItemId === dish.id)
+        )
+        
+        const totalQuantity = dishOrders.reduce((sum, item) => sum + item.quantity, 0)
+        const totalRevenue = totalQuantity * dish.price
+        
+        return {
+          name: dish.name,
+          category: dish.category,
+          quantity: totalQuantity,
+          revenue: totalRevenue
+        }
+      }).filter(dish => dish.quantity > 0)
+        .sort((a, b) => b.quantity - a.quantity)
+        .slice(0, 10)
 
     return {
       totalOrders,
@@ -256,7 +264,7 @@ export default function AnalyticsCharts({ orders, completedOrders, orderHistory,
       categoryStats,
       dishStats
     }
-  }, [allFilteredOrders, orders, categories, menuItems, dateFilter, start, end])
+  }, [allFilteredOrders, orders, categories, menuItems, dateFilter, start, end, selectedCategories])
 
   return (
     <div className="space-y-6">
@@ -375,13 +383,24 @@ export default function AnalyticsCharts({ orders, completedOrders, orderHistory,
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={300}>
-              <AreaChart data={analytics.dailyData}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="date" />
-                <YAxis />
-                <Tooltip />
-                <Area type="monotone" dataKey="orders" stroke="#C9A152" fill="#C9A152" fillOpacity={0.3} />
-              </AreaChart>
+              {analytics.dailyData.length === 1 ? (
+                // Single day - use bar chart instead of line/area
+                <BarChart data={analytics.dailyData}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="date" />
+                  <YAxis />
+                  <Tooltip />
+                  <Bar dataKey="orders" fill="#C9A152" radius={[4, 4, 0, 0]} />
+                </BarChart>
+              ) : (
+                <AreaChart data={analytics.dailyData}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="date" />
+                  <YAxis />
+                  <Tooltip />
+                  <Area type="monotone" dataKey="orders" stroke="#C9A152" fill="#C9A152" fillOpacity={0.3} />
+                </AreaChart>
+              )}
             </ResponsiveContainer>
           </CardContent>
         </Card>
@@ -396,13 +415,24 @@ export default function AnalyticsCharts({ orders, completedOrders, orderHistory,
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={300}>
-              <AreaChart data={analytics.dailyData}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="date" />
-                <YAxis />
-                <Tooltip formatter={(value: number) => [`€${value.toFixed(2)}`, 'Ricavi']} />
-                <Area type="monotone" dataKey="revenue" stroke="#8B7355" fill="#8B7355" fillOpacity={0.3} />
-              </AreaChart>
+              {analytics.dailyData.length === 1 ? (
+                // Single day - use bar chart instead of line/area
+                <BarChart data={analytics.dailyData}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="date" />
+                  <YAxis />
+                  <Tooltip formatter={(value: number) => [`€${value.toFixed(2)}`, 'Ricavi']} />
+                  <Bar dataKey="revenue" fill="#8B7355" radius={[4, 4, 0, 0]} />
+                </BarChart>
+              ) : (
+                <AreaChart data={analytics.dailyData}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="date" />
+                  <YAxis />
+                  <Tooltip formatter={(value: number) => [`€${value.toFixed(2)}`, 'Ricavi']} />
+                  <Area type="monotone" dataKey="revenue" stroke="#8B7355" fill="#8B7355" fillOpacity={0.3} />
+                </AreaChart>
+              )}
             </ResponsiveContainer>
           </CardContent>
         </Card>
@@ -440,13 +470,24 @@ export default function AnalyticsCharts({ orders, completedOrders, orderHistory,
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={300}>
-              <LineChart data={analytics.dailyData}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="date" />
-                <YAxis />
-                <Tooltip formatter={(value: number) => [`€${value.toFixed(2)}`, 'Valore Medio']} />
-                <Line type="monotone" dataKey="averageValue" stroke="#D4B366" strokeWidth={2} />
-              </LineChart>
+              {analytics.dailyData.length === 1 ? (
+                // Single day - use bar chart
+                <BarChart data={analytics.dailyData}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="date" />
+                  <YAxis />
+                  <Tooltip formatter={(value: number) => [`€${value.toFixed(2)}`, 'Valore Medio']} />
+                  <Bar dataKey="averageValue" fill="#D4B366" radius={[4, 4, 0, 0]} />
+                </BarChart>
+              ) : (
+                <LineChart data={analytics.dailyData}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="date" />
+                  <YAxis />
+                  <Tooltip formatter={(value: number) => [`€${value.toFixed(2)}`, 'Valore Medio']} />
+                  <Line type="monotone" dataKey="averageValue" stroke="#D4B366" strokeWidth={3} dot={{ r: 6 }} />
+                </LineChart>
+              )}
             </ResponsiveContainer>
           </CardContent>
         </Card>
@@ -506,13 +547,105 @@ export default function AnalyticsCharts({ orders, completedOrders, orderHistory,
         </Card>
       </div>
 
+      {/* Most Ordered Dishes Pie Chart */}
+      {analytics.dishStats.length > 0 && (
+        <Card className="shadow-professional">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <ShoppingBag size={20} />
+              Top 10 Piatti - Grafico a Torta
+              <Badge variant="outline" className="ml-2">
+                Categorie: {selectedCategories.length > 0 ? selectedCategories.join(', ') : 'Nessuna'}
+              </Badge>
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ResponsiveContainer width="100%" height={400}>
+              <PieChart>
+                <Pie
+                  data={analytics.dishStats.slice(0, 8)} // Limit to top 8 for readability
+                  cx="50%"
+                  cy="50%"
+                  labelLine={false}
+                  label={({ name, quantity }) => `${name} (${quantity}x)`}
+                  outerRadius={120}
+                  fill="#8884d8"
+                  dataKey="quantity"
+                >
+                  {analytics.dishStats.slice(0, 8).map((entry, index) => (
+                    <Cell key={`dish-${index}`} fill={COLORS[index % COLORS.length]} />
+                  ))}
+                </Pie>
+                <Tooltip formatter={(value: number, name: string) => [`${value}x`, 'Quantità']} />
+              </PieChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Top Dishes */}
       <Card className="shadow-professional">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Users size={20} />
-            Piatti Più Ordinati
-          </CardTitle>
+          <div className="flex items-center justify-between">
+            <CardTitle className="flex items-center gap-2">
+              <Users size={20} />
+              Piatti Più Ordinati
+            </CardTitle>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant="outline" size="sm">
+                  Filtra Categorie ({selectedCategories.length})
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-64">
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <Label className="text-sm font-medium">Categorie</Label>
+                    <div className="flex gap-2">
+                      <Button 
+                        size="sm" 
+                        variant="ghost"
+                        onClick={() => setSelectedCategories(categories.map(c => c.name))}
+                        className="h-6 px-2 text-xs"
+                      >
+                        Tutte
+                      </Button>
+                      <Button 
+                        size="sm" 
+                        variant="ghost"
+                        onClick={() => setSelectedCategories([])}
+                        className="h-6 px-2 text-xs"
+                      >
+                        Nessuna
+                      </Button>
+                    </div>
+                  </div>
+                  <div className="space-y-2 max-h-48 overflow-y-auto">
+                    {categories.map((category) => (
+                      <div key={category.id} className="flex items-center space-x-2">
+                        <input
+                          type="checkbox"
+                          id={`cat-${category.id}`}
+                          checked={selectedCategories.includes(category.name)}
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              setSelectedCategories([...selectedCategories, category.name])
+                            } else {
+                              setSelectedCategories(selectedCategories.filter(c => c !== category.name))
+                            }
+                          }}
+                          className="rounded"
+                        />
+                        <label htmlFor={`cat-${category.id}`} className="text-sm font-medium">
+                          {category.name}
+                        </label>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </PopoverContent>
+            </Popover>
+          </div>
         </CardHeader>
         <CardContent>
           <div className="space-y-4">

@@ -58,9 +58,19 @@
 - **Success Criteria**: Latenza < 2 secondi, interfaccia chiara per cucina
 
 ### Sistema Analytics Integrato
-- **Functionality**: Statistiche dettagliate su ordini, ricavi e performance
+- **Functionality**: Statistiche dettagliate su ordini, ricavi e performance con grafici categoria/piatti
 - **Purpose**: Fornire insights per decisioni business-oriented
-- **Success Criteria**: Dati accurati, visualizzazioni chiare, filtri funzionali
+- **Success Criteria**: Dati accurati, visualizzazioni chiare, grafici torta per categorie e piatti più ordinati
+
+### Sistema Coperto per Tavolo
+- **Functionality**: Costo fisso per persona aggiunto automaticamente al conto
+- **Purpose**: Gestire il coperto standard secondo normative italiane
+- **Success Criteria**: Addebito automatico basato sul numero persone dichiarato all'attivazione tavolo
+
+### Modalità All You Can Eat
+- **Functionality**: Sistema forfettario con limite ordini e esclusioni menu selettive
+- **Purpose**: Offrire servizio all-inclusive con controllo costi e flessibilità
+- **Success Criteria**: Limite ordini configurabile, esclusione piatti selettiva, addebito separato items esclusi
 
 ## Design Direction
 

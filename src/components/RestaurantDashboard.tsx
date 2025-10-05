@@ -34,6 +34,7 @@ const RestaurantDashboard = ({ user, onLogout }: RestaurantDashboardProps) => {
   const [reservations, setReservations] = useKV<Reservation[]>(`reservations_${user.restaurantId}`, [])
   const [orderHistory, setOrderHistory] = useKV<OrderHistory[]>(`orderHistory_${user.restaurantId}`, [])
   const [categories, setCategories] = useKV<MenuCategory[]>('menuCategories', [])
+  const [restaurants, setRestaurants] = useKV<Restaurant[]>('restaurants', [])
   
   const [newTableName, setNewTableName] = useState('')
   const [newMenuItem, setNewMenuItem] = useState({
@@ -54,6 +55,7 @@ const RestaurantDashboard = ({ user, onLogout }: RestaurantDashboardProps) => {
   const [orderViewMode, setOrderViewMode] = useState<'table' | 'dish'>('table')
   const [showCompletedOrders, setShowCompletedOrders] = useState(false)
   const [showQrDialog, setShowQrDialog] = useState(false)
+  const [customerCount, setCustomerCount] = useState('')
   
   const restaurantMenuItems = menuItems?.filter(item => item.restaurantId === user.restaurantId) || []
   const restaurantTables = tables?.filter(table => table.restaurantId === user.restaurantId) || []
@@ -62,6 +64,9 @@ const RestaurantDashboard = ({ user, onLogout }: RestaurantDashboardProps) => {
   const restaurantReservations = reservations?.filter(reservation => reservation.restaurantId === user.restaurantId) || []
   const restaurantOrderHistory = orderHistory?.filter(history => history.restaurantId === user.restaurantId) || []
   const restaurantCategories = categories?.filter(cat => cat.restaurantId === user.restaurantId) || []
+
+  // Get current restaurant
+  const currentRestaurant = restaurants?.find(r => r.id === user.restaurantId)
 
   const generatePin = () => Math.floor(1000 + Math.random() * 9000).toString()
   const generateQrCode = (tableId: string) => `${window.location.origin}?table=${tableId}`
@@ -96,19 +101,43 @@ const RestaurantDashboard = ({ user, onLogout }: RestaurantDashboardProps) => {
       // Deactivate table - just mark as inactive, don't change PIN
       setTables(tables?.map(t => 
         t.id === tableId 
-          ? { ...t, isActive: false, status: 'available' }
+          ? { ...t, isActive: false, status: 'available', customerCount: undefined, remainingOrders: undefined }
           : t
       ) || [])
       toast.success('Tavolo disattivato')
     } else {
-      // Activate table - generate new PIN
-      setTables(tables?.map(t => 
-        t.id === tableId 
-          ? { ...t, isActive: true, pin: generatePin(), status: 'waiting-order' }
-          : t
-      ) || [])
-      toast.success('Tavolo attivato con nuovo PIN')
+      // For activation, we need customer count - this will be handled by the dialog
+      setSelectedTable(table)
+      // Don't activate immediately, wait for customer count input
     }
+  }
+
+  const handleActivateTable = (tableId: string, customerCount: number) => {
+    if (!customerCount || customerCount <= 0) {
+      toast.error('Inserisci un numero valido di clienti')
+      return
+    }
+
+    const remainingOrders = currentRestaurant?.allYouCanEat.enabled 
+      ? currentRestaurant.allYouCanEat.maxOrders 
+      : undefined
+
+    setTables(tables?.map(t => 
+      t.id === tableId 
+        ? { 
+            ...t, 
+            isActive: true, 
+            pin: generatePin(), 
+            status: 'waiting-order',
+            customerCount: customerCount,
+            remainingOrders: remainingOrders
+          }
+        : t
+    ) || [])
+    
+    toast.success(`Tavolo attivato per ${customerCount} persone`)
+    setSelectedTable(null)
+    setCustomerCount('')
   }
 
   const handleDeleteTable = (tableId: string) => {
@@ -156,6 +185,23 @@ const RestaurantDashboard = ({ user, onLogout }: RestaurantDashboardProps) => {
   const handleDeleteMenuItem = (itemId: string) => {
     setMenuItems(menuItems?.filter(item => item.id !== itemId) || [])
     toast.success('Piatto rimosso')
+  }
+
+  const handleToggleAllYouCanEatExclusion = (itemId: string) => {
+    setMenuItems(menuItems?.map(item => 
+      item.id === itemId 
+        ? { ...item, excludeFromAllYouCanEat: !item.excludeFromAllYouCanEat }
+        : item
+    ) || [])
+    
+    const item = menuItems?.find(item => item.id === itemId)
+    if (item) {
+      toast.success(
+        item.excludeFromAllYouCanEat 
+          ? 'Piatto incluso in All You Can Eat' 
+          : 'Piatto escluso da All You Can Eat'
+      )
+    }
   }
 
   const handleCompleteOrder = (orderId: string) => {
@@ -774,16 +820,16 @@ const RestaurantDashboard = ({ user, onLogout }: RestaurantDashboardProps) => {
             
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
               {restaurantTables.map(table => (
-                <Card key={table.id} className={`shadow-professional hover:shadow-professional-lg transition-all duration-300 ${!table.isActive ? 'opacity-50 bg-gray-50' : 'bg-white'}`}>
+                <Card key={table.id} className={`shadow-professional hover:shadow-professional-lg transition-all duration-300 ${!table.isActive ? 'opacity-75 bg-gray-50 border-2 border-dashed border-gray-300' : 'bg-white'}`}>
                   <CardHeader className="pb-3">
                     <div className="flex items-center justify-between">
-                      <CardTitle className="text-lg flex items-center gap-2">
+                      <CardTitle className={`text-lg flex items-center gap-2 ${!table.isActive ? 'font-bold' : ''}`}>
                         <div className={`w-8 h-8 rounded border-2 flex items-center justify-center text-xs font-bold ${
-                          table.isActive ? 'bg-green-100 border-green-400 text-green-700' : 'bg-gray-100 border-gray-400 text-gray-500'
+                          table.isActive ? 'bg-green-100 border-green-400 text-green-700' : 'bg-gray-200 border-gray-500 text-gray-700'
                         }`}>
                           {table.name.slice(-1)}
                         </div>
-                        {table.name}
+                        <span className={!table.isActive ? 'text-gray-900 font-semibold' : ''}>{table.name}</span>
                       </CardTitle>
                       <Button
                         variant="ghost"
@@ -803,6 +849,17 @@ const RestaurantDashboard = ({ user, onLogout }: RestaurantDashboardProps) => {
                           <div className="text-xs text-muted-foreground mb-1">PIN Temporaneo</div>
                           <div className="text-2xl font-bold text-primary tracking-wider">{table.pin}</div>
                         </div>
+                        {table.customerCount && (
+                          <div className="text-center">
+                            <div className="text-xs text-muted-foreground">Clienti</div>
+                            <div className="text-lg font-semibold">{table.customerCount}</div>
+                            {currentRestaurant?.allYouCanEat.enabled && table.remainingOrders !== undefined && (
+                              <div className="text-xs text-accent">
+                                {table.remainingOrders} ordini rimasti
+                              </div>
+                            )}
+                          </div>
+                        )}
                         <div className="flex flex-wrap gap-2">
                           <Button
                             variant="outline"
@@ -849,13 +906,13 @@ const RestaurantDashboard = ({ user, onLogout }: RestaurantDashboardProps) => {
                       </>
                     ) : (
                       <>
-                        <div className="bg-gray-100 border border-gray-200 rounded-lg p-3 text-center">
-                          <div className="text-sm text-gray-500">Tavolo Vuoto</div>
-                          <div className="text-xs text-gray-400 mt-1">Clicca "Attiva" per iniziare</div>
+                        <div className="bg-gray-100 border-2 border-gray-300 rounded-lg p-3 text-center">
+                          <div className="text-base font-medium text-gray-700">Tavolo Vuoto</div>
+                          <div className="text-sm text-gray-600 mt-1">Clicca "Attiva" per iniziare</div>
                         </div>
                         <Button
                           onClick={() => handleToggleTable(table.id)}
-                          className="w-full bg-green-600 hover:bg-green-700 text-white"
+                          className="w-full bg-green-600 hover:bg-green-700 text-white font-semibold shadow-md hover:shadow-lg"
                           size="sm"
                         >
                           Attiva Tavolo
@@ -1172,7 +1229,7 @@ const RestaurantDashboard = ({ user, onLogout }: RestaurantDashboardProps) => {
                             </div>
                           </CardHeader>
                           <CardContent>
-                            <div className="flex gap-2">
+                            <div className="flex gap-2 flex-wrap">
                               <Button
                                 variant="outline"
                                 size="sm"
@@ -1197,6 +1254,17 @@ const RestaurantDashboard = ({ user, onLogout }: RestaurantDashboardProps) => {
                               >
                                 <Trash size={14} />
                               </Button>
+                              {currentRestaurant?.allYouCanEat.enabled && (
+                                <Button
+                                  variant={item.excludeFromAllYouCanEat ? "destructive" : "outline"}
+                                  size="sm"
+                                  onClick={() => handleToggleAllYouCanEatExclusion(item.id)}
+                                  className="h-8 text-xs px-2"
+                                  title={item.excludeFromAllYouCanEat ? 'Includi in All You Can Eat' : 'Escludi da All You Can Eat'}
+                                >
+                                  {item.excludeFromAllYouCanEat ? 'Escluso' : 'Incluso'}
+                                </Button>
+                              )}
                             </div>
                           </CardContent>
                         </Card>
@@ -1235,37 +1303,199 @@ const RestaurantDashboard = ({ user, onLogout }: RestaurantDashboardProps) => {
               <h2 className="text-2xl font-bold text-foreground">Impostazioni</h2>
             </div>
             
-            <Card className="shadow-professional">
-              <CardContent className="p-6">
-                <div className="space-y-4">
+            <div className="grid gap-6 md:grid-cols-2">
+              {/* Restaurant Info */}
+              <Card className="shadow-professional">
+                <CardHeader>
+                  <CardTitle>Informazioni Ristorante</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
                   <div>
                     <Label htmlFor="restaurantName">Nome Ristorante</Label>
                     <Input
                       id="restaurantName"
+                      value={currentRestaurant?.name || ''}
+                      onChange={(e) => {
+                        if (currentRestaurant) {
+                          setRestaurants(restaurants?.map(r => 
+                            r.id === currentRestaurant.id 
+                              ? { ...r, name: e.target.value }
+                              : r
+                          ) || [])
+                        }
+                      }}
                       placeholder="Nome del ristorante"
                     />
                   </div>
                   <div>
-                    <Label htmlFor="restaurantEmail">Email</Label>
+                    <Label htmlFor="restaurantContact">Contatto</Label>
                     <Input
-                      id="restaurantEmail"
-                      type="email"
+                      id="restaurantContact"
+                      value={currentRestaurant?.contact || ''}
+                      onChange={(e) => {
+                        if (currentRestaurant) {
+                          setRestaurants(restaurants?.map(r => 
+                            r.id === currentRestaurant.id 
+                              ? { ...r, contact: e.target.value }
+                              : r
+                          ) || [])
+                        }
+                      }}
                       placeholder="email@ristorante.com"
                     />
                   </div>
                   <div>
-                    <Label htmlFor="restaurantPhone">Telefono</Label>
+                    <Label htmlFor="restaurantHours">Orari</Label>
                     <Input
-                      id="restaurantPhone"
-                      placeholder="Numero di telefono"
+                      id="restaurantHours"
+                      value={currentRestaurant?.hours || ''}
+                      onChange={(e) => {
+                        if (currentRestaurant) {
+                          setRestaurants(restaurants?.map(r => 
+                            r.id === currentRestaurant.id 
+                              ? { ...r, hours: e.target.value }
+                              : r
+                          ) || [])
+                        }
+                      }}
+                      placeholder="12:00-23:00"
                     />
                   </div>
-                  <Button className="w-full">
-                    Salva Impostazioni
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
+
+              {/* Cover Charge Settings */}
+              <Card className="shadow-professional">
+                <CardHeader>
+                  <CardTitle>Coperto</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div>
+                    <Label htmlFor="coverCharge">Costo Coperto per Persona (€)</Label>
+                    <Input
+                      id="coverCharge"
+                      type="number"
+                      step="0.50"
+                      min="0"
+                      value={currentRestaurant?.coverChargePerPerson || 0}
+                      onChange={(e) => {
+                        if (currentRestaurant) {
+                          setRestaurants(restaurants?.map(r => 
+                            r.id === currentRestaurant.id 
+                              ? { ...r, coverChargePerPerson: parseFloat(e.target.value) || 0 }
+                              : r
+                          ) || [])
+                        }
+                      }}
+                      placeholder="2.00"
+                    />
+                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    Il coperto verrà automaticamente aggiunto al conto di ogni tavolo in base al numero di persone.
+                  </p>
+                </CardContent>
+              </Card>
+
+              {/* All You Can Eat Settings */}
+              <Card className="shadow-professional md:col-span-2">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    All You Can Eat
+                    <Badge variant={currentRestaurant?.allYouCanEat.enabled ? "default" : "secondary"}>
+                      {currentRestaurant?.allYouCanEat.enabled ? "Attivo" : "Disattivo"}
+                    </Badge>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="flex items-center space-x-2">
+                    <input
+                      type="checkbox"
+                      id="enableAllYouCanEat"
+                      checked={currentRestaurant?.allYouCanEat.enabled || false}
+                      onChange={(e) => {
+                        if (currentRestaurant) {
+                          setRestaurants(restaurants?.map(r => 
+                            r.id === currentRestaurant.id 
+                              ? { 
+                                  ...r, 
+                                  allYouCanEat: { 
+                                    ...r.allYouCanEat, 
+                                    enabled: e.target.checked 
+                                  } 
+                                }
+                              : r
+                          ) || [])
+                        }
+                      }}
+                      className="rounded"
+                    />
+                    <Label htmlFor="enableAllYouCanEat">Abilita modalità All You Can Eat</Label>
+                  </div>
+
+                  {currentRestaurant?.allYouCanEat.enabled && (
+                    <div className="grid gap-4 md:grid-cols-2">
+                      <div>
+                        <Label htmlFor="allYouCanEatPrice">Prezzo per Persona (€)</Label>
+                        <Input
+                          id="allYouCanEatPrice"
+                          type="number"
+                          step="1.00"
+                          min="0"
+                          value={currentRestaurant?.allYouCanEat.pricePerPerson || 0}
+                          onChange={(e) => {
+                            if (currentRestaurant) {
+                              setRestaurants(restaurants?.map(r => 
+                                r.id === currentRestaurant.id 
+                                  ? { 
+                                      ...r, 
+                                      allYouCanEat: { 
+                                        ...r.allYouCanEat, 
+                                        pricePerPerson: parseFloat(e.target.value) || 0 
+                                      } 
+                                    }
+                                  : r
+                              ) || [])
+                            }
+                          }}
+                          placeholder="25.00"
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="maxOrders">Numero Massimo Ordini per Tavolo</Label>
+                        <Input
+                          id="maxOrders"
+                          type="number"
+                          min="1"
+                          max="10"
+                          value={currentRestaurant?.allYouCanEat.maxOrders || 3}
+                          onChange={(e) => {
+                            if (currentRestaurant) {
+                              setRestaurants(restaurants?.map(r => 
+                                r.id === currentRestaurant.id 
+                                  ? { 
+                                      ...r, 
+                                      allYouCanEat: { 
+                                        ...r.allYouCanEat, 
+                                        maxOrders: parseInt(e.target.value) || 3 
+                                      } 
+                                    }
+                                  : r
+                              ) || [])
+                            }
+                          }}
+                          placeholder="3"
+                        />
+                      </div>
+                    </div>
+                  )}
+
+                  <p className="text-sm text-muted-foreground">
+                    Con All You Can Eat attivo, i clienti pagano un prezzo fisso e possono ordinare liberamente 
+                    entro il limite di ordini impostato. I piatti esclusi verranno addebitati separatamente.
+                  </p>
+                </CardContent>
+              </Card>
+            </div>
           </TabsContent>
 
           {/* History Tab */}
@@ -1345,6 +1575,88 @@ const RestaurantDashboard = ({ user, onLogout }: RestaurantDashboardProps) => {
                   Copia Link
                 </Button>
               </div>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Customer Count Dialog for Table Activation */}
+      <Dialog open={!!selectedTable && !selectedTable.isActive} onOpenChange={(open) => {
+        if (!open) {
+          setSelectedTable(null)
+          setCustomerCount('')
+        }
+      }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Attiva {selectedTable?.name}</DialogTitle>
+            <DialogDescription>
+              Inserisci il numero di clienti per questo tavolo
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="customerCount">Numero di Clienti</Label>
+              <Input
+                id="customerCount"
+                type="number"
+                min="1"
+                max="20"
+                value={customerCount}
+                onChange={(e) => setCustomerCount(e.target.value)}
+                placeholder="es. 4"
+                className="text-lg text-center"
+              />
+            </div>
+            
+            {currentRestaurant?.coverChargePerPerson && currentRestaurant.coverChargePerPerson > 0 && (
+              <div className="bg-muted/50 p-3 rounded-lg">
+                <p className="text-sm text-muted-foreground">
+                  Coperto: €{currentRestaurant.coverChargePerPerson.toFixed(2)} × {customerCount || 0} = 
+                  <span className="font-semibold ml-1">
+                    €{((currentRestaurant.coverChargePerPerson || 0) * (parseInt(customerCount) || 0)).toFixed(2)}
+                  </span>
+                </p>
+              </div>
+            )}
+            
+            {currentRestaurant?.allYouCanEat.enabled && (
+              <div className="bg-primary/10 p-3 rounded-lg">
+                <p className="text-sm font-medium text-primary mb-1">All You Can Eat Attivo</p>
+                <p className="text-sm text-muted-foreground">
+                  €{currentRestaurant.allYouCanEat.pricePerPerson.toFixed(2)} × {customerCount || 0} = 
+                  <span className="font-semibold ml-1">
+                    €{((currentRestaurant.allYouCanEat.pricePerPerson || 0) * (parseInt(customerCount) || 0)).toFixed(2)}
+                  </span>
+                </p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Massimo {currentRestaurant.allYouCanEat.maxOrders} ordini per tavolo
+                </p>
+              </div>
+            )}
+            
+            <div className="flex gap-2">
+              <Button 
+                variant="outline" 
+                className="flex-1"
+                onClick={() => {
+                  setSelectedTable(null)
+                  setCustomerCount('')
+                }}
+              >
+                Annulla
+              </Button>
+              <Button 
+                className="flex-1 bg-green-600 hover:bg-green-700"
+                onClick={() => {
+                  if (selectedTable) {
+                    handleActivateTable(selectedTable.id, parseInt(customerCount))
+                  }
+                }}
+                disabled={!customerCount || parseInt(customerCount) <= 0}
+              >
+                Attiva Tavolo
+              </Button>
             </div>
           </div>
         </DialogContent>
