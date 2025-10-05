@@ -59,7 +59,8 @@ export default function AnalyticsCharts({ orders, completedOrders, orderHistory,
   // Helper function to get date range
   const getDateRange = (filter: DateFilter) => {
     const now = new Date()
-    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
     const weekAgo = new Date(today)
     weekAgo.setDate(weekAgo.getDate() - 7)
     
@@ -228,7 +229,6 @@ export default function AnalyticsCharts({ orders, completedOrders, orderHistory,
       return {
         name: category.name,
         quantity: totalQuantity,
-        revenue: totalRevenue,
         percentage: totalOrders > 0 ? (categoryOrders.length / totalOrders) * 100 : 0
       }
     }).filter(cat => cat.quantity > 0)
@@ -250,9 +250,10 @@ export default function AnalyticsCharts({ orders, completedOrders, orderHistory,
           quantity: totalQuantity,
           revenue: totalRevenue
         }
-      }).filter(dish => dish.quantity > 0)
-        .sort((a, b) => b.quantity - a.quantity)
-        .slice(0, 10)
+      })
+      .filter(dish => dish.quantity > 0)
+      .sort((a, b) => b.quantity - a.quantity)
+      .slice(0, 10)
 
     return {
       totalOrders,
