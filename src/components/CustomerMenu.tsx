@@ -36,7 +36,15 @@ export default function CustomerMenu({ tableId, onExit }: Props) {
   const [tables] = useKV<Table[]>('tables', [])
   const [menuItems] = useKV<MenuItem[]>('menuItems', [])
   const [categories] = useKV<MenuCategory[]>('menuCategories', [])
-  const [orders, setOrders] = useKV<Order[]>('orders', [])
+  
+  // Find the table first to get the restaurant ID
+  const table = tables?.find(t => t.id === tableId)
+  
+  // Use restaurant-specific key for orders
+  const [orders, setOrders] = useKV<Order[]>(
+    table ? `orders_${table.restaurantId}` : 'orders_default', 
+    []
+  )
   
   const [cart, setCart] = useState<CartItem[]>([])
   const [selectedCategory, setSelectedCategory] = useState<string>('all')
@@ -46,7 +54,6 @@ export default function CustomerMenu({ tableId, onExit }: Props) {
   const [isPinVerified, setIsPinVerified] = useState(false)
   const [showPin, setShowPin] = useState(false)
 
-  const table = tables?.find(t => t.id === tableId)
   const restaurantMenuItems = menuItems?.filter(m => 
     m.restaurantId === table?.restaurantId && m.isActive
   ) || []

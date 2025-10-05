@@ -184,18 +184,22 @@ const TimelineReservations = ({ user, tables, reservations, setReservations }: T
 
   // Get reservation blocks for rendering
   const getReservationBlocks = (): ReservationBlock[] => {
-    return dayReservations.map(reservation => {
-      const table = restaurantTables.find(t => t.id === reservation.tableId)!
-      const startMinutes = timeToMinutes(reservation.time)
-      const duration = 120 // Default 2 hours
-      
-      return {
-        reservation,
-        startMinutes,
-        duration,
-        table
-      }
-    })
+    return dayReservations
+      .map(reservation => {
+        const table = restaurantTables.find(t => t.id === reservation.tableId)
+        if (!table) return null // Skip if table not found
+        
+        const startMinutes = timeToMinutes(reservation.time)
+        const duration = 120 // Default 2 hours
+        
+        return {
+          reservation,
+          startMinutes,
+          duration,
+          table
+        }
+      })
+      .filter((block): block is ReservationBlock => block !== null)
   }
 
   // Get position and width for reservation block
