@@ -141,26 +141,6 @@ export default function LoginPage({ onLogin, onTableAccess }: Props) {
                 >
                   {loading ? 'Accesso in corso...' : 'Accedi al Menù'}
                 </Button>
-                
-                <div className="text-center pt-4 border-t">
-                  <p className="text-sm text-muted-foreground mb-3">
-                    Come funziona:
-                  </p>
-                  <div className="text-xs text-muted-foreground space-y-2">
-                    <div className="flex items-center gap-2">
-                      <div className="w-6 h-6 bg-primary/20 rounded-full flex items-center justify-center text-primary font-bold text-xs">1</div>
-                      <span>Scansiona il QR code sul tavolo</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <div className="w-6 h-6 bg-primary/20 rounded-full flex items-center justify-center text-primary font-bold text-xs">2</div>
-                      <span>Inserisci il PIN temporaneo fornito dal cameriere</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <div className="w-6 h-6 bg-primary/20 rounded-full flex items-center justify-center text-primary font-bold text-xs">3</div>
-                      <span>Ordina direttamente dal tuo dispositivo</span>
-                    </div>
-                  </div>
-                </div>
               </CardContent>
             </Card>
           </TabsContent>
