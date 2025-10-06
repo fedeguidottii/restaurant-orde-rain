@@ -99,62 +99,12 @@ export default function AnalyticsCharts({ orders, completedOrders, orderHistory,
   const dateRange = getDateRange(dateFilter)
   const { start, end } = dateRange
 
-  // Generate sample data for better analytics
-  const generateSampleData = () => {
-    const sampleOrderHistory: OrderHistory[] = []
-    const now = Date.now()
-    const threMonthsAgo = now - (90 * 24 * 60 * 60 * 1000)
-    
-    // Generate 100 sample orders over the last 3 months
-    for (let i = 0; i < 100; i++) {
-      const randomTime = threMonthsAgo + Math.random() * (now - threMonthsAgo)
-      const randomItems = Math.floor(Math.random() * 4) + 1 // 1-4 items
-      const items: Array<{
-        menuItemId: string
-        name: string
-        quantity: number
-        price: number
-        notes?: string
-      }> = []
-      let total = 0
-      
-      for (let j = 0; j < randomItems; j++) {
-        const randomMenuItem = menuItems[Math.floor(Math.random() * menuItems.length)]
-        const quantity = Math.floor(Math.random() * 3) + 1
-        items.push({
-          menuItemId: randomMenuItem.id,
-          name: randomMenuItem.name,
-          quantity,
-          price: randomMenuItem.price
-        })
-        total += randomMenuItem.price * quantity
-      }
-      
-      sampleOrderHistory.push({
-        id: `sample-${i}`,
-        tableId: `table-${Math.floor(Math.random() * 5) + 1}`,
-        tableName: `Tavolo ${Math.floor(Math.random() * 5) + 1}`,
-        restaurantId: 'restaurant-1',
-        items,
-        total,
-        timestamp: randomTime,
-        paidAt: randomTime + (Math.random() * 30 * 60 * 1000), // 0-30 minutes later
-        customerCount: Math.floor(Math.random() * 6) + 1
-      })
-    }
-    
-    return sampleOrderHistory
-  }
-
-  const sampleData = useMemo(() => generateSampleData(), [menuItems])
-  const allOrderHistory = [...orderHistory, ...sampleData]
-
   // Filter data based on date range
   const filteredCompletedOrders = completedOrders.filter(order => 
     order.timestamp >= start && order.timestamp <= end
   )
   
-  const filteredOrderHistory = allOrderHistory.filter(order => 
+  const filteredOrderHistory = orderHistory.filter(order => 
     order.paidAt >= start && order.paidAt <= end
   )
 
