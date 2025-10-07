@@ -314,21 +314,6 @@ const RestaurantDashboard = ({ user, onLogout }: RestaurantDashboardProps) => {
     setShowTableDialog(false)
   }
 
-  const handleClearAllData = () => {
-    if (confirm('ATTENZIONE: Questa azione cancellerà tutti i dati (ordini, tavoli, menu, prenotazioni). Continuare?')) {
-      // Clear all restaurant data
-      setOrders([])
-      setCompletedOrders([])
-      setOrderHistory([])
-      setReservations([])
-      setTables([])
-      setMenuItems([])
-      setCategories([])
-      
-      toast.success('Tutti i dati sono stati cancellati')
-    }
-  }
-
   // Set active section based on tab
   useEffect(() => {
     setActiveSection(activeTab)
@@ -1053,23 +1038,7 @@ const RestaurantDashboard = ({ user, onLogout }: RestaurantDashboardProps) => {
                     </CardContent>
                   </Card>
 
-                  <Card className="shadow-professional border-destructive/20">
-                    <CardHeader>
-                      <CardTitle className="text-destructive">Zona Pericolosa</CardTitle>
-                      <CardDescription>
-                        Azioni irreversibili - usare con cautela
-                      </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                      <Button 
-                        variant="destructive" 
-                        onClick={handleClearAllData}
-                        className="w-full"
-                      >
-                        Cancella Tutti i Dati
-                      </Button>
-                    </CardContent>
-                  </Card>
+
                 </>
               )}
             </div>
