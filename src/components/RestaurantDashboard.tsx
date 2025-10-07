@@ -26,7 +26,7 @@ interface RestaurantDashboardProps {
 
 const RestaurantDashboard = ({ user, onLogout }: RestaurantDashboardProps) => {
   const [activeSection, setActiveSection] = useState('orders')
-  const [sidebarExpanded, setSidebarExpanded] = useState(false)
+  const [sidebarExpanded, setSidebarExpanded] = useState(true)
   const [activeTab, setActiveTab] = useState('orders')
   
   const [tables, setTables] = useKV<Table[]>('tables', [])
@@ -39,7 +39,6 @@ const RestaurantDashboard = ({ user, onLogout }: RestaurantDashboardProps) => {
   const [restaurants, setRestaurants] = useKV<Restaurant[]>('restaurants', [])
   
   const [newTableName, setNewTableName] = useState('')
-  const [newTableGuests, setNewTableGuests] = useState(2)
   const [newMenuItem, setNewMenuItem] = useState({
     name: '',
     description: '',
@@ -48,11 +47,12 @@ const RestaurantDashboard = ({ user, onLogout }: RestaurantDashboardProps) => {
     image: ''
   })
   const [newCategory, setNewCategory] = useState('')
-  const [draggedCategory, setDraggedCategory] = useState<MenuCategory | null>(null)
   const [editingCategory, setEditingCategory] = useState<MenuCategory | null>(null)
   const [editCategoryName, setEditCategoryName] = useState('')
   const [selectedTable, setSelectedTable] = useState<Table | null>(null)
   const [showTableDialog, setShowTableDialog] = useState(false)
+  const [showMenuDialog, setShowMenuDialog] = useState(false)
+  const [showCategoryDialog, setShowCategoryDialog] = useState(false)
   const [showQrDialog, setShowQrDialog] = useState(false)
   const [qrCodeDataUrl, setQrCodeDataUrl] = useState('')
   const [orderViewMode, setOrderViewMode] = useState<'table' | 'dish'>('table')
@@ -80,7 +80,7 @@ const RestaurantDashboard = ({ user, onLogout }: RestaurantDashboardProps) => {
     const tableId = `table-${Date.now()}`
     const newTable: Table = {
       id: tableId,
-      name: newTableName,
+      name: newTableName.trim(),
       isActive: false,
       pin: generatePin(),
       qrCode: generateQrCode(tableId),
@@ -89,7 +89,8 @@ const RestaurantDashboard = ({ user, onLogout }: RestaurantDashboardProps) => {
     }
 
     setTables(prev => [...(prev || []), newTable])
-    setNewTableName('')
+    setNewTableName('') // Reset the input field
+    setShowTableDialog(false)
     toast.success('Tavolo creato con successo')
   }
 
@@ -98,44 +99,16 @@ const RestaurantDashboard = ({ user, onLogout }: RestaurantDashboardProps) => {
     if (!table) return
 
     if (!table.isActive) {
-      // Show dialog to get customer count when activating
-      const guests = prompt('Quanti clienti si sono seduti al tavolo?', '2')
-      if (!guests || isNaN(parseInt(guests))) {
-        toast.error('Numero di clienti non valido')
-        return
-      }
-      
-      const customerCount = parseInt(guests)
-      const newPin = generatePin()
-      
-      setTables(prev => prev?.map(t => t.id === tableId ? {
-        ...t,
-        isActive: true,
-        pin: newPin,
-        customerCount,
-        remainingOrders: currentRestaurant?.allYouCanEat.enabled ? currentRestaurant.allYouCanEat.maxOrders : undefined
-      } : t) || [])
-      
-      toast.success(`Tavolo ${table.name} attivato con PIN: ${newPin}`)
-    } else {
-      // Deactivate table
-      setTables(prev => prev?.map(t => t.id === tableId ? {
-        ...t,
-        isActive: false,
-        pin: generatePin(),
-        customerCount: undefined,
-        remainingOrders: undefined
-      } : t) || [])
-      
-      toast.success(`Tavolo ${table.name} disattivato`)
+      // Activating table - generate QR and PIN
+      await generateQRCode(table.qrCode)
+      setSelectedTable(table)
     }
-  }
 
-  const handleDeleteTable = (tableId: string) => {
-    if (confirm('Sei sicuro di voler eliminare questo tavolo?')) {
-      setTables(prev => prev?.filter(t => t.id !== tableId) || [])
-      toast.success('Tavolo eliminato')
-    }
+    setTables(prev => prev?.map(t => 
+      t.id === tableId ? { ...t, isActive: !t.isActive } : t
+    ) || [])
+
+    toast.success(table.isActive ? 'Tavolo disattivato' : 'Tavolo attivato')
   }
 
   const handleCreateCategory = async () => {
@@ -160,6 +133,48 @@ const RestaurantDashboard = ({ user, onLogout }: RestaurantDashboardProps) => {
     toast.success('Categoria creata con successo')
   }
 
+  const handleEditCategory = (category: MenuCategory) => {
+    setEditingCategory(category)
+    setEditCategoryName(category.name)
+  }
+
+  const handleSaveEditCategory = () => {
+    if (!editCategoryName.trim() || !editingCategory) {
+      toast.error('Inserisci il nome della categoria')
+      return
+    }
+
+    setCategories(prev => prev?.map(c => 
+      c.id === editingCategory.id ? { ...c, name: editCategoryName.trim() } : c
+    ) || [])
+    
+    setEditingCategory(null)
+    setEditCategoryName('')
+    toast.success('Categoria modificata con successo')
+  }
+
+  const handleDeleteCategory = (categoryId: string) => {
+    // Check if category has items
+    const hasItems = restaurantMenuItems.some(item => {
+      const category = restaurantCategories.find(c => c.id === categoryId)
+      return category && item.category === category.name
+    })
+
+    if (hasItems) {
+      toast.error('Non puoi eliminare una categoria che contiene piatti')
+      return
+    }
+
+    setCategories(prev => prev?.filter(c => c.id !== categoryId) || [])
+    toast.success('Categoria eliminata con successo')
+  }
+
+  const handleToggleCategoryVisibility = (categoryId: string) => {
+    setCategories(prev => prev?.map(c => 
+      c.id === categoryId ? { ...c, isActive: !c.isActive } : c
+    ) || [])
+  }
+
   const handleCreateMenuItem = async () => {
     if (!newMenuItem.name || !newMenuItem.category || !newMenuItem.price) {
       toast.error('Compila tutti i campi obbligatori')
@@ -179,8 +194,32 @@ const RestaurantDashboard = ({ user, onLogout }: RestaurantDashboardProps) => {
     }
 
     setMenuItems(prev => [...(prev || []), item])
-    setNewMenuItem({ name: '', description: '', price: '', category: '', image: '' })
-    toast.success('Piatto aggiunto al menu')
+    setNewMenuItem({
+      name: '',
+      description: '',
+      price: '',
+      category: '',
+      image: ''
+    })
+    setShowMenuDialog(false)
+    toast.success('Piatto creato con successo')
+  }
+
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      if (file.size > 5 * 1024 * 1024) { // 5MB limit
+        toast.error('L\'immagine deve essere inferiore a 5MB')
+        return
+      }
+
+      const reader = new FileReader()
+      reader.onload = (event) => {
+        const result = event.target?.result as string
+        setNewMenuItem(prev => ({ ...prev, image: result }))
+      }
+      reader.readAsDataURL(file)
+    }
   }
 
   const handleCompleteOrderItem = (orderId: string, itemId: string) => {
@@ -195,7 +234,22 @@ const RestaurantDashboard = ({ user, onLogout }: RestaurantDashboardProps) => {
         return item
       })
       
-      return { ...order, items: updatedItems }
+      // Check if all items are completed
+      const allItemsCompleted = updatedItems.every(item => 
+        (item.completedQuantity || 0) >= item.quantity
+      )
+      
+      const updatedOrder = { ...order, items: updatedItems }
+      
+      // If all items completed, move to completed orders
+      if (allItemsCompleted) {
+        setTimeout(() => {
+          setCompletedOrders(prev => [...(prev || []), { ...updatedOrder, status: 'completed' as const }])
+          setOrders(prev => prev?.filter(o => o.id !== orderId) || [])
+        }, 100)
+      }
+      
+      return updatedOrder
     }) || [])
     
     toast.success('Piatto completato')
@@ -289,7 +343,7 @@ const RestaurantDashboard = ({ user, onLogout }: RestaurantDashboardProps) => {
           const menuItem = restaurantMenuItems.find(m => m.id === item.menuItemId)
           return {
             menuItemId: item.menuItemId,
-            name: menuItem?.name || 'Sconosciuto',
+            name: menuItem?.name || 'Piatto sconosciuto',
             quantity: item.quantity,
             price: menuItem?.price || 0,
             notes: item.notes
@@ -297,21 +351,25 @@ const RestaurantDashboard = ({ user, onLogout }: RestaurantDashboardProps) => {
         })
       ),
       total: calculateTableTotal(tableId),
-      timestamp: Date.now(),
+      timestamp: tableOrders[0]?.timestamp || Date.now(),
       paidAt: Date.now(),
       customerCount: table.customerCount
     }
-    
+
     setOrderHistory(prev => [...(prev || []), historyEntry])
     
-    // Remove orders
+    // Clear table orders
     setOrders(prev => prev?.filter(o => o.tableId !== tableId) || [])
+    setCompletedOrders(prev => prev?.filter(o => o.tableId !== tableId) || [])
     
-    // Deactivate table
-    handleToggleTable(tableId)
+    // Reset table status
+    setTables(prev => prev?.map(t => 
+      t.id === tableId 
+        ? { ...t, status: 'available' as const, customerCount: undefined, remainingOrders: undefined }
+        : t
+    ) || [])
     
-    toast.success(`Tavolo ${table.name} segnato come pagato`)
-    setShowTableDialog(false)
+    toast.success('Conto saldato e tavolo liberato')
   }
 
   // Set active section based on tab
@@ -320,702 +378,622 @@ const RestaurantDashboard = ({ user, onLogout }: RestaurantDashboardProps) => {
   }, [activeTab])
 
   return (
-    <div className="min-h-screen bg-subtle-gradient flex">
-      {/* Fixed Sidebar */}
-      <div 
-        className={`fixed left-0 top-0 h-full bg-card border-r border-border shadow-professional-lg z-40 transition-all duration-300 ${
-          sidebarExpanded ? 'w-64' : 'w-16'
-        }`}
-        onMouseEnter={() => setSidebarExpanded(true)}
-        onMouseLeave={() => setSidebarExpanded(false)}
-      >
+    <div className="min-h-screen bg-background flex">
+      {/* Sidebar */}
+      <div className={`${sidebarExpanded ? 'w-64' : 'w-16'} transition-all duration-300 bg-card border-r border-border flex flex-col`}>
+        {/* Sidebar Header */}
         <div className="p-4 border-b border-border">
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 bg-liquid-gradient rounded-lg flex items-center justify-center shadow-gold">
-              <CaretDown weight="bold" size={16} className="text-primary-foreground" />
+            <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
+              <BookOpen size={16} className="text-primary-foreground" />
             </div>
             {sidebarExpanded && (
-              <div>
-                <h1 className="font-bold text-foreground">Restaurant Manager</h1>
-                <p className="text-xs text-muted-foreground">Benvenuto, {user.username}</p>
+              <div className="flex-1 min-w-0">
+                <h1 className="font-semibold text-sm truncate">
+                  {currentRestaurant?.name || 'Dashboard'}
+                </h1>
               </div>
             )}
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setSidebarExpanded(!sidebarExpanded)}
+              className="h-8 w-8 p-0"
+            >
+              <CaretDown size={14} className={`transition-transform ${sidebarExpanded ? 'rotate-180' : 'rotate-90'}`} />
+            </Button>
           </div>
         </div>
 
-        <nav className="p-2 space-y-1 flex-1">
-          <Button
-            variant={activeSection === 'orders' ? 'secondary' : 'ghost'}
-            className={`w-full justify-start ${!sidebarExpanded && 'px-2'} transition-all duration-200 hover:shadow-gold ${
-              activeSection === 'orders' ? 'shadow-gold bg-primary/10 text-primary border-primary/20' : 'hover:bg-primary/5'
-            }`}
-            onClick={() => {
-              setActiveTab('orders')
-              setSidebarExpanded(false)
-            }}
-          >
-            <List size={16} />
-            {sidebarExpanded && <span className="ml-2 transition-all duration-200">Ordini</span>}
-          </Button>
-          
-          <Button
-            variant={activeSection === 'tables' ? 'secondary' : 'ghost'}
-            className={`w-full justify-start ${!sidebarExpanded && 'px-2'} transition-all duration-200 hover:shadow-gold ${
-              activeSection === 'tables' ? 'shadow-gold bg-primary/10 text-primary border-primary/20' : 'hover:bg-primary/5'
-            }`}
-            onClick={() => {
-              setActiveTab('tables')
-              setSidebarExpanded(false)
-            }}
-          >
-            <MapPin size={16} />
-            {sidebarExpanded && <span className="ml-2 transition-all duration-200">Tavoli</span>}
-          </Button>
-          
-          <Button
-            variant={activeSection === 'menu' ? 'secondary' : 'ghost'}
-            className={`w-full justify-start ${!sidebarExpanded && 'px-2'} transition-all duration-200 hover:shadow-gold ${
-              activeSection === 'menu' ? 'shadow-gold bg-primary/10 text-primary border-primary/20' : 'hover:bg-primary/5'
-            }`}
-            onClick={() => {
-              setActiveTab('menu')
-              setSidebarExpanded(false)
-            }}
-          >
-            <BookOpen size={16} />
-            {sidebarExpanded && <span className="ml-2 transition-all duration-200">Menu</span>}
-          </Button>
-
-          <Button
-            variant={activeSection === 'reservations' ? 'secondary' : 'ghost'}
-            className={`w-full justify-start ${!sidebarExpanded && 'px-2'} transition-all duration-200 hover:shadow-gold ${
-              activeSection === 'reservations' ? 'shadow-gold bg-primary/10 text-primary border-primary/20' : 'hover:bg-primary/5'
-            }`}
-            onClick={() => {
-              setActiveTab('reservations')
-              setSidebarExpanded(false)
-            }}
-          >
-            <Calendar size={16} />
-            {sidebarExpanded && <span className="ml-2 transition-all duration-200">Prenotazioni</span>}
-          </Button>
-          
-          <Button
-            variant={activeSection === 'analytics' ? 'secondary' : 'ghost'}
-            className={`w-full justify-start ${!sidebarExpanded && 'px-2'} transition-all duration-200 hover:shadow-gold ${
-              activeSection === 'analytics' ? 'shadow-gold bg-primary/10 text-primary border-primary/20' : 'hover:bg-primary/5'
-            }`}
-            onClick={() => {
-              setActiveTab('analytics')
-              setSidebarExpanded(false)
-            }}
-          >
-            <ChartBar size={16} />
-            {sidebarExpanded && <span className="ml-2 transition-all duration-200">Analitiche</span>}
-          </Button>
-          
-          <Button
-            variant={activeSection === 'settings' ? 'secondary' : 'ghost'}
-            className={`w-full justify-start ${!sidebarExpanded && 'px-2'} transition-all duration-200 hover:shadow-gold ${
-              activeSection === 'settings' ? 'shadow-gold bg-primary/10 text-primary border-primary/20' : 'hover:bg-primary/5'
-            }`}
-            onClick={() => {
-              setActiveTab('settings')
-              setSidebarExpanded(false)
-            }}
-          >
-            <Gear size={16} />
-            {sidebarExpanded && <span className="ml-2 transition-all duration-200">Impostazioni</span>}
-          </Button>
+        {/* Navigation */}
+        <nav className="flex-1 p-2">
+          <div className="space-y-1">
+            <button
+              onClick={() => setActiveTab('orders')}
+              className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors ${
+                activeTab === 'orders' 
+                  ? 'bg-primary text-primary-foreground' 
+                  : 'text-muted-foreground hover:text-foreground hover:bg-secondary/50'
+              }`}
+            >
+              <List size={16} />
+              {sidebarExpanded && 'Ordini'}
+            </button>
+            <button
+              onClick={() => setActiveTab('tables')}
+              className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors ${
+                activeTab === 'tables' 
+                  ? 'bg-primary text-primary-foreground' 
+                  : 'text-muted-foreground hover:text-foreground hover:bg-secondary/50'
+              }`}
+            >
+              <MapPin size={16} />
+              {sidebarExpanded && 'Tavoli'}
+            </button>
+            <button
+              onClick={() => setActiveTab('menu')}
+              className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors ${
+                activeTab === 'menu' 
+                  ? 'bg-primary text-primary-foreground' 
+                  : 'text-muted-foreground hover:text-foreground hover:bg-secondary/50'
+              }`}
+            >
+              <BookOpen size={16} />
+              {sidebarExpanded && 'Menu'}
+            </button>
+            <button
+              onClick={() => setActiveTab('reservations')}
+              className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors ${
+                activeTab === 'reservations' 
+                  ? 'bg-primary text-primary-foreground' 
+                  : 'text-muted-foreground hover:text-foreground hover:bg-secondary/50'
+              }`}
+            >
+              <Calendar size={16} />
+              {sidebarExpanded && 'Prenotazioni'}
+            </button>
+            <button
+              onClick={() => setActiveTab('settings')}
+              className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors ${
+                activeTab === 'settings' 
+                  ? 'bg-primary text-primary-foreground' 
+                  : 'text-muted-foreground hover:text-foreground hover:bg-secondary/50'
+              }`}
+            >
+              <Gear size={16} />
+              {sidebarExpanded && 'Impostazioni'}
+            </button>
+          </div>
         </nav>
 
-        <div className="p-2">
-          <Button variant="outline" onClick={onLogout} className={`w-full ${!sidebarExpanded && 'px-2'} transition-all duration-200 hover:shadow-gold hover:bg-destructive/5 hover:border-destructive/20 hover:text-destructive`}>
+        {/* Sidebar Footer */}
+        <div className="border-t border-border p-2">
+          <Button
+            variant="ghost"
+            onClick={onLogout}
+            className={`w-full ${sidebarExpanded ? 'justify-start' : 'justify-center'} text-muted-foreground hover:text-foreground`}
+          >
             <SignOut size={16} />
-            {sidebarExpanded && <span className="ml-2 transition-all duration-200">Esci</span>}
+            {sidebarExpanded && <span className="ml-3">Logout</span>}
           </Button>
         </div>
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 ml-16 p-6">
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          {/* Orders Tab */}
-          <TabsContent value="orders" className="space-y-4">
-            <div className="flex items-center justify-between">
-              <h2 className="text-2xl font-bold text-foreground">Gestione Ordini</h2>
-              <div className="flex gap-2">
-                <Select value={orderViewMode} onValueChange={(value: 'table' | 'dish') => setOrderViewMode(value)}>
-                  <SelectTrigger className="w-36">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="table">Per Tavoli</SelectItem>
-                    <SelectItem value="dish">Per Piatti</SelectItem>
-                  </SelectContent>
-                </Select>
-                <Badge variant="secondary" className="text-sm">
-                  {restaurantOrders.length} {restaurantOrders.length === 1 ? 'ordine attivo' : 'ordini attivi'}
-                </Badge>
-              </div>
-            </div>
-            
-            <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
-              {restaurantOrders.map(order => {
-                const table = restaurantTables.find(t => t.id === order.tableId)
-                return (
-                  <Card key={order.id} className="bg-order-card shadow-liquid hover:shadow-liquid-lg transition-all duration-300 border-liquid">
-                    <CardHeader className="pb-2">
-                      <div className="flex items-center justify-between">
-                        <CardTitle className="text-sm font-semibold text-foreground">
-                          {table?.name || 'Tavolo sconosciuto'}
-                        </CardTitle>
-                        <Badge variant="outline" className="text-xs">
-                          {formatTimeAgo(order.timestamp)}
-                        </Badge>
-                      </div>
-                    </CardHeader>
-                    <CardContent className="space-y-2">
-                      {order.items.map(item => {
-                        const menuItem = restaurantMenuItems.find(m => m.id === item.menuItemId)
-                        const completedQuantity = item.completedQuantity || 0
-                        const remainingQuantity = item.quantity - completedQuantity
-                        
-                        return (
-                          <div key={item.id} className="flex items-center justify-between p-2 bg-background/50 rounded-lg">
-                            <div className="flex-1">
-                              <div className="text-xs font-medium">{menuItem?.name}</div>
-                              <div className="text-xs text-muted-foreground">
-                                Qta: {item.quantity} {completedQuantity > 0 && `(${remainingQuantity} rimasti)`}
-                              </div>
-                              {item.notes && (
-                                <div className="text-xs text-accent italic">{item.notes}</div>
-                              )}
-                            </div>
-                            {remainingQuantity > 0 && (
-                              <Button
-                                size="sm"
-                                onClick={() => handleCompleteOrderItem(order.id, item.id)}
-                                className="h-6 w-12 text-xs bg-green-600 hover:bg-green-700 text-white"
-                              >
-                                Pronto
-                              </Button>
-                            )}
-                          </div>
-                        )
-                      })}
-                    </CardContent>
-                  </Card>
-                )
-              })}
-            </div>
+      <div className="flex-1 flex flex-col">
+        {/* Top Header */}
+        <div className="bg-background border-b border-border px-6 py-4">
+          <div className="flex items-center justify-between">
+            <h2 className="text-xl font-semibold text-foreground">
+              {activeTab === 'orders' && 'Gestione Ordini'}
+              {activeTab === 'tables' && 'Gestione Tavoli'}
+              {activeTab === 'menu' && 'Gestione Menu'}
+              {activeTab === 'reservations' && 'Prenotazioni'}
+              {activeTab === 'settings' && 'Impostazioni'}
+            </h2>
+          </div>
+        </div>
 
-            {/* Completed Orders Section */}
-            <div className="mt-8">
-              <h3 className="text-xl font-bold text-foreground mb-4">Ordini Completati</h3>
-              <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
-                {completedOrders?.map(order => {
-                  const table = restaurantTables.find(t => t.id === order.tableId)
-                  return (
-                    <Card key={order.id} className="bg-green-50 border-green-200 shadow-professional">
-                      <CardHeader className="pb-2">
-                        <CardTitle className="text-sm font-semibold text-green-800">
-                          {table?.name || 'Tavolo sconosciuto'} - Completato
-                        </CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        <div className="text-xs text-green-600">
-                          Completato alle {new Date(order.timestamp).toLocaleTimeString()}
-                        </div>
-                      </CardContent>
-                    </Card>
-                  )
-                }) || []}
-              </div>
-            </div>
-          </TabsContent>
+        {/* Content Area */}
+        <div className="flex-1 p-6 overflow-auto">
+          <div className="space-y-6">
 
-          {/* Tables Tab */}
-          <TabsContent value="tables" className="space-y-4">
-            <div className="flex items-center justify-between">
-              <h2 className="text-2xl font-bold text-foreground">Gestione Tavoli</h2>
-              <Dialog>
-                <DialogTrigger asChild>
-                  <Button className="shadow-gold hover:shadow-gold-lg">
-                    <Plus size={16} className="mr-2" />
-                    Nuovo Tavolo
-                  </Button>
-                </DialogTrigger>
-                <DialogContent>
-                  <DialogHeader>
-                    <DialogTitle>Nuovo Tavolo</DialogTitle>
-                  </DialogHeader>
-                  <div className="space-y-4">
-                    <div>
-                      <Label htmlFor="table-name">Nome Tavolo</Label>
-                      <Input
-                        id="table-name"
-                        value={newTableName}
-                        onChange={(e) => setNewTableName(e.target.value)}
-                        placeholder="es. Tavolo 1"
-                      />
-                    </div>
-                    <Button onClick={handleCreateTable} className="w-full">
-                      Crea Tavolo
+            {/* Orders Tab */}
+            {activeTab === 'orders' && (
+              <div className="space-y-6">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant={orderViewMode === 'table' ? 'default' : 'outline'}
+                      size="sm"
+                      onClick={() => setOrderViewMode('table')}
+                    >
+                      Per Tavolo
+                    </Button>
+                    <Button
+                      variant={orderViewMode === 'dish' ? 'default' : 'outline'}
+                      size="sm"
+                      onClick={() => setOrderViewMode('dish')}
+                    >
+                      Per Piatto
                     </Button>
                   </div>
-                </DialogContent>
-              </Dialog>
-            </div>
-            
-            <div className="grid gap-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6">
-              {restaurantTables.map(table => (
-                <Card key={table.id} className={`shadow-professional hover:shadow-professional-lg transition-all duration-300 hover-lift ${!table.isActive ? 'opacity-60' : ''}`}>
-                  <CardHeader className="pb-2">
-                    <div className="flex items-center justify-between">
-                      <CardTitle className="text-sm flex items-center gap-2">
-                        <div className={`w-5 h-5 rounded border flex items-center justify-center text-xs font-bold ${
-                          table.isActive ? 'bg-green-100 border-green-400 text-green-700' : 'bg-gray-200 border-gray-400 text-gray-600'
-                        }`}>
-                          {table.name.slice(-1)}
-                        </div>
-                        <span className="text-xs">{table.name}</span>
-                      </CardTitle>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleToggleTable(table.id)}
-                        className="h-4 w-4 p-0 text-xs"
-                        title={table.isActive ? 'Disattiva tavolo' : 'Attiva tavolo'}
-                      >
-                        {table.isActive ? <EyeSlash size={8} /> : <Eye size={8} />}
-                      </Button>
-                    </div>
-                  </CardHeader>
-                  <CardContent className="space-y-2">
-                    {table.isActive ? (
-                      <>
-                        <div className="bg-primary/10 border border-primary/20 rounded-lg p-2 text-center">
-                          <div className="text-xs text-muted-foreground">PIN</div>
-                          <div className="text-base font-bold text-primary">{table.pin}</div>
-                        </div>
-                        {table.customerCount && (
-                          <div className="text-center text-xs">
-                            <span className="font-medium">{table.customerCount} clienti</span>
-                          </div>
-                        )}
-                        <div className="flex gap-1">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleShowQrCode(table)}
-                            className="text-xs flex-1 h-5"
-                          >
-                            QR Code
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => {
-                              setSelectedTable(table)
-                              setShowTableDialog(true)
-                            }}
-                            className="text-xs flex-1 h-5"
-                          >
-                            Conto
-                          </Button>
-                        </div>
-                        <div className="flex gap-1">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="text-xs h-5 w-5 p-0"
-                            title="Modifica tavolo"
-                          >
-                            <PencilSimple size={8} />
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleDeleteTable(table.id)}
-                            className="text-xs text-destructive hover:bg-destructive/10 h-5 w-5 p-0"
-                            title="Elimina tavolo"
-                          >
-                            <Trash size={8} />
-                          </Button>
-                        </div>
-                      </>
-                    ) : (
-                      <>
-                        <div className="bg-gray-100 border border-gray-300 rounded-lg p-2 text-center">
-                          <div className="text-xs text-gray-600">Tavolo Vuoto</div>
-                        </div>
-                        <Button
-                          onClick={() => handleToggleTable(table.id)}
-                          className="w-full bg-green-600 hover:bg-green-700 text-white text-xs h-5"
-                        >
-                          Attiva
-                        </Button>
-                        <div className="flex gap-1">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="text-xs h-5 w-5 p-0"
-                            title="Modifica tavolo"
-                          >
-                            <PencilSimple size={8} />
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleDeleteTable(table.id)}
-                            className="text-xs text-destructive hover:bg-destructive/10 h-5 w-5 p-0"
-                            title="Elimina tavolo"
-                          >
-                            <Trash size={8} />
-                          </Button>
-                        </div>
-                      </>
-                    )}
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          </TabsContent>
+                </div>
 
-          {/* Menu Tab */}
-          <TabsContent value="menu" className="space-y-6">
-            <div className="flex items-center justify-between">
-              <h2 className="text-2xl font-bold text-foreground">Gestione Menu</h2>
-              <div className="flex gap-2">
-                <Dialog>
-                  <DialogTrigger asChild>
-                    <Button variant="outline" className="shadow-gold hover:shadow-gold-lg">
-                      Gestisci Categorie
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent className="max-w-md">
-                    <DialogHeader>
-                      <DialogTitle>Gestione Categorie</DialogTitle>
-                    </DialogHeader>
-                    <div className="space-y-4">
-                      <div className="flex gap-2">
-                        <Input
-                          value={newCategory}
-                          onChange={(e) => setNewCategory(e.target.value)}
-                          placeholder="Nome categoria"
-                        />
-                        <Button onClick={handleCreateCategory}>
-                          <Plus size={16} />
+                {/* Active Orders */}
+                <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
+                  {restaurantOrders.map(order => {
+                    const table = restaurantTables.find(t => t.id === order.tableId)
+                    return (
+                      <Card key={order.id} className="shadow-professional hover:shadow-professional-lg transition-all duration-300">
+                        <CardHeader className="pb-2">
+                          <div className="flex items-center justify-between">
+                            <CardTitle className="text-sm font-semibold">
+                              {table?.name || 'Tavolo sconosciuto'}
+                            </CardTitle>
+                            <Badge variant={order.status === 'waiting' ? 'default' : 'secondary'} className="text-xs">
+                              {order.status === 'waiting' ? 'In attesa' : 'In preparazione'}
+                            </Badge>
+                          </div>
+                          <div className="text-xs text-muted-foreground">
+                            {formatTimeAgo(order.timestamp)}
+                          </div>
+                        </CardHeader>
+                        <CardContent className="space-y-2">
+                          {order.items.map(item => {
+                            const menuItem = restaurantMenuItems.find(m => m.id === item.menuItemId)
+                            const completedQuantity = item.completedQuantity || 0
+                            const remainingQuantity = item.quantity - completedQuantity
+                            
+                            return (
+                              <div key={item.id} className="flex items-center justify-between p-2 bg-background/50 rounded-lg">
+                                <div className="flex-1">
+                                  <div className="text-xs font-medium">{menuItem?.name}</div>
+                                  <div className="text-xs text-muted-foreground">
+                                    Qta: {item.quantity} {completedQuantity > 0 && `(${remainingQuantity} rimasti)`}
+                                  </div>
+                                  {item.notes && (
+                                    <div className="text-xs text-accent italic">{item.notes}</div>
+                                  )}
+                                </div>
+                                {remainingQuantity > 0 && (
+                                  <Button
+                                    size="sm"
+                                    onClick={() => handleCompleteOrderItem(order.id, item.id)}
+                                    className="h-6 w-12 text-xs bg-green-600 hover:bg-green-700 text-white"
+                                  >
+                                    Pronto
+                                  </Button>
+                                )}
+                              </div>
+                            )
+                          })}
+                        </CardContent>
+                      </Card>
+                    )
+                  })}
+                </div>
+
+                {/* Completed Orders Section */}
+                <div className="mt-8">
+                  <h3 className="text-xl font-bold text-foreground mb-4">Ordini Completati</h3>
+                  <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
+                    {completedOrders?.map(order => {
+                      const table = restaurantTables.find(t => t.id === order.tableId)
+                      return (
+                        <Card key={order.id} className="bg-green-50 border-green-200 shadow-professional">
+                          <CardHeader className="pb-2">
+                            <CardTitle className="text-sm font-semibold text-green-800">
+                              {table?.name || 'Tavolo sconosciuto'} - Completato
+                            </CardTitle>
+                          </CardHeader>
+                          <CardContent>
+                            <div className="text-xs text-green-600">
+                              Completato alle {new Date(order.timestamp).toLocaleTimeString()}
+                            </div>
+                          </CardContent>
+                        </Card>
+                      )
+                    }) || []}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Tables Tab */}
+            {activeTab === 'tables' && (
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <Dialog open={showTableDialog} onOpenChange={setShowTableDialog}>
+                    <DialogTrigger asChild>
+                      <Button className="shadow-gold hover:shadow-gold-lg">
+                        <Plus size={16} className="mr-2" />
+                        Nuovo Tavolo
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent>
+                      <DialogHeader>
+                        <DialogTitle>Nuovo Tavolo</DialogTitle>
+                      </DialogHeader>
+                      <div className="space-y-4">
+                        <div>
+                          <Label htmlFor="table-name">Nome Tavolo</Label>
+                          <Input
+                            id="table-name"
+                            value={newTableName}
+                            onChange={(e) => setNewTableName(e.target.value)}
+                            placeholder="es. Tavolo 1"
+                          />
+                        </div>
+                        <Button onClick={handleCreateTable} className="w-full">
+                          Crea Tavolo
                         </Button>
                       </div>
-                      <div className="space-y-2 max-h-60 overflow-y-auto">
-                        {restaurantCategories.map(category => (
-                          <div key={category.id} className="flex items-center justify-between p-2 bg-secondary/20 rounded">
-                            <span className="text-sm">{category.name}</span>
+                    </DialogContent>
+                  </Dialog>
+                </div>
+                
+                <div className="grid gap-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6">
+                  {restaurantTables.map(table => (
+                    <Card key={table.id} className={`shadow-professional hover:shadow-professional-lg transition-all duration-300 hover-lift ${!table.isActive ? 'opacity-60' : ''}`}>
+                      <CardHeader className="pb-2">
+                        <div className="flex items-center justify-between">
+                          <CardTitle className="text-sm font-semibold">{table.name}</CardTitle>
+                          <Switch
+                            checked={table.isActive}
+                            onCheckedChange={() => handleToggleTable(table.id)}
+                          />
+                        </div>
+                        <Badge 
+                          variant={table.status === 'available' ? 'secondary' : 'default'}
+                          className="text-xs w-fit"
+                        >
+                          {table.status === 'available' ? 'Libero' : 
+                           table.status === 'waiting-order' ? 'Ordinazione' :
+                           table.status === 'eating' ? 'Occupato' : 'Servizio'}
+                        </Badge>
+                      </CardHeader>
+                      <CardContent className="space-y-2">
+                        {table.isActive && (
+                          <>
+                            <div className="text-xs text-muted-foreground">
+                              PIN: <code className="bg-muted px-1 py-0.5 rounded text-xs">{table.pin}</code>
+                            </div>
                             <div className="flex gap-1">
                               <Button
                                 variant="outline"
                                 size="sm"
-                                className="h-6 w-6 p-0"
-                                onClick={() => {
-                                  setEditingCategory(category)
-                                  setEditCategoryName(category.name)
-                                }}
+                                onClick={() => handleShowQrCode(table)}
+                                className="flex-1 text-xs h-7"
                               >
-                                <PencilSimple size={10} />
+                                <QrCode size={12} className="mr-1" />
+                                QR
                               </Button>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                className="h-6 w-6 p-0"
-                                onClick={() => {
-                                  setCategories(prev => prev?.map(c => 
-                                    c.id === category.id ? { ...c, isActive: !c.isActive } : c
-                                  ) || [])
-                                }}
-                              >
-                                {category.isActive ? <Eye size={10} /> : <EyeSlash size={10} />}
-                              </Button>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  </DialogContent>
-                </Dialog>
-                <Dialog>
-                  <DialogTrigger asChild>
-                    <Button className="shadow-gold hover:shadow-gold-lg">
-                      <Plus size={16} className="mr-2" />
-                      Nuovo Piatto
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent>
-                    <DialogHeader>
-                      <DialogTitle>Nuovo Piatto</DialogTitle>
-                    </DialogHeader>
-                    <div className="space-y-4">
-                      <div>
-                        <Label htmlFor="item-name">Nome Piatto</Label>
-                        <Input
-                          id="item-name"
-                          value={newMenuItem.name}
-                          onChange={(e) => setNewMenuItem(prev => ({ ...prev, name: e.target.value }))}
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="item-description">Descrizione</Label>
-                        <Textarea
-                          id="item-description"
-                          value={newMenuItem.description}
-                          onChange={(e) => setNewMenuItem(prev => ({ ...prev, description: e.target.value }))}
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="item-price">Prezzo (€)</Label>
-                        <Input
-                          id="item-price"
-                          type="number"
-                          step="0.01"
-                          value={newMenuItem.price}
-                          onChange={(e) => setNewMenuItem(prev => ({ ...prev, price: e.target.value }))}
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="item-category">Categoria</Label>
-                        <Select value={newMenuItem.category} onValueChange={(value) => setNewMenuItem(prev => ({ ...prev, category: value }))}>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Seleziona categoria" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {restaurantCategories.filter(c => c.isActive).map(category => (
-                              <SelectItem key={category.id} value={category.name}>
-                                {category.name}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <div>
-                        <Label htmlFor="item-image">URL Immagine (opzionale)</Label>
-                        <Input
-                          id="item-image"
-                          value={newMenuItem.image}
-                          onChange={(e) => setNewMenuItem(prev => ({ ...prev, image: e.target.value }))}
-                          placeholder="https://..."
-                        />
-                      </div>
-                      <Button onClick={handleCreateMenuItem} className="w-full">
-                        Aggiungi Piatto
-                      </Button>
-                    </div>
-                  </DialogContent>
-                </Dialog>
-              </div>
-            </div>
-
-            {/* Menu Categories and Items */}
-            <div className="space-y-6">
-              {restaurantCategories.filter(c => c.isActive).map(category => (
-                <div key={category.id} className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <h3 className="text-lg font-semibold text-foreground">{category.name}</h3>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="h-6 w-6 p-0"
-                      onClick={() => {
-                        setCategories(prev => prev?.map(c => 
-                          c.id === category.id ? { ...c, isActive: false } : c
-                        ) || [])
-                      }}
-                    >
-                      <EyeSlash size={10} />
-                    </Button>
-                  </div>
-                  <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
-                    {restaurantMenuItems
-                      .filter(item => item.category === category.name)
-                      .map(item => (
-                        <Card key={item.id} className="shadow-professional hover:shadow-professional-lg transition-all duration-300">
-                          <CardContent className="p-4">
-                            <div className="flex items-start justify-between">
-                              <div className="flex-1">
-                                <h4 className="font-medium text-foreground">{item.name}</h4>
-                                <p className="text-sm text-muted-foreground mt-1">{item.description}</p>
-                                <p className="text-lg font-bold text-primary mt-2">€{item.price.toFixed(2)}</p>
-                              </div>
-                              <div className="flex gap-1">
+                              {(table.status !== 'available') && (
                                 <Button
                                   variant="outline"
                                   size="sm"
-                                  className="h-6 w-6 p-0"
-                                  title="Modifica piatto"
+                                  onClick={() => handleMarkTableAsPaid(table.id)}
+                                  className="flex-1 text-xs h-7"
                                 >
-                                  <PencilSimple size={10} />
+                                  Salda
                                 </Button>
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  className="h-6 w-6 p-0"
-                                  onClick={() => {
-                                    setMenuItems(prev => prev?.map(m => 
-                                      m.id === item.id ? { ...m, isActive: !m.isActive } : m
-                                    ) || [])
-                                  }}
-                                >
-                                  {item.isActive ? <Eye size={10} /> : <EyeSlash size={10} />}
-                                </Button>
-                              </div>
+                              )}
                             </div>
-                            {item.image && (
-                              <img
-                                src={item.image}
-                                alt={item.name}
-                                className="w-full h-32 object-cover rounded-lg mt-3"
-                              />
+                            {table.customerCount && (
+                              <div className="text-xs text-accent">
+                                {table.customerCount} persone
+                              </div>
                             )}
-                          </CardContent>
-                        </Card>
-                      ))}
+                            {calculateTableTotal(table.id) > 0 && (
+                              <div className="text-xs font-medium">
+                                Totale: €{calculateTableTotal(table.id).toFixed(2)}
+                              </div>
+                            )}
+                          </>
+                        )}
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Menu Tab */}
+            {activeTab === 'menu' && (
+              <div className="space-y-6">
+                <div className="flex items-center justify-between">
+                  <div className="flex gap-2">
+                    <Dialog open={showCategoryDialog} onOpenChange={setShowCategoryDialog}>
+                      <DialogTrigger asChild>
+                        <Button variant="outline" className="shadow-gold hover:shadow-gold-lg">
+                          Gestisci Categorie
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent className="max-w-md">
+                        <DialogHeader>
+                          <DialogTitle>Gestione Categorie</DialogTitle>
+                        </DialogHeader>
+                        <div className="space-y-4">
+                          <div className="flex gap-2">
+                            <Input
+                              value={newCategory}
+                              onChange={(e) => setNewCategory(e.target.value)}
+                              placeholder="Nome categoria"
+                            />
+                            <Button onClick={handleCreateCategory}>
+                              <Plus size={16} />
+                            </Button>
+                          </div>
+                          <div className="space-y-2 max-h-60 overflow-y-auto">
+                            {restaurantCategories.map(category => (
+                              <div key={category.id}>
+                                {editingCategory?.id === category.id ? (
+                                  <div className="flex items-center gap-2 p-2 bg-secondary/20 rounded">
+                                    <Input
+                                      value={editCategoryName}
+                                      onChange={(e) => setEditCategoryName(e.target.value)}
+                                      className="flex-1"
+                                    />
+                                    <Button
+                                      size="sm"
+                                      onClick={handleSaveEditCategory}
+                                    >
+                                      <Check size={14} />
+                                    </Button>
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      onClick={() => {
+                                        setEditingCategory(null)
+                                        setEditCategoryName('')
+                                      }}
+                                    >
+                                      <X size={14} />
+                                    </Button>
+                                  </div>
+                                ) : (
+                                  <div className="flex items-center justify-between p-2 bg-secondary/20 rounded">
+                                    <span className="text-sm">{category.name}</span>
+                                    <div className="flex gap-1">
+                                      <Button
+                                        variant="outline"
+                                        size="sm"
+                                        className="h-6 w-6 p-0"
+                                        onClick={() => handleEditCategory(category)}
+                                      >
+                                        <PencilSimple size={10} />
+                                      </Button>
+                                      <Button
+                                        variant="outline"
+                                        size="sm"
+                                        className="h-6 w-6 p-0"
+                                        onClick={() => handleToggleCategoryVisibility(category.id)}
+                                      >
+                                        {category.isActive ? <Eye size={10} /> : <EyeSlash size={10} />}
+                                      </Button>
+                                      <Button
+                                        variant="outline"
+                                        size="sm"
+                                        className="h-6 w-6 p-0 text-destructive"
+                                        onClick={() => handleDeleteCategory(category.id)}
+                                      >
+                                        <Trash size={10} />
+                                      </Button>
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      </DialogContent>
+                    </Dialog>
+                    <Dialog open={showMenuDialog} onOpenChange={setShowMenuDialog}>
+                      <DialogTrigger asChild>
+                        <Button className="shadow-gold hover:shadow-gold-lg">
+                          <Plus size={16} className="mr-2" />
+                          Nuovo Piatto
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent>
+                        <DialogHeader>
+                          <DialogTitle>Nuovo Piatto</DialogTitle>
+                        </DialogHeader>
+                        <div className="space-y-4">
+                          <div>
+                            <Label htmlFor="item-name">Nome Piatto</Label>
+                            <Input
+                              id="item-name"
+                              value={newMenuItem.name}
+                              onChange={(e) => setNewMenuItem(prev => ({ ...prev, name: e.target.value }))}
+                            />
+                          </div>
+                          <div>
+                            <Label htmlFor="item-description">Descrizione</Label>
+                            <Textarea
+                              id="item-description"
+                              value={newMenuItem.description}
+                              onChange={(e) => setNewMenuItem(prev => ({ ...prev, description: e.target.value }))}
+                            />
+                          </div>
+                          <div>
+                            <Label htmlFor="item-price">Prezzo (€)</Label>
+                            <Input
+                              id="item-price"
+                              type="number"
+                              step="0.01"
+                              value={newMenuItem.price}
+                              onChange={(e) => setNewMenuItem(prev => ({ ...prev, price: e.target.value }))}
+                            />
+                          </div>
+                          <div>
+                            <Label htmlFor="item-category">Categoria</Label>
+                            <Select value={newMenuItem.category} onValueChange={(value) => setNewMenuItem(prev => ({ ...prev, category: value }))}>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Seleziona categoria" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {restaurantCategories.filter(c => c.isActive).map(category => (
+                                  <SelectItem key={category.id} value={category.name}>
+                                    {category.name}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          <div>
+                            <Label htmlFor="item-image">Immagine (opzionale)</Label>
+                            <Input
+                              id="item-image"
+                              type="file"
+                              accept="image/*"
+                              onChange={handleImageUpload}
+                            />
+                            {newMenuItem.image && (
+                              <div className="mt-2">
+                                <img 
+                                  src={newMenuItem.image} 
+                                  alt="Preview" 
+                                  className="w-20 h-20 object-cover rounded"
+                                />
+                              </div>
+                            )}
+                          </div>
+                          <Button onClick={handleCreateMenuItem} className="w-full">
+                            Aggiungi Piatto
+                          </Button>
+                        </div>
+                      </DialogContent>
+                    </Dialog>
                   </div>
                 </div>
-              ))}
-            </div>
-          </TabsContent>
 
-          {/* Reservations Tab */}
-          <TabsContent value="reservations" className="space-y-4">
-            <ReservationsManager 
-              reservations={reservations || []}
-              setReservations={setReservations}
-              tables={restaurantTables}
-              user={user}
-            />
-          </TabsContent>
-
-          {/* Analytics Tab */}
-          <TabsContent value="analytics" className="space-y-4">
-            <AnalyticsCharts 
-              orders={restaurantOrders || []}
-              completedOrders={completedOrders || []}
-              orderHistory={orderHistory || []}
-              menuItems={restaurantMenuItems}
-              categories={restaurantCategories}
-            />
-          </TabsContent>
-
-          {/* Settings Tab */}
-          <TabsContent value="settings" className="space-y-6">
-            <div className="max-w-2xl space-y-6">
-              <h2 className="text-2xl font-bold text-foreground">Impostazioni Ristorante</h2>
-              
-              {currentRestaurant && (
-                <>
-                  <Card className="shadow-professional">
-                    <CardHeader>
-                      <CardTitle>Informazioni Generali</CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                      <div>
-                        <Label htmlFor="restaurant-name">Nome Ristorante</Label>
-                        <Input
-                          id="restaurant-name"
-                          value={currentRestaurant.name}
-                          onChange={(e) => handleUpdateRestaurantSettings({ name: e.target.value })}
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="restaurant-contact">Contatto</Label>
-                        <Input
-                          id="restaurant-contact"
-                          value={currentRestaurant.contact}
-                          onChange={(e) => handleUpdateRestaurantSettings({ contact: e.target.value })}
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="restaurant-hours">Orari</Label>
-                        <Input
-                          id="restaurant-hours"
-                          value={currentRestaurant.hours}
-                          onChange={(e) => handleUpdateRestaurantSettings({ hours: e.target.value })}
-                        />
-                      </div>
-                    </CardContent>
-                  </Card>
-
-                  <Card className="shadow-professional">
-                    <CardHeader>
-                      <CardTitle>Modalità Coperto</CardTitle>
-                      <CardDescription>
-                        Applica un costo fisso per persona a tutti i tavoli
-                      </CardDescription>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                      <div className="flex items-center space-x-2">
-                        <Switch
-                          id="cover-charge"
-                          checked={currentRestaurant.coverChargePerPerson > 0}
-                          onCheckedChange={(checked) => {
-                            handleUpdateRestaurantSettings({
-                              coverChargePerPerson: checked ? 2.00 : 0
-                            })
-                          }}
-                        />
-                        <Label htmlFor="cover-charge">Attiva coperto</Label>
-                      </div>
-                      {currentRestaurant.coverChargePerPerson > 0 && (
-                        <div>
-                          <Label htmlFor="cover-amount">Costo per persona (€)</Label>
-                          <Input
-                            id="cover-amount"
-                            type="number"
-                            step="0.50"
-                            value={currentRestaurant.coverChargePerPerson}
-                            onChange={(e) => handleUpdateRestaurantSettings({
-                              coverChargePerPerson: parseFloat(e.target.value) || 0
-                            })}
+                {/* Menu Items Grid */}
+                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                  {restaurantMenuItems.map(item => (
+                    <Card key={item.id} className="shadow-professional hover:shadow-professional-lg transition-all duration-300">
+                      {item.image && (
+                        <div className="w-full h-32 bg-muted">
+                          <img 
+                            src={item.image} 
+                            alt={item.name}
+                            className="w-full h-full object-cover rounded-t-lg"
                           />
                         </div>
                       )}
-                    </CardContent>
-                  </Card>
+                      <CardHeader className="pb-2">
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1">
+                            <CardTitle className="text-sm font-semibold">{item.name}</CardTitle>
+                            <CardDescription className="text-xs mt-1">
+                              {item.description}
+                            </CardDescription>
+                          </div>
+                          <div className="text-right">
+                            <div className="text-lg font-bold">€{item.price.toFixed(2)}</div>
+                            <Badge variant="outline" className="text-xs">
+                              {item.category}
+                            </Badge>
+                          </div>
+                        </div>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="flex items-center justify-between">
+                          <Badge variant={item.isActive ? 'default' : 'secondary'} className="text-xs">
+                            {item.isActive ? 'Attivo' : 'Disattivo'}
+                          </Badge>
+                          <div className="flex gap-1">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => {
+                                setMenuItems(prev => prev?.map(m => 
+                                  m.id === item.id ? { ...m, isActive: !m.isActive } : m
+                                ) || [])
+                              }}
+                            >
+                              {item.isActive ? <EyeSlash size={14} /> : <Eye size={14} />}
+                            </Button>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              </div>
+            )}
 
-                  <Card className="shadow-professional">
-                    <CardHeader>
-                      <CardTitle>Modalità All You Can Eat</CardTitle>
-                      <CardDescription>
-                        Costo fisso per persona con limite di ordini
-                      </CardDescription>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                      <div className="flex items-center space-x-2">
-                        <Switch
-                          id="all-you-can-eat"
-                          checked={currentRestaurant.allYouCanEat.enabled}
-                          onCheckedChange={(enabled) => {
-                            handleUpdateRestaurantSettings({
-                              allYouCanEat: { ...currentRestaurant.allYouCanEat, enabled }
-                            })
-                          }}
-                        />
-                        <Label htmlFor="all-you-can-eat">Attiva All You Can Eat</Label>
-                      </div>
-                      {currentRestaurant.allYouCanEat.enabled && (
-                        <>
-                          <div>
-                            <Label htmlFor="ayce-price">Prezzo per persona (€)</Label>
-                            <Input
-                              id="ayce-price"
-                              type="number"
-                              step="0.50"
-                              value={currentRestaurant.allYouCanEat.pricePerPerson}
-                              onChange={(e) => handleUpdateRestaurantSettings({
-                                allYouCanEat: {
-                                  ...currentRestaurant.allYouCanEat,
-                                  pricePerPerson: parseFloat(e.target.value) || 0
-                                }
+            {/* Reservations Tab */}
+            {activeTab === 'reservations' && (
+              <ReservationsManager
+                user={user}
+                tables={restaurantTables}
+                reservations={reservations || []}
+                setReservations={setReservations}
+              />
+            )}
+
+            {/* Settings Tab */}
+            {activeTab === 'settings' && (
+              <div className="space-y-6">
+                {currentRestaurant && (
+                  <div className="grid gap-6 md:grid-cols-2">
+                    <Card className="shadow-professional">
+                      <CardHeader>
+                        <CardTitle>Informazioni Generali</CardTitle>
+                      </CardHeader>
+                      <CardContent className="space-y-4">
+                        <div>
+                          <Label>Nome Ristorante</Label>
+                          <Input
+                            value={currentRestaurant.name}
+                            onChange={(e) => handleUpdateRestaurantSettings({ name: e.target.value })}
+                          />
+                        </div>
+                        <div>
+                          <Label>Contatto</Label>
+                          <Input
+                            value={currentRestaurant.contact}
+                            onChange={(e) => handleUpdateRestaurantSettings({ contact: e.target.value })}
+                          />
+                        </div>
+                        <div>
+                          <Label>Orari</Label>
+                          <Input
+                            value={currentRestaurant.hours}
+                            onChange={(e) => handleUpdateRestaurantSettings({ hours: e.target.value })}
+                          />
+                        </div>
+                      </CardContent>
+                    </Card>
+
+                    <Card className="shadow-professional">
+                      <CardHeader>
+                        <CardTitle>Tariffe</CardTitle>
+                      </CardHeader>
+                      <CardContent className="space-y-4">
+                        <div>
+                          <Label>Coperto per persona (€)</Label>
+                          <Input
+                            type="number"
+                            step="0.01"
+                            value={currentRestaurant.coverChargePerPerson}
+                            onChange={(e) => handleUpdateRestaurantSettings({ 
+                              coverChargePerPerson: parseFloat(e.target.value) || 0 
+                            })}
+                          />
+                        </div>
+                        
+                        <Separator />
+                        
+                        <div className="space-y-4">
+                          <div className="flex items-center justify-between">
+                            <Label>All You Can Eat</Label>
+                            <Switch
+                              checked={currentRestaurant.allYouCanEat.enabled}
+                              onCheckedChange={(enabled) => handleUpdateRestaurantSettings({
+                                allYouCanEat: { ...currentRestaurant.allYouCanEat, enabled }
                               })}
                             />
                           </div>
@@ -1048,141 +1026,29 @@ const RestaurantDashboard = ({ user, onLogout }: RestaurantDashboardProps) => {
 
       {/* QR Code Dialog */}
       <Dialog open={showQrDialog} onOpenChange={setShowQrDialog}>
-        <DialogContent>
+        <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle>QR Code - {selectedTable?.name}</DialogTitle>
             <DialogDescription>
-              I clienti possono scansionare questo QR code per accedere al menu
+              I clienti possono scansionare questo QR code per accedere al menu e ordinare
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-4">
-            <div className="flex justify-center">
-              {qrCodeDataUrl && (
-                <img src={qrCodeDataUrl} alt="QR Code" className="border rounded-lg" />
-              )}
-            </div>
+          <div className="flex flex-col items-center space-y-4">
+            {qrCodeDataUrl && (
+              <img 
+                src={qrCodeDataUrl} 
+                alt="QR Code" 
+                className="w-64 h-64 border rounded-lg"
+              />
+            )}
             <div className="text-center space-y-2">
               <p className="text-sm text-muted-foreground">
-                PIN: <span className="font-bold text-primary text-lg">{selectedTable?.pin}</span>
+                PIN Tavolo: <code className="bg-muted px-2 py-1 rounded text-sm font-mono">{selectedTable?.pin}</code>
               </p>
-              <p className="text-xs text-muted-foreground break-all">
-                {selectedTable?.qrCode}
+              <p className="text-xs text-muted-foreground">
+                Il PIN può essere utilizzato in alternativa al QR code
               </p>
             </div>
-            <div className="flex gap-2">
-              <Button
-                variant="outline"
-                onClick={() => {
-                  if (selectedTable?.qrCode) {
-                    navigator.clipboard.writeText(selectedTable.qrCode)
-                    toast.success('Link copiato negli appunti')
-                  }
-                }}
-                className="flex-1"
-              >
-                Copia Link
-              </Button>
-              <Button
-                variant="outline"
-                onClick={() => {
-                  if (selectedTable?.qrCode) {
-                    window.open(selectedTable.qrCode, '_blank')
-                  }
-                }}
-                className="flex-1"
-              >
-                Testa QR Code
-              </Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      {/* Table Bill Dialog */}
-      <Dialog open={showTableDialog} onOpenChange={setShowTableDialog}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Conto - {selectedTable?.name}</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            {selectedTable && (
-              <>
-                <div className="space-y-2">
-                  {restaurantOrders
-                    .filter(o => o.tableId === selectedTable.id)
-                    .map(order => (
-                      <div key={order.id} className="border rounded-lg p-3">
-                        <div className="text-sm font-medium">Ordine #{order.id.slice(-4)}</div>
-                        {order.items.map(item => {
-                          const menuItem = restaurantMenuItems.find(m => m.id === item.menuItemId)
-                          return (
-                            <div key={item.id} className="flex justify-between text-sm">
-                              <span>{menuItem?.name} x{item.quantity}</span>
-                              <span>€{((menuItem?.price || 0) * item.quantity).toFixed(2)}</span>
-                            </div>
-                          )
-                        })}
-                      </div>
-                    ))}
-                </div>
-                
-                {selectedTable.customerCount && currentRestaurant && (
-                  <div className="border-t pt-3">
-                    <div className="flex justify-between">
-                      <span>Clienti: {selectedTable.customerCount}</span>
-                    </div>
-                    {currentRestaurant.allYouCanEat.enabled ? (
-                      <div className="flex justify-between">
-                        <span>All You Can Eat:</span>
-                        <span>€{(currentRestaurant.allYouCanEat.pricePerPerson * selectedTable.customerCount).toFixed(2)}</span>
-                      </div>
-                    ) : (
-                      currentRestaurant.coverChargePerPerson > 0 && (
-                        <div className="flex justify-between">
-                          <span>Coperto:</span>
-                          <span>€{(currentRestaurant.coverChargePerPerson * selectedTable.customerCount).toFixed(2)}</span>
-                        </div>
-                      )
-                    )}
-                  </div>
-                )}
-                
-                <div className="border-t pt-3">
-                  <div className="flex justify-between font-bold text-lg">
-                    <span>Totale:</span>
-                    <span>€{calculateTableTotal(selectedTable.id).toFixed(2)}</span>
-                  </div>
-                </div>
-                
-                <div className="flex gap-2 pt-3">
-                  <Button
-                    variant="outline"
-                    onClick={() => {
-                      // Remove individual orders
-                      const orderIds = restaurantOrders
-                        .filter(o => o.tableId === selectedTable.id)
-                        .map(o => o.id)
-                      
-                      orderIds.forEach(orderId => {
-                        setOrders(prev => prev?.filter(o => o.id !== orderId) || [])
-                      })
-                      
-                      toast.success('Ordini eliminati')
-                      setShowTableDialog(false)
-                    }}
-                    className="flex-1"
-                  >
-                    Elimina Ordini
-                  </Button>
-                  <Button
-                    onClick={() => handleMarkTableAsPaid(selectedTable.id)}
-                    className="flex-1 bg-green-600 hover:bg-green-700 text-white"
-                  >
-                    Segna come Pagato
-                  </Button>
-                </div>
-              </>
-            )}
           </div>
         </DialogContent>
       </Dialog>
