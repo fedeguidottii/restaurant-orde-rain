@@ -3,8 +3,6 @@ import { useKV } from '@github/spark/hooks'
 import LoginPage from './components/LoginPage'
 import AdminDashboard from './components/AdminDashboard'
 import RestaurantDashboard from './components/RestaurantDashboard'
-import CustomerMenu from './components/CustomerMenu'
-import CustomerOrderPage from './components/CustomerOrderPage'
 import { Toaster } from 'sonner'
 
 export type UserRole = 'admin' | 'restaurant' | 'customer'
@@ -120,21 +118,6 @@ export interface Reservation {
 
 function App() {
   const [currentUser, setCurrentUser] = useKV<User | null>('currentUser', null)
-  const [currentTable, setCurrentTable] = useKV<string | null>('currentTable', null)
-
-  // Check URL parameters for QR code table access
-  useEffect(() => {
-    const urlParams = new URLSearchParams(window.location.search)
-    const tableParam = urlParams.get('table')
-    
-    if (tableParam && !currentUser) {
-      // QR code access - go directly to customer order page
-      setCurrentTable(tableParam)
-      setCurrentUser({ id: 'customer', username: 'Customer', role: 'customer' })
-      // Clean URL without reloading
-      window.history.replaceState({}, document.title, window.location.pathname)
-    }
-  }, [currentUser, setCurrentTable, setCurrentUser])
 
   // Initialize default data
   const [users, setUsers] = useKV<User[]>('users', [])
@@ -496,18 +479,12 @@ function App() {
 
   const handleLogout = () => {
     setCurrentUser(null)
-    setCurrentTable(null)
-  }
-
-  const handleTableAccess = (tableId: string) => {
-    setCurrentTable(tableId)
-    setCurrentUser({ id: 'customer', username: 'Customer', role: 'customer' })
   }
 
   if (!currentUser) {
     return (
       <>
-        <LoginPage onLogin={handleLogin} onTableAccess={handleTableAccess} />
+        <LoginPage onLogin={handleLogin} />
         <Toaster position="top-center" />
       </>
     )
@@ -520,9 +497,6 @@ function App() {
       )}
       {currentUser.role === 'restaurant' && (
         <RestaurantDashboard user={currentUser} onLogout={handleLogout} />
-      )}
-      {currentUser.role === 'customer' && currentTable && (
-        <CustomerOrderPage tableId={currentTable} onExit={handleLogout} />
       )}
       <Toaster position="top-center" />
     </>
