@@ -1011,17 +1011,17 @@ const RestaurantDashboard = ({ user, onLogout }: RestaurantDashboardProps) => {
                               })}
                             />
                           </div>
-                        </>
-                      )}
-                    </CardContent>
-                  </Card>
+                        </div>
+                      </CardContent>
+                    </Card>
 
+                  </div>
+                )}
+              </div>
+            )}
 
-                </>
-              )}
-            </div>
-          </TabsContent>
-        </Tabs>
+          </div>
+        </div>
       </div>
 
       {/* QR Code Dialog */}
