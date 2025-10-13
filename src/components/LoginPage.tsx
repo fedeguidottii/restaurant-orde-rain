@@ -3,11 +3,10 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Label } from '@/components/ui/label'
-import { Badge } from '@/components/ui/badge'
 import { useKV } from '@github/spark/hooks'
 import { toast } from 'sonner'
 import { User } from '../App'
-import { Users } from '@phosphor-icons/react'
+import { Users, Eye, EyeSlash } from '@phosphor-icons/react'
 
 interface Props {
   onLogin: (user: User) => void
@@ -17,6 +16,7 @@ export default function LoginPage({ onLogin }: Props) {
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
+  const [showPassword, setShowPassword] = useState(false)
 
   const [users] = useKV<User[]>('users', [])
 
@@ -58,9 +58,9 @@ export default function LoginPage({ onLogin }: Props) {
 
         <Card className="shadow-liquid-lg bg-order-card border-liquid">
           <CardHeader>
-            <CardTitle className="text-xl">Accesso Staff</CardTitle>
+            <CardTitle className="text-xl">Accesso</CardTitle>
             <CardDescription>
-              Accedi come amministratore o gestore del ristorante
+              Accedi al sistema di gestione
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -70,20 +70,33 @@ export default function LoginPage({ onLogin }: Props) {
                 id="username"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
-                placeholder="admin, osteria, o mario"
+                placeholder="Inserisci il nome utente"
                 className="shadow-liquid"
               />
             </div>
             <div className="space-y-2">
               <Label htmlFor="password">Password</Label>
-              <Input
-                id="password"
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="Password"
-                className="shadow-liquid"
-              />
+              <div className="relative">
+                <Input
+                  id="password"
+                  type={showPassword ? "text" : "password"}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="Inserisci la password"
+                  className="shadow-liquid pr-10"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute inset-y-0 right-0 pr-3 flex items-center text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  {showPassword ? (
+                    <EyeSlash size={20} />
+                  ) : (
+                    <Eye size={20} />
+                  )}
+                </button>
+              </div>
             </div>
             <Button 
               onClick={handleLogin} 
@@ -92,23 +105,6 @@ export default function LoginPage({ onLogin }: Props) {
             >
               {loading ? 'Accesso in corso...' : 'Accedi'}
             </Button>
-            
-            <div className="text-center pt-4 border-t">
-              <div className="space-y-2 text-xs text-muted-foreground">
-                <div>
-                  <Badge variant="outline" className="mr-2">Admin</Badge>
-                  Username: <strong>admin</strong> | Password: <strong>admin123</strong>
-                </div>
-                <div>
-                  <Badge variant="outline" className="mr-2">Osteria del Borgo</Badge>
-                  Username: <strong>osteria</strong> | Password: <strong>restaurant123</strong>
-                </div>
-                <div>
-                  <Badge variant="outline" className="mr-2">Pizzeria Da Mario</Badge>
-                  Username: <strong>mario</strong> | Password: <strong>restaurant123</strong>
-                </div>
-              </div>
-            </div>
           </CardContent>
         </Card>
       </div>
