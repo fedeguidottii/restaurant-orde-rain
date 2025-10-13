@@ -107,6 +107,66 @@ export default function LoginPage({ onLogin }: Props) {
             </Button>
           </CardContent>
         </Card>
+
+        {/* Credenziali di esempio */}
+        <Card className="mt-4 shadow-liquid border-liquid bg-card/80">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm text-muted-foreground">Credenziali di prova</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3 pt-0">
+            <div className="flex justify-between items-center p-3 bg-secondary/50 rounded-lg">
+              <div>
+                <p className="text-sm font-medium">Amministratore</p>
+                <p className="text-xs text-muted-foreground">admin / admin123</p>
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  setUsername('admin')
+                  setPassword('admin123')
+                }}
+                className="text-xs"
+              >
+                Usa
+              </Button>
+            </div>
+            <div className="flex justify-between items-center p-3 bg-secondary/50 rounded-lg">
+              <div>
+                <p className="text-sm font-medium">Osteria del Borgo</p>
+                <p className="text-xs text-muted-foreground">osteria / restaurant123</p>
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  setUsername('osteria')
+                  setPassword('restaurant123')
+                }}
+                className="text-xs"
+              >
+                Usa
+              </Button>
+            </div>
+            <div className="flex justify-between items-center p-3 bg-secondary/50 rounded-lg">
+              <div>
+                <p className="text-sm font-medium">Pizzeria Da Mario</p>
+                <p className="text-xs text-muted-foreground">mario / restaurant123</p>
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  setUsername('mario')
+                  setPassword('restaurant123')
+                }}
+                className="text-xs"
+              >
+                Usa
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     </div>
   )
