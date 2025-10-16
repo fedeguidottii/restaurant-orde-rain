@@ -97,15 +97,14 @@ export default function LoginPage({ onLogin, onTableAccess, customerMode = false
                     id="pin"
                     value={pin}
                     onChange={(e) => setPin(e.target.value)}
-                    placeholder="Inserisci il PIN a 4 cifre"
+                    placeholder="PIN a 4 cifre"
                     maxLength={4}
-                    autoFocus
                     className="shadow-liquid text-center text-2xl font-bold tracking-widest"
                   />
                 </div>
                 <Button 
                   onClick={handleTableAccess}
-                  disabled={loading || !pin || pin.length !== 4}
+                  disabled={loading || !pin}
                   className="w-full bg-liquid-gradient shadow-liquid-lg hover:shadow-[0_12px_48px_-12px_rgba(201,161,82,0.5)] transition-all duration-300 text-lg font-bold py-6"
                 >
                   {loading ? 'Accesso in corso...' : 'Accedi al Menù'}
@@ -262,7 +261,7 @@ export default function LoginPage({ onLogin, onTableAccess, customerMode = false
                         </div>
                         <div>
                           <Badge variant="outline" className="mr-2">Ristorante</Badge>
-                          Usa il nome del tuo ristorante | Password: restaurant123
+                          Username: demo | Password: restaurant123
                         </div>
                       </div>
                     </div>
