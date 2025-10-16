@@ -56,6 +56,7 @@ const RestaurantDashboard = ({ user, onLogout }: RestaurantDashboardProps) => {
   const [showCompletedOrders, setShowCompletedOrders] = useState(false)
   const [showQrDialog, setShowQrDialog] = useState(false)
   const [customerCount, setCustomerCount] = useState('')
+  const [selectedOrderHistory, setSelectedOrderHistory] = useState<OrderHistory | null>(null)
   
   const restaurantMenuItems = menuItems?.filter(item => item.restaurantId === user.restaurantId) || []
   const restaurantTables = tables?.filter(table => table.restaurantId === user.restaurantId) || []
@@ -677,7 +678,7 @@ const RestaurantDashboard = ({ user, onLogout }: RestaurantDashboardProps) => {
                         )}
                       </div>
 
-                      <div className="p-3.5 space-y-2.5 max-h-[380px] overflow-y-auto">
+                      <div className="p-3.5 space-y-3 max-h-[380px] overflow-y-auto">
                         {order.items.map((item) => {
                           const menuItem = restaurantMenuItems.find(m => m.id === item.menuItemId)
                           const completedQuantity = item.completedQuantity || 0
@@ -687,9 +688,13 @@ const RestaurantDashboard = ({ user, onLogout }: RestaurantDashboardProps) => {
                           return (
                             <div 
                               key={item.id} 
+                              className="bg-gradient-to-br from-white to-muted/20 rounded-xl p-3 border border-border/30 hover:border-primary/20 transition-all duration-150"
                             >
-                              <div className="flex items-start gap-2.5 mb-2">
-                                <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-primary to-accent flex items-center justify-center text-white text-sm font-bold shadow-sm">
+                              <div className="flex items-start gap-2.5 mb-2.5">
+                                <div className="relative flex-shrink-0">
+                                  <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center text-foreground text-lg font-bold border-2 border-primary/30">
+                                    {item.quantity}
+                                  </div>
                                   {completedQuantity > 0 && (
                                     <div className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-green-500 flex items-center justify-center text-white text-xs font-bold border-2 border-white shadow-md">
                                       ✓
@@ -697,10 +702,10 @@ const RestaurantDashboard = ({ user, onLogout }: RestaurantDashboardProps) => {
                                   )}
                                 </div>
                                 <div className="flex-1 min-w-0">
-                                  <h4 className="font-semibold text-sm text-foreground mb-0.5 leading-tight">{menuItem?.name || 'Piatto'}</h4>
+                                  <h4 className="font-bold text-base text-foreground mb-0.5 leading-tight">{menuItem?.name || 'Piatto'}</h4>
                                   {item.notes && (
-                                    <div className="flex items-start gap-1 mt-1 bg-amber-50 border border-amber-200 rounded-md px-2 py-1">
-                                      <span className="text-amber-600 text-[10px] flex-shrink-0 mt-0.5">💡</span>
+                                    <div className="flex items-start gap-1.5 mt-1.5 bg-amber-50 border border-amber-200 rounded-lg px-2.5 py-1.5">
+                                      <span className="text-amber-600 text-xs flex-shrink-0 mt-0.5">💡</span>
                                       <p className="text-xs text-amber-800 font-medium italic leading-tight">
                                         {item.notes}
                                       </p>
@@ -710,12 +715,12 @@ const RestaurantDashboard = ({ user, onLogout }: RestaurantDashboardProps) => {
                               </div>
 
                               {completedQuantity > 0 && (
-                                <div className="mb-2 bg-green-50 border border-green-200 rounded-md px-2.5 py-1.5">
-                                  <div className="flex items-center justify-between text-xs mb-1">
-                                    <span className="text-green-700 font-semibold">✓ Completati</span>
-                                    <span className="text-green-700 font-bold text-xs">{completedQuantity}/{item.quantity}</span>
+                                <div className="mb-2.5 bg-green-50 border border-green-200 rounded-lg px-3 py-2">
+                                  <div className="flex items-center justify-between text-xs mb-1.5">
+                                    <span className="text-green-700 font-semibold">✓ Pronti</span>
+                                    <span className="text-green-700 font-bold">{completedQuantity}/{item.quantity}</span>
                                   </div>
-                                  <div className="h-1.5 bg-green-100 rounded-full overflow-hidden">
+                                  <div className="h-2 bg-green-100 rounded-full overflow-hidden">
                                     <div 
                                       className="h-full bg-gradient-to-r from-green-600 to-green-500 rounded-full transition-all duration-500"
                                       style={{ width: `${itemProgress}%` }}
@@ -726,11 +731,12 @@ const RestaurantDashboard = ({ user, onLogout }: RestaurantDashboardProps) => {
                               
                               {remainingQuantity > 0 && (
                                 <Button 
+                                  onClick={() => handleCompleteDish(order.id, item.id)}
                                   size="sm"
-                                  className="w-full bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white shadow-sm hover:shadow-md hover:scale-[1.02] transition-all duration-150 font-semibold text-xs h-8"
+                                  className="w-full bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white shadow-sm hover:shadow-md hover:scale-[1.02] transition-all duration-150 font-bold text-sm h-10"
                                 >
-                                  <Check size={14} className="mr-1.5" weight="bold" />
-                                  PRONTO ({remainingQuantity})
+                                  <Check size={16} className="mr-2" weight="bold" />
+                                  {menuItem?.name} PRONTO ({remainingQuantity})
                                 </Button>
                               )}
                             </div>
@@ -968,9 +974,10 @@ const RestaurantDashboard = ({ user, onLogout }: RestaurantDashboardProps) => {
                           return (
                             <div 
                               key={order.id} 
-                              className="group flex items-center gap-3 p-3 hover:bg-muted/20 transition-colors duration-150"
+                              className="group flex items-center gap-3 p-3 hover:bg-primary/5 transition-colors duration-150 cursor-pointer"
+                              onClick={() => setSelectedOrderHistory(order)}
                             >
-                              <div className="w-11 h-11 rounded-lg bg-gradient-to-br from-muted to-muted/50 flex items-center justify-center text-foreground font-bold text-base shadow-sm group-hover:shadow-md group-hover:scale-105 transition-all duration-150 flex-shrink-0">
+                              <div className="w-11 h-11 rounded-lg bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center text-foreground font-bold text-base shadow-sm group-hover:shadow-md group-hover:scale-105 transition-all duration-150 flex-shrink-0">
                                 {order.tableName.match(/\d+/)?.[0] || order.tableName.slice(-1)}
                               </div>
                               
@@ -1979,7 +1986,6 @@ const RestaurantDashboard = ({ user, onLogout }: RestaurantDashboardProps) => {
                       <Button
                         variant="destructive"
                         onClick={() => {
-                          // Delete all orders for this table
                           setOrders(orders?.filter(o => o.tableId !== selectedTable?.id) || [])
                           setCompletedOrders(completedOrders?.filter(o => o.tableId !== selectedTable?.id) || [])
                           toast.success('Ordini eliminati')
@@ -1990,7 +1996,6 @@ const RestaurantDashboard = ({ user, onLogout }: RestaurantDashboardProps) => {
                       </Button>
                       <Button
                         onClick={() => {
-                          // Move orders to history and mark as paid
                           const orderHistoryEntries: OrderHistory[] = tableOrders.map(order => ({
                             id: order.id,
                             tableId: order.tableId,
@@ -2015,7 +2020,6 @@ const RestaurantDashboard = ({ user, onLogout }: RestaurantDashboardProps) => {
                           setOrders(orders?.filter(o => o.tableId !== selectedTable?.id) || [])
                           setCompletedOrders(completedOrders?.filter(o => o.tableId !== selectedTable?.id) || [])
                           
-                          // Generate new PIN for the table
                           setTables(tables?.map(t => 
                             t.id === selectedTable?.id 
                               ? { ...t, pin: generatePin() }
@@ -2034,6 +2038,118 @@ const RestaurantDashboard = ({ user, onLogout }: RestaurantDashboardProps) => {
                 </>
               )
             })()}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Order History Details Dialog */}
+      <Dialog open={!!selectedOrderHistory} onOpenChange={(open) => !open && setSelectedOrderHistory(null)}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-3">
+              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-primary to-accent flex items-center justify-center text-white font-bold text-xl shadow-md">
+                {selectedOrderHistory?.tableName.match(/\d+/)?.[0] || selectedOrderHistory?.tableName.slice(-1)}
+              </div>
+              <div>
+                <div className="text-xl font-bold">{selectedOrderHistory?.tableName}</div>
+                <div className="text-sm font-normal text-muted-foreground">
+                  {selectedOrderHistory && new Date(selectedOrderHistory.paidAt).toLocaleDateString('it-IT', { 
+                    day: '2-digit', 
+                    month: 'long', 
+                    year: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                  })}
+                </div>
+              </div>
+            </DialogTitle>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            {/* Customer Info */}
+            {(selectedOrderHistory?.customerName || selectedOrderHistory?.customerCount) && (
+              <div className="bg-gradient-to-br from-primary/5 to-accent/5 rounded-xl p-4 border border-primary/20">
+                <h3 className="text-sm font-semibold text-muted-foreground mb-2">Informazioni Cliente</h3>
+                <div className="grid grid-cols-2 gap-3">
+                  {selectedOrderHistory?.customerName && (
+                    <div>
+                      <div className="text-xs text-muted-foreground">Nome</div>
+                      <div className="font-semibold">{selectedOrderHistory.customerName}</div>
+                    </div>
+                  )}
+                  {selectedOrderHistory?.customerPhone && (
+                    <div>
+                      <div className="text-xs text-muted-foreground">Telefono</div>
+                      <div className="font-semibold">{selectedOrderHistory.customerPhone}</div>
+                    </div>
+                  )}
+                  {selectedOrderHistory?.customerCount && (
+                    <div>
+                      <div className="text-xs text-muted-foreground">Numero Persone</div>
+                      <div className="font-semibold">{selectedOrderHistory.customerCount}</div>
+                    </div>
+                  )}
+                  {selectedOrderHistory?.reservationId && (
+                    <div>
+                      <div className="text-xs text-muted-foreground">Prenotazione</div>
+                      <div className="font-semibold">#{selectedOrderHistory.reservationId.slice(-6)}</div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Order Items */}
+            <div>
+              <h3 className="text-sm font-semibold text-muted-foreground mb-3">Dettaglio Ordine</h3>
+              <div className="space-y-2 max-h-[400px] overflow-y-auto">
+                {selectedOrderHistory?.items.map((item, index) => (
+                  <div 
+                    key={index}
+                    className="bg-white rounded-lg p-3 border border-border/30 hover:border-primary/20 transition-all duration-150"
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex items-start gap-3 flex-1">
+                        <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center text-foreground font-bold text-base border-2 border-primary/30 flex-shrink-0">
+                          {item.quantity}
+                        </div>
+                        <div className="flex-1">
+                          <h4 className="font-semibold text-base text-foreground mb-0.5">{item.name}</h4>
+                          {item.notes && (
+                            <div className="flex items-start gap-1.5 mt-1.5 bg-amber-50 border border-amber-200 rounded-lg px-2.5 py-1.5">
+                              <span className="text-amber-600 text-xs flex-shrink-0 mt-0.5">💡</span>
+                              <p className="text-xs text-amber-800 font-medium italic leading-tight">
+                                {item.notes}
+                              </p>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                      <div className="text-right flex-shrink-0">
+                        <div className="text-sm text-muted-foreground">€{item.price.toFixed(2)} cad.</div>
+                        <div className="text-base font-bold text-primary">€{(item.price * item.quantity).toFixed(2)}</div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Total */}
+            <Separator />
+            <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl p-4 border-2 border-green-200">
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="text-sm text-green-700 font-medium">Totale Pagato</div>
+                  <div className="text-xs text-green-600 mt-0.5">
+                    {selectedOrderHistory?.items.reduce((sum, item) => sum + item.quantity, 0)} piatti totali
+                  </div>
+                </div>
+                <div className="text-3xl font-bold text-green-700">
+                  €{selectedOrderHistory?.total.toFixed(2)}
+                </div>
+              </div>
+            </div>
           </div>
         </DialogContent>
       </Dialog>
