@@ -58,8 +58,6 @@ const RestaurantDashboard = ({ user, onLogout }: RestaurantDashboardProps) => {
   const [customerCount, setCustomerCount] = useState('')
   const [selectedOrderHistory, setSelectedOrderHistory] = useState<OrderHistory | null>(null)
   const [historyDateFilter, setHistoryDateFilter] = useState<string>('')
-  const [expandedTableOrders, setExpandedTableOrders] = useState<Set<string>>(new Set())
-  const [expandedDishOrders, setExpandedDishOrders] = useState<Set<string>>(new Set())
   
   const restaurantMenuItems = menuItems?.filter(item => item.restaurantId === user.restaurantId) || []
   const restaurantTables = tables?.filter(table => table.restaurantId === user.restaurantId) || []
@@ -639,26 +637,13 @@ const RestaurantDashboard = ({ user, onLogout }: RestaurantDashboardProps) => {
                   const totalDishes = order.items.reduce((sum, item) => sum + item.quantity, 0)
                   const completedDishes = order.items.reduce((sum, item) => sum + (item.completedQuantity || 0), 0)
                   const progressPercent = totalDishes > 0 ? (completedDishes / totalDishes) * 100 : 0
-                  const isExpanded = expandedTableOrders.has(order.id)
-                  const itemsToShow = isExpanded ? order.items : order.items.slice(0, 3)
                   
                   return (
                     <div 
                       key={order.id} 
                       className="group bg-white rounded-xl shadow-md border border-border/20 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 overflow-hidden"
                     >
-                      <div 
-                        className="bg-gradient-to-br from-primary/5 via-accent/5 to-primary/5 p-3.5 border-b border-border/10 cursor-pointer hover:bg-primary/10 transition-colors duration-150"
-                        onClick={() => {
-                          const newExpanded = new Set(expandedTableOrders)
-                          if (isExpanded) {
-                            newExpanded.delete(order.id)
-                          } else {
-                            newExpanded.add(order.id)
-                          }
-                          setExpandedTableOrders(newExpanded)
-                        }}
-                      >
+                      <div className="bg-gradient-to-br from-primary/5 via-accent/5 to-primary/5 p-3.5 border-b border-border/10">
                         <div className="flex items-center justify-between mb-2">
                           <div className="flex items-center gap-2.5">
                             <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-primary to-accent flex items-center justify-center text-white font-bold text-base shadow-md group-hover:scale-105 transition-transform duration-200">
@@ -694,85 +679,79 @@ const RestaurantDashboard = ({ user, onLogout }: RestaurantDashboardProps) => {
                         )}
                       </div>
 
-                      <div className="p-2.5 space-y-1.5 max-h-[380px] overflow-y-auto">
-                        {itemsToShow.map((item) => {
-                          const menuItem = restaurantMenuItems.find(m => m.id === item.menuItemId)
-                          const completedQuantity = item.completedQuantity || 0
-                          const remainingQuantity = item.quantity - completedQuantity
-                          const itemProgress = (completedQuantity / item.quantity) * 100
-                          
-                          return (
-                            <div 
-                              key={item.id} 
-                              className="bg-gradient-to-br from-white to-muted/20 rounded-lg p-2.5 border border-border/40 hover:border-primary/30 transition-all duration-150 shadow-sm"
-                            >
-                              <div className="flex items-start gap-2.5">
-                                <div className="relative flex-shrink-0">
-                                  <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center text-foreground text-base font-bold border border-primary/30">
-                                    {item.quantity}
-                                  </div>
-                                  {completedQuantity > 0 && (
-                                    <div className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-green-500 flex items-center justify-center text-white text-[10px] font-bold border-2 border-white shadow-md">
-                                      ✓
+                      <div className="relative">
+                        <div className="p-2.5 space-y-1.5 max-h-[380px] overflow-y-auto scrollbar-thin">
+                          {order.items.map((item) => {
+                            const menuItem = restaurantMenuItems.find(m => m.id === item.menuItemId)
+                            const completedQuantity = item.completedQuantity || 0
+                            const remainingQuantity = item.quantity - completedQuantity
+                            const itemProgress = (completedQuantity / item.quantity) * 100
+                            
+                            return (
+                              <div 
+                                key={item.id} 
+                                className="bg-gradient-to-br from-white to-muted/20 rounded-lg p-2.5 border border-border/40 hover:border-primary/30 transition-all duration-150 shadow-sm"
+                              >
+                                <div className="flex items-start gap-2.5">
+                                  <div className="relative flex-shrink-0">
+                                    <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center text-foreground text-base font-bold border border-primary/30">
+                                      {item.quantity}
                                     </div>
-                                  )}
-                                </div>
-                                <div className="flex-1 min-w-0 flex flex-col gap-1.5">
-                                  <div>
-                                    <h4 className="font-bold text-sm text-foreground leading-tight">{menuItem?.name || 'Piatto'}</h4>
-                                    {item.notes && (
-                                      <div className="flex items-start gap-1 mt-1 bg-amber-50 border border-amber-200 rounded px-2 py-1">
-                                        <span className="text-amber-600 text-[10px] flex-shrink-0 mt-0.5">💡</span>
-                                        <p className="text-[11px] text-amber-800 font-medium italic leading-tight">
-                                          {item.notes}
-                                        </p>
+                                    {completedQuantity > 0 && (
+                                      <div className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-green-500 flex items-center justify-center text-white text-[10px] font-bold border-2 border-white shadow-md">
+                                        ✓
                                       </div>
                                     )}
                                   </div>
-
-                                  {completedQuantity > 0 && (
-                                    <div className="bg-green-50 border border-green-200 rounded px-2 py-1">
-                                      <div className="flex items-center justify-between text-[11px] mb-0.5">
-                                        <span className="text-green-700 font-semibold">✓ Pronti</span>
-                                        <span className="text-green-700 font-bold">{completedQuantity}/{item.quantity}</span>
+                                  <div className="flex-1 min-w-0 flex flex-col gap-1.5">
+                                    <div>
+                                      <div className="flex items-start justify-between gap-2">
+                                        <h4 className="font-bold text-sm text-foreground leading-tight flex-1">{menuItem?.name || 'Piatto'}</h4>
+                                        {completedQuantity > 0 && (
+                                          <span className="text-[10px] font-bold text-green-600 bg-green-50 px-1.5 py-0.5 rounded border border-green-200 flex-shrink-0 leading-tight">
+                                            {completedQuantity}/{item.quantity}
+                                          </span>
+                                        )}
                                       </div>
-                                      <div className="h-1.5 bg-green-100 rounded-full overflow-hidden">
+                                      {item.notes && (
+                                        <div className="flex items-start gap-1 mt-1 bg-amber-50 border border-amber-200 rounded px-2 py-1">
+                                          <span className="text-amber-600 text-[10px] flex-shrink-0 mt-0.5">💡</span>
+                                          <p className="text-[11px] text-amber-800 font-medium italic leading-tight">
+                                            {item.notes}
+                                          </p>
+                                        </div>
+                                      )}
+                                    </div>
+
+                                    {completedQuantity > 0 && completedQuantity < item.quantity && (
+                                      <div className="h-1 bg-green-100 rounded-full overflow-hidden">
                                         <div 
                                           className="h-full bg-gradient-to-r from-green-600 to-green-500 rounded-full transition-all duration-500"
                                           style={{ width: `${itemProgress}%` }}
                                         />
                                       </div>
-                                    </div>
+                                    )}
+                                  </div>
+                                  
+                                  {remainingQuantity > 0 && (
+                                    <Button 
+                                      onClick={() => handleCompleteDish(order.id, item.id)}
+                                      size="sm"
+                                      className="flex-shrink-0 bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white shadow-sm hover:shadow-md hover:scale-105 transition-all duration-150 font-semibold h-8 px-2.5"
+                                    >
+                                      <div className="flex items-center gap-1">
+                                        <Check size={12} weight="bold" />
+                                        <span className="text-[11px]">({remainingQuantity})</span>
+                                      </div>
+                                    </Button>
                                   )}
                                 </div>
-                                
-                                {remainingQuantity > 0 && (
-                                  <Button 
-                                    onClick={() => handleCompleteDish(order.id, item.id)}
-                                    size="sm"
-                                    className="flex-shrink-0 bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white shadow-sm hover:shadow-md hover:scale-105 transition-all duration-150 font-semibold h-8 px-2.5"
-                                  >
-                                    <div className="flex items-center gap-1">
-                                      <Check size={12} weight="bold" />
-                                      <span className="text-[11px]">({remainingQuantity})</span>
-                                    </div>
-                                  </Button>
-                                )}
                               </div>
-                            </div>
-                          )
-                        })}
-                        {!isExpanded && order.items.length > 3 && (
-                          <button
-                            onClick={() => {
-                              const newExpanded = new Set(expandedTableOrders)
-                              newExpanded.add(order.id)
-                              setExpandedTableOrders(newExpanded)
-                            }}
-                            className="w-full text-center py-1.5 text-xs text-primary font-semibold hover:bg-primary/5 rounded-lg transition-colors duration-150"
-                          >
-                            +{order.items.length - 3} altri piatti
-                          </button>
+                            )
+                          })}
+                        </div>
+                        {order.items.length > 4 && (
+                          <div className="absolute bottom-0 left-0 right-0 h-8 bg-gradient-to-t from-white via-white/80 to-transparent pointer-events-none rounded-b-xl" />
                         )}
                       </div>
                     </div>
@@ -809,26 +788,13 @@ const RestaurantDashboard = ({ user, onLogout }: RestaurantDashboardProps) => {
                     const totalQuantity = orders.reduce((sum, o) => sum + o.quantity, 0)
                     const totalCompleted = orders.reduce((sum, o) => sum + o.completedQuantity, 0)
                     const progressPercent = totalQuantity > 0 ? (totalCompleted / totalQuantity) * 100 : 0
-                    const isExpanded = expandedDishOrders.has(item.id)
-                    const ordersToShow = isExpanded ? orders : orders.slice(0, 3)
 
                     return (
                       <div 
                         key={item.id}
                         className="group bg-white rounded-xl shadow-md border border-border/20 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 overflow-hidden"
                       >
-                        <div 
-                          className="p-3 cursor-pointer hover:bg-muted/20 transition-colors duration-150"
-                          onClick={() => {
-                            const newExpanded = new Set(expandedDishOrders)
-                            if (isExpanded) {
-                              newExpanded.delete(item.id)
-                            } else {
-                              newExpanded.add(item.id)
-                            }
-                            setExpandedDishOrders(newExpanded)
-                          }}
-                        >
+                        <div className="p-3">
                           <div className="flex items-start gap-2.5 mb-2">
                             <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-primary to-accent flex items-center justify-center text-white text-lg font-bold shadow-md group-hover:scale-105 transition-transform duration-200 flex-shrink-0">
                               {totalQuantity}
@@ -857,87 +823,76 @@ const RestaurantDashboard = ({ user, onLogout }: RestaurantDashboardProps) => {
                           )}
                         </div>
 
-                        <div className="p-2.5 space-y-1.5 max-h-[380px] overflow-y-auto">
-                          {ordersToShow.map((orderInfo) => {
-                            const remaining = orderInfo.quantity - orderInfo.completedQuantity
-                            
-                            return (
-                              <div 
-                                key={`${orderInfo.orderId}-${orderInfo.itemId}`} 
-                                className="bg-gradient-to-br from-white to-muted/30 rounded-lg p-2.5 border border-border/40 shadow-sm hover:shadow-md hover:border-primary/30 transition-all duration-200"
-                              >
-                                <div className="flex items-start gap-2.5">
-                                  <div className="relative flex-shrink-0">
-                                    <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center text-foreground text-base font-bold border border-primary/30">
-                                      {orderInfo.quantity}
-                                    </div>
-                                    {orderInfo.completedQuantity > 0 && (
-                                      <div className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-green-500 flex items-center justify-center text-white text-[10px] font-bold border-2 border-white shadow-md">
-                                        ✓
+                        <div className="relative">
+                          <div className="p-2.5 space-y-1.5 max-h-[380px] overflow-y-auto scrollbar-thin">
+                            {orders.map((orderInfo) => {
+                              const remaining = orderInfo.quantity - orderInfo.completedQuantity
+                              
+                              return (
+                                <div 
+                                  key={`${orderInfo.orderId}-${orderInfo.itemId}`} 
+                                  className="bg-gradient-to-br from-white to-muted/30 rounded-lg p-2.5 border border-border/40 shadow-sm hover:shadow-md hover:border-primary/30 transition-all duration-200"
+                                >
+                                  <div className="flex items-start gap-2.5">
+                                    <div className="relative flex-shrink-0">
+                                      <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center text-foreground text-base font-bold border border-primary/30">
+                                        {orderInfo.quantity}
                                       </div>
-                                    )}
-                                  </div>
-                                  <div className="flex-1 min-w-0 flex flex-col gap-1.5">
-                                    <div>
-                                      <h4 className="font-bold text-sm text-foreground leading-tight">{orderInfo.tableName}</h4>
-                                      {orderInfo.notes && (
-                                        <div className="flex items-start gap-1 mt-1 bg-amber-50 border border-amber-200 rounded px-2 py-1">
-                                          <span className="text-amber-600 text-[10px] flex-shrink-0 mt-0.5">💡</span>
-                                          <p className="text-[11px] text-amber-800 font-medium italic leading-tight">
-                                            {orderInfo.notes}
-                                          </p>
+                                      {orderInfo.completedQuantity > 0 && (
+                                        <div className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-green-500 flex items-center justify-center text-white text-[10px] font-bold border-2 border-white shadow-md">
+                                          ✓
                                         </div>
                                       )}
                                     </div>
-
-                                    {orderInfo.completedQuantity > 0 && (
-                                      <div className="bg-green-50 border border-green-200 rounded px-2 py-1">
-                                        <div className="flex items-center justify-between text-[11px] mb-0.5">
-                                          <span className="text-green-700 font-semibold">✓ Pronti</span>
-                                          <span className="text-green-700 font-bold">{orderInfo.completedQuantity}/{orderInfo.quantity}</span>
+                                    <div className="flex-1 min-w-0 flex flex-col gap-1.5">
+                                      <div>
+                                        <div className="flex items-start justify-between gap-2">
+                                          <h4 className="font-bold text-sm text-foreground leading-tight flex-1">{orderInfo.tableName}</h4>
+                                          {orderInfo.completedQuantity > 0 && (
+                                            <span className="text-[10px] font-bold text-green-600 bg-green-50 px-1.5 py-0.5 rounded border border-green-200 flex-shrink-0 leading-tight">
+                                              {orderInfo.completedQuantity}/{orderInfo.quantity}
+                                            </span>
+                                          )}
                                         </div>
-                                        <div className="h-1.5 bg-green-100 rounded-full overflow-hidden">
+                                        {orderInfo.notes && (
+                                          <div className="flex items-start gap-1 mt-1 bg-amber-50 border border-amber-200 rounded px-2 py-1">
+                                            <span className="text-amber-600 text-[10px] flex-shrink-0 mt-0.5">💡</span>
+                                            <p className="text-[11px] text-amber-800 font-medium italic leading-tight">
+                                              {orderInfo.notes}
+                                            </p>
+                                          </div>
+                                        )}
+                                      </div>
+
+                                      {orderInfo.completedQuantity > 0 && orderInfo.completedQuantity < orderInfo.quantity && (
+                                        <div className="h-1 bg-green-100 rounded-full overflow-hidden">
                                           <div 
                                             className="h-full bg-gradient-to-r from-green-600 to-green-500 rounded-full transition-all duration-500"
                                             style={{ width: `${(orderInfo.completedQuantity / orderInfo.quantity) * 100}%` }}
                                           />
                                         </div>
-                                      </div>
+                                      )}
+                                    </div>
+
+                                    {remaining > 0 && (
+                                      <Button
+                                        onClick={() => handleCompleteDish(orderInfo.orderId, orderInfo.itemId)}
+                                        size="sm"
+                                        className="flex-shrink-0 bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white shadow-sm hover:shadow-md hover:scale-105 transition-all duration-150 font-semibold h-8 px-2.5"
+                                      >
+                                        <div className="flex items-center gap-1">
+                                          <Check size={12} weight="bold" />
+                                          <span className="text-[11px]">({remaining})</span>
+                                        </div>
+                                      </Button>
                                     )}
                                   </div>
-
-                                  {remaining > 0 && (
-                                    <Button
-                                      onClick={() => handleCompleteDish(orderInfo.orderId, orderInfo.itemId)}
-                                      size="sm"
-                                      className="flex-shrink-0 bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white shadow-sm hover:shadow-md hover:scale-105 transition-all duration-150 font-semibold h-8 px-2.5"
-                                    >
-                                      <div className="flex items-center gap-1">
-                                        <Check size={12} weight="bold" />
-                                        <span className="text-[11px]">({remaining})</span>
-                                      </div>
-                                    </Button>
-                                  )}
                                 </div>
-                              </div>
-                            )
-                          })}
-                          
-                          {orders.length > 3 && (
-                            <button
-                              onClick={() => {
-                                const newExpanded = new Set(expandedDishOrders)
-                                if (isExpanded) {
-                                  newExpanded.delete(item.id)
-                                } else {
-                                  newExpanded.add(item.id)
-                                }
-                                setExpandedDishOrders(newExpanded)
-                              }}
-                              className="w-full text-center py-1.5 text-xs text-primary font-semibold hover:bg-primary/5 rounded-lg transition-colors duration-150"
-                            >
-                              {isExpanded ? 'Mostra meno' : `+${orders.length - 3} altri tavoli`}
-                            </button>
+                              )
+                            })}
+                          </div>
+                          {orders.length > 4 && (
+                            <div className="absolute bottom-0 left-0 right-0 h-8 bg-gradient-to-t from-white via-white/80 to-transparent pointer-events-none rounded-b-xl" />
                           )}
                         </div>
                       </div>
