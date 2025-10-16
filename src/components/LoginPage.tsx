@@ -87,7 +87,7 @@ export default function LoginPage({ onLogin, onTableAccess, customerMode = false
               <CardHeader>
                 <CardTitle className="text-xl">Accesso al Tavolo</CardTitle>
                 <CardDescription>
-                  Il tuo codice tavolo è stato rilevato automaticamente
+                  Inserisci il PIN fornito dal cameriere
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
@@ -109,7 +109,7 @@ export default function LoginPage({ onLogin, onTableAccess, customerMode = false
                 >
                   {loading ? 'Accesso in corso...' : 'Accedi al Menù'}
                 </Button>
-                
+
                 <div className="text-center pt-4 border-t">
                   <p className="text-sm text-muted-foreground mb-3">
                     Come funziona:
@@ -117,7 +117,7 @@ export default function LoginPage({ onLogin, onTableAccess, customerMode = false
                   <div className="text-xs text-muted-foreground space-y-2">
                     <div className="flex items-center gap-2">
                       <div className="w-6 h-6 bg-primary/20 rounded-full flex items-center justify-center text-primary font-bold text-xs">1</div>
-                      <span>Chiedi il PIN al cameriere</span>
+                      <span>Scansiona il QR code sul tavolo</span>
                     </div>
                     <div className="flex items-center gap-2">
                       <div className="w-6 h-6 bg-primary/20 rounded-full flex items-center justify-center text-primary font-bold text-xs">2</div>
@@ -138,8 +138,8 @@ export default function LoginPage({ onLogin, onTableAccess, customerMode = false
               <div className="w-16 h-16 bg-liquid-gradient rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-liquid-lg">
                 <Users weight="bold" size={32} className="text-primary-foreground" />
               </div>
-              <h1 className="text-3xl font-bold text-foreground mb-2">Restaurant Manager</h1>
-              <p className="text-muted-foreground">Sistema di gestione ordini per ristoranti</p>
+              <h1 className="text-3xl font-bold text-foreground mb-2">Sistema Gestione Ristorante</h1>
+              <p className="text-muted-foreground">Accedi al sistema</p>
             </div>
 
             <Tabs defaultValue="customer" className="w-full">
@@ -220,7 +220,7 @@ export default function LoginPage({ onLogin, onTableAccess, customerMode = false
                   <CardHeader>
                     <CardTitle className="text-xl">Accesso Staff</CardTitle>
                     <CardDescription>
-                      Accedi come amministratore o gestore del ristorante
+                      Accesso per amministratori e gestori del ristorante
                     </CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-4">
