@@ -577,12 +577,12 @@ const RestaurantDashboard = ({ user, onLogout }: RestaurantDashboardProps) => {
       }`}>
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
           {/* Orders Tab */}
-          <TabsContent value="orders" className="space-y-4">
+          <TabsContent value="orders" className="space-y-6">
             <div className="flex items-center justify-between">
-              <h2 className="text-2xl font-bold text-foreground">Gestione Ordini</h2>
-              <div className="flex gap-2">
+              <h2 className="text-3xl font-bold text-foreground">Gestione Ordini</h2>
+              <div className="flex gap-3">
                 <Select value={orderViewMode} onValueChange={(value: 'table' | 'dish') => setOrderViewMode(value)}>
-                  <SelectTrigger className="w-36">
+                  <SelectTrigger className="w-40 shadow-gold">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -590,133 +590,222 @@ const RestaurantDashboard = ({ user, onLogout }: RestaurantDashboardProps) => {
                     <SelectItem value="dish">Per Piatti</SelectItem>
                   </SelectContent>
                 </Select>
-                <Badge variant="secondary" className="text-sm">
-                  {restaurantOrders.length} {restaurantOrders.length === 1 ? 'ordine' : 'ordini'} attivo
+                <Badge variant="secondary" className="text-sm shadow-gold px-4 py-2">
+                  {restaurantOrders.length} {restaurantOrders.length === 1 ? 'ordine' : 'ordini'}
                 </Badge>
               </div>
             </div>
             
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-              {restaurantOrders.map(order => {
-                const table = restaurantTables.find(t => t.id === order.tableId)
-                
-                return (
-                  <Card key={order.id} className="bg-white border-l-4 border-l-yellow-400 shadow-professional hover:shadow-professional-lg transition-all duration-300 hover-lift">
-                    <CardHeader className="pb-3">
-                      <div className="flex items-center justify-between">
-                        <CardTitle className="text-lg font-semibold">{table?.name || 'Tavolo sconosciuto'}</CardTitle>
-                        <Badge variant="outline" className="text-xs">
-                          {getTimeAgo(order.timestamp)}
-                        </Badge>
+            {orderViewMode === 'table' ? (
+              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                {restaurantOrders.map(order => {
+                  const table = restaurantTables.find(t => t.id === order.tableId)
+                  
+                  return (
+                    <div 
+                      key={order.id} 
+                      className="bg-gradient-to-br from-white via-amber-50/30 to-white rounded-2xl p-5 shadow-liquid-lg border border-primary/10 hover:shadow-liquid transition-all duration-300"
+                    >
+                      <div className="flex items-center justify-between mb-4">
+                        <div className="flex items-center gap-3">
+                          <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-primary to-accent flex items-center justify-center text-white font-bold text-lg shadow-gold">
+                            {table?.name?.slice(-1) || '?'}
+                          </div>
+                          <div>
+                            <h3 className="text-xl font-bold text-foreground">{table?.name || 'Tavolo'}</h3>
+                            <p className="text-xs text-muted-foreground">{getTimeAgo(order.timestamp)}</p>
+                          </div>
+                        </div>
                       </div>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                      <div className="space-y-3">
+
+                      <div className="space-y-2">
                         {order.items.map((item) => {
                           const menuItem = restaurantMenuItems.find(m => m.id === item.menuItemId)
                           const completedQuantity = item.completedQuantity || 0
                           const remainingQuantity = item.quantity - completedQuantity
                           
                           return (
-                            <div key={item.id} className="p-3 bg-card-gradient rounded-lg border border-liquid shadow-sm">
-                              <div className="flex items-start justify-between mb-2">
-                                <div className="flex-1">
-                                  <div className="font-medium text-sm">
-                                    {item.quantity}x {menuItem?.name || 'Piatto sconosciuto'}
-                                  </div>
-                                  {item.notes && (
-                                    <div className="text-xs text-muted-foreground italic mt-1">
-                                      {item.notes}
-                                    </div>
-                                  )}
-                                  {completedQuantity > 0 && (
-                                    <div className="text-xs text-green-600 font-medium mt-1">
-                                      ✓ {completedQuantity} pronti
-                                    </div>
-                                  )}
+                            <div key={item.id} className="bg-white/80 backdrop-blur-sm rounded-xl p-3 border border-primary/5 shadow-sm">
+                              <div className="mb-2">
+                                <div className="flex items-center gap-2">
+                                  <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-primary text-primary-foreground text-xs font-bold">
+                                    {item.quantity}
+                                  </span>
+                                  <span className="font-semibold text-foreground">{menuItem?.name || 'Piatto'}</span>
                                 </div>
+                                {item.notes && (
+                                  <p className="text-xs text-amber-700 italic mt-1 ml-8 font-medium">
+                                    ⓘ {item.notes}
+                                  </p>
+                                )}
+                                {completedQuantity > 0 && (
+                                  <p className="text-xs text-green-600 font-semibold mt-1 ml-8">
+                                    ✓ {completedQuantity} {completedQuantity === 1 ? 'pronto' : 'pronti'}
+                                  </p>
+                                )}
                               </div>
                               
                               {remainingQuantity > 0 && (
                                 <Button 
                                   onClick={() => handleCompleteDish(order.id, item.id)}
                                   size="sm"
-                                  className="w-full bg-green-600 hover:bg-green-700 text-white shadow-md hover:shadow-lg transition-all duration-200 text-xs py-1.5"
+                                  className="w-full bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white shadow-lg hover:shadow-xl transition-all duration-200 font-bold"
                                 >
-                                  Pronto ({remainingQuantity} da fare)
+                                  ✓ PRONTO ({remainingQuantity})
                                 </Button>
-                              )}
-                              
-                              {remainingQuantity === 0 && (
-                                <div className="w-full py-1.5 text-center bg-green-100 text-green-700 rounded text-xs font-medium">
-                                  ✓ Completato
-                                </div>
                               )}
                             </div>
                           )
                         })}
                       </div>
-                    </CardContent>
-                  </Card>
-                )
-              })}
-              
-              {restaurantOrders.length === 0 && (
-                <Card className="col-span-full shadow-professional">
-                  <CardContent className="text-center py-8">
-                    <Clock size={48} className="mx-auto text-muted-foreground mb-4" />
-                    <p className="text-muted-foreground">Nessun ordine attivo</p>
-                  </CardContent>
-                </Card>
-              )}
-            </div>
+                    </div>
+                  )
+                })}
+                
+                {restaurantOrders.length === 0 && (
+                  <div className="col-span-full text-center py-16">
+                    <Clock size={64} className="mx-auto text-muted-foreground/30 mb-4" />
+                    <p className="text-xl text-muted-foreground">Nessun ordine attivo</p>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                {(() => {
+                  const dishGroups: Record<string, { item: MenuItem, orders: Array<{ orderId: string, tableId: string, tableName: string, quantity: number, completedQuantity: number, notes?: string, itemId: string }> }> = {}
+                  
+                  restaurantOrders.forEach(order => {
+                    order.items.forEach(item => {
+                      const menuItem = restaurantMenuItems.find(m => m.id === item.menuItemId)
+                      if (menuItem) {
+                        if (!dishGroups[menuItem.id]) {
+                          dishGroups[menuItem.id] = { item: menuItem, orders: [] }
+                        }
+                        const table = restaurantTables.find(t => t.id === order.tableId)
+                        dishGroups[menuItem.id].orders.push({
+                          orderId: order.id,
+                          tableId: order.tableId,
+                          tableName: table?.name || 'Tavolo',
+                          quantity: item.quantity,
+                          completedQuantity: item.completedQuantity || 0,
+                          notes: item.notes,
+                          itemId: item.id
+                        })
+                      }
+                    })
+                  })
+
+                  return Object.values(dishGroups).map(({ item, orders }) => {
+                    const totalQuantity = orders.reduce((sum, o) => sum + o.quantity, 0)
+                    const totalCompleted = orders.reduce((sum, o) => sum + o.completedQuantity, 0)
+                    const totalRemaining = totalQuantity - totalCompleted
+
+                    return (
+                      <div 
+                        key={item.id}
+                        className="bg-gradient-to-br from-white via-amber-50/30 to-white rounded-2xl p-5 shadow-liquid-lg border border-primary/10 hover:shadow-liquid transition-all duration-300"
+                      >
+                        <div className="mb-4">
+                          <div className="flex items-center gap-3 mb-2">
+                            <span className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-gradient-to-br from-primary to-accent text-white text-xl font-bold shadow-gold">
+                              {totalQuantity}
+                            </span>
+                            <h3 className="text-xl font-bold text-foreground flex-1">{item.name}</h3>
+                          </div>
+                          {totalCompleted > 0 && (
+                            <p className="text-sm text-green-600 font-semibold ml-15">
+                              ✓ {totalCompleted} {totalCompleted === 1 ? 'pronto' : 'pronti'} / {totalRemaining} da fare
+                            </p>
+                          )}
+                        </div>
+
+                        <div className="space-y-2">
+                          {orders.map((orderInfo) => {
+                            const remaining = orderInfo.quantity - orderInfo.completedQuantity
+                            
+                            return (
+                              <div key={`${orderInfo.orderId}-${orderInfo.itemId}`} className="bg-white/80 backdrop-blur-sm rounded-xl p-3 border border-primary/5 shadow-sm">
+                                <div className="flex items-center justify-between mb-2">
+                                  <div className="flex-1">
+                                    <p className="font-semibold text-sm text-foreground">{orderInfo.tableName}</p>
+                                    {orderInfo.notes && (
+                                      <p className="text-xs text-amber-700 italic mt-1 font-medium">
+                                        ⓘ {orderInfo.notes}
+                                      </p>
+                                    )}
+                                    <p className="text-xs text-muted-foreground mt-1">
+                                      Quantità: {orderInfo.quantity} {orderInfo.completedQuantity > 0 && `(${orderInfo.completedQuantity} pronti)`}
+                                    </p>
+                                  </div>
+                                </div>
+                                
+                                {remaining > 0 && (
+                                  <Button 
+                                    onClick={() => handleCompleteDish(orderInfo.orderId, orderInfo.itemId)}
+                                    size="sm"
+                                    className="w-full bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white shadow-lg hover:shadow-xl transition-all duration-200 font-bold"
+                                  >
+                                    ✓ PRONTO ({remaining})
+                                  </Button>
+                                )}
+                              </div>
+                            )
+                          })}
+                        </div>
+                      </div>
+                    )
+                  })
+                })()}
+              </div>
+            )}
 
             {/* Completed Orders Section */}
             {restaurantCompletedOrders.length > 0 && (
               <>
-                <Separator className="my-6" />
-                <div className="flex items-center justify-between">
-                  <h3 className="text-xl font-semibold text-foreground">Ordini Completati</h3>
-                  <Badge variant="secondary" className="text-sm">
+                <Separator className="my-8 opacity-30" />
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-2xl font-bold text-foreground">Ordini Completati</h3>
+                  <Badge variant="secondary" className="text-sm shadow-gold px-4 py-2">
                     {restaurantCompletedOrders.length} {restaurantCompletedOrders.length === 1 ? 'completato' : 'completati'}
                   </Badge>
                 </div>
                 
-                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                   {restaurantCompletedOrders.map(order => {
                     const table = restaurantTables.find(t => t.id === order.tableId)
                     
                     return (
-                      <Card key={order.id} className="bg-green-50 border-l-4 border-l-green-400 shadow-professional hover:shadow-professional-lg transition-all duration-300 hover-lift">
-                        <CardHeader className="pb-3">
-                          <div className="flex items-center justify-between">
-                            <CardTitle className="text-lg font-semibold">{table?.name || 'Tavolo sconosciuto'}</CardTitle>
-                            <Badge variant="outline" className="text-xs bg-green-100">
-                              Completato
-                            </Badge>
+                      <div 
+                        key={order.id} 
+                        className="bg-gradient-to-br from-green-50 via-emerald-50/50 to-green-50 rounded-2xl p-4 shadow-professional border border-green-200/50 hover:shadow-professional-lg transition-all duration-300"
+                      >
+                        <div className="flex items-center gap-3 mb-3">
+                          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-green-600 to-green-500 flex items-center justify-center text-white font-bold shadow-md">
+                            ✓
                           </div>
-                        </CardHeader>
-                        <CardContent className="space-y-3">
-                          <div className="space-y-2">
-                            {order.items.map((item, index) => {
-                              const menuItem = restaurantMenuItems.find(m => m.id === item.menuItemId)
-                              return (
-                                <div key={index} className="flex items-center justify-between text-sm">
-                                  <span className="font-medium">{item.quantity}x {menuItem?.name || 'Piatto sconosciuto'}</span>
-                                </div>
-                              )
-                            })}
-                          </div>
-                          <Separator />
-                          <Button 
-                            variant="outline"
-                            onClick={() => handleUncompleteOrder(order.id)}
-                            className="w-full text-sm shadow-sm hover:shadow-md transition-all duration-200"
-                          >
-                            Riporta in Attesa
-                          </Button>
-                        </CardContent>
-                      </Card>
+                          <h4 className="text-lg font-bold text-foreground">{table?.name || 'Tavolo'}</h4>
+                        </div>
+                        
+                        <div className="space-y-1 mb-3">
+                          {order.items.map((item, index) => {
+                            const menuItem = restaurantMenuItems.find(m => m.id === item.menuItemId)
+                            return (
+                              <div key={index} className="text-sm text-foreground/80">
+                                <span className="font-semibold">{item.quantity}x</span> {menuItem?.name || 'Piatto'}
+                              </div>
+                            )
+                          })}
+                        </div>
+                        
+                        <Button 
+                          variant="outline"
+                          onClick={() => handleUncompleteOrder(order.id)}
+                          size="sm"
+                          className="w-full text-xs border-green-300 hover:bg-green-100 shadow-sm"
+                        >
+                          Riporta in Attesa
+                        </Button>
+                      </div>
                     )
                   })}
                 </div>
@@ -726,57 +815,57 @@ const RestaurantDashboard = ({ user, onLogout }: RestaurantDashboardProps) => {
             {/* Order History Section */}
             {restaurantOrderHistory.length > 0 && (
               <>
-                <Separator className="my-6" />
-                <div className="flex items-center justify-between">
-                  <h3 className="text-xl font-semibold text-foreground">Storico Ordini</h3>
-                  <Badge variant="secondary" className="text-sm">
-                    {restaurantOrderHistory.length} {restaurantOrderHistory.length === 1 ? 'storico' : 'storici'}
+                <Separator className="my-8 opacity-30" />
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-2xl font-bold text-foreground">Storico Ordini</h3>
+                  <Badge variant="secondary" className="text-sm shadow-gold px-4 py-2">
+                    {restaurantOrderHistory.length}
                   </Badge>
                 </div>
                 
-                <div className="grid gap-4 md:grid-cols-1 lg:grid-cols-2">
+                <div className="space-y-2">
                   {restaurantOrderHistory
                     .sort((a, b) => b.paidAt - a.paidAt)
-                    .slice(0, 10)
+                    .slice(0, 15)
                     .map(order => {
                       return (
-                        <Card key={order.id} className="bg-gray-50 border-l-4 border-l-gray-400 shadow-professional">
-                          <CardHeader className="pb-3">
-                            <div className="flex items-center justify-between">
-                              <CardTitle className="text-lg font-semibold">{order.tableName}</CardTitle>
-                              <div className="text-right">
-                                <Badge variant="outline" className="text-xs bg-gray-100">
-                                  Pagato
-                                </Badge>
-                                <p className="text-xs text-muted-foreground mt-1">
-                                  {new Date(order.paidAt).toLocaleDateString('it-IT')}
-                                </p>
-                              </div>
-                            </div>
-                          </CardHeader>
-                          <CardContent className="space-y-3">
-                            <div className="space-y-2">
-                              {order.items.slice(0, 3).map((item, index) => (
-                                <div key={index} className="flex items-center justify-between text-sm">
-                                  <span className="font-medium">{item.quantity}x {item.name}</span>
-                                  <span className="text-muted-foreground">€{(item.price * item.quantity).toFixed(2)}</span>
-                                </div>
-                              ))}
-                              {order.items.length > 3 && (
-                                <p className="text-xs text-muted-foreground">
-                                  ...e altri {order.items.length - 3} piatti
-                                </p>
-                              )}
-                            </div>
-                            <Separator />
-                            <div className="flex justify-between items-center">
-                              <span className="font-bold text-primary">Totale: €{order.total.toFixed(2)}</span>
+                        <div 
+                          key={order.id} 
+                          className="bg-white/60 backdrop-blur-sm rounded-xl p-3 border border-gray-200/50 shadow-sm hover:shadow-md transition-all duration-200 flex items-center gap-4"
+                        >
+                          <div className="w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center text-gray-600 font-bold text-sm flex-shrink-0">
+                            {order.tableName.slice(-1)}
+                          </div>
+                          
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 mb-1">
+                              <h4 className="font-bold text-sm text-foreground">{order.tableName}</h4>
+                              <span className="text-xs text-muted-foreground">•</span>
+                              <span className="text-xs text-muted-foreground">
+                                {new Date(order.paidAt).toLocaleDateString('it-IT', { day: '2-digit', month: 'short' })}
+                              </span>
                               <span className="text-xs text-muted-foreground">
                                 {formatTime(order.timestamp)}
                               </span>
                             </div>
-                          </CardContent>
-                        </Card>
+                            <p className="text-xs text-muted-foreground truncate">
+                              {order.items.slice(0, 2).map(item => `${item.quantity}x ${item.name}`).join(', ')}
+                              {order.items.length > 2 && ` +${order.items.length - 2}`}
+                            </p>
+                          </div>
+                          
+                          <div className="flex items-center gap-3 flex-shrink-0">
+                            <div className="text-right">
+                              <p className="font-bold text-primary text-sm">€{order.total.toFixed(2)}</p>
+                              {order.customerCount && (
+                                <p className="text-xs text-muted-foreground">{order.customerCount} {order.customerCount === 1 ? 'persona' : 'persone'}</p>
+                              )}
+                            </div>
+                            <Badge variant="outline" className="text-xs bg-gray-100 border-gray-300">
+                              Pagato
+                            </Badge>
+                          </div>
+                        </div>
                       )
                     })
                   }
