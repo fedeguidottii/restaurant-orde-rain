@@ -579,40 +579,40 @@ const RestaurantDashboard = ({ user, onLogout }: RestaurantDashboardProps) => {
           {/* Orders Tab */}
           <TabsContent value="orders" className="space-y-6">
             <div className="flex items-center justify-between mb-6">
-              <div className="flex items-center gap-4">
-                <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-primary to-accent flex items-center justify-center text-white shadow-gold-lg">
-                  <Clock size={28} />
+              <div className="flex items-center gap-3">
+                <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-primary to-accent flex items-center justify-center text-white shadow-gold">
+                  <Clock size={20} weight="duotone" />
                 </div>
                 <div>
-                  <h2 className="text-3xl font-bold text-foreground">Gestione Ordini</h2>
-                  <p className="text-sm text-muted-foreground mt-1">Gestisci gli ordini in tempo reale</p>
+                  <h2 className="text-2xl font-bold text-foreground">Gestione Ordini</h2>
+                  <p className="text-xs text-muted-foreground mt-0.5">Gestisci gli ordini in tempo reale</p>
                 </div>
               </div>
-              <div className="flex gap-3">
+              <div className="flex gap-2">
                 <Select value={orderViewMode} onValueChange={(value: 'table' | 'dish') => setOrderViewMode(value)}>
-                  <SelectTrigger className="w-[180px] h-12 shadow-professional border-2 font-semibold hover:border-primary/30 transition-all duration-200">
+                  <SelectTrigger className="w-[160px] h-9 shadow-sm hover:shadow-md border hover:border-primary/30 transition-all duration-200">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="table" className="font-semibold">
+                    <SelectItem value="table">
                       <div className="flex items-center gap-2">
-                        <MapPin size={16} />
-                        Per Tavoli
+                        <MapPin size={14} />
+                        <span className="text-sm">Per Tavoli</span>
                       </div>
                     </SelectItem>
-                    <SelectItem value="dish" className="font-semibold">
+                    <SelectItem value="dish">
                       <div className="flex items-center gap-2">
-                        <List size={16} />
-                        Per Piatti
+                        <List size={14} />
+                        <span className="text-sm">Per Piatti</span>
                       </div>
                     </SelectItem>
                   </SelectContent>
                 </Select>
-                <div className="flex items-center gap-2 px-5 py-3 rounded-xl bg-gradient-to-br from-primary/10 to-accent/5 border-2 border-primary/20 shadow-gold">
-                  <Clock size={20} className="text-primary" />
+                <div className="flex items-center gap-2 px-4 py-2 rounded-lg bg-gradient-to-br from-primary/5 to-accent/5 border border-primary/20 shadow-sm">
+                  <Clock size={16} className="text-primary" weight="duotone" />
                   <div className="text-right">
-                    <div className="text-2xl font-bold text-primary">{restaurantOrders.length}</div>
-                    <div className="text-xs text-muted-foreground font-medium">
+                    <div className="text-xl font-bold text-primary">{restaurantOrders.length}</div>
+                    <div className="text-[10px] text-muted-foreground font-medium leading-none">
                       {restaurantOrders.length === 1 ? 'ordine' : 'ordini'}
                     </div>
                   </div>
@@ -621,7 +621,7 @@ const RestaurantDashboard = ({ user, onLogout }: RestaurantDashboardProps) => {
             </div>
             
             {orderViewMode === 'table' ? (
-              <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+              <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
                 {restaurantOrders.map(order => {
                   const table = restaurantTables.find(t => t.id === order.tableId)
                   const totalDishes = order.items.reduce((sum, item) => sum + item.quantity, 0)
@@ -631,37 +631,37 @@ const RestaurantDashboard = ({ user, onLogout }: RestaurantDashboardProps) => {
                   return (
                     <div 
                       key={order.id} 
-                      className="group bg-white rounded-2xl shadow-professional-lg border border-border/20 hover:shadow-professional-xl hover:scale-[1.02] transition-all duration-300 overflow-hidden animate-fade-in"
+                      className="group bg-white rounded-xl shadow-md border border-border/20 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 overflow-hidden"
                     >
-                      <div className="bg-gradient-to-br from-primary/10 via-accent/5 to-primary/5 p-5 border-b border-border/10">
-                        <div className="flex items-center justify-between mb-3">
-                          <div className="flex items-center gap-3">
-                            <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-primary to-accent flex items-center justify-center text-white font-bold text-2xl shadow-gold-lg group-hover:scale-110 transition-transform duration-300">
+                      <div className="bg-gradient-to-br from-primary/5 via-accent/5 to-primary/5 p-4 border-b border-border/10">
+                        <div className="flex items-center justify-between mb-2.5">
+                          <div className="flex items-center gap-2.5">
+                            <div className="w-11 h-11 rounded-lg bg-gradient-to-br from-primary to-accent flex items-center justify-center text-white font-bold text-lg shadow-md group-hover:scale-105 transition-transform duration-200">
                               {table?.name?.match(/\d+/)?.[0] || table?.name?.slice(-1) || '?'}
                             </div>
                             <div>
-                              <h3 className="text-2xl font-bold text-foreground">{table?.name || 'Tavolo'}</h3>
-                              <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                                <Clock size={12} />
+                              <h3 className="text-lg font-bold text-foreground">{table?.name || 'Tavolo'}</h3>
+                              <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                                <Clock size={11} weight="duotone" />
                                 <span>{getTimeAgo(order.timestamp)}</span>
                               </div>
                             </div>
                           </div>
                           <div className="text-right">
-                            <div className="text-3xl font-bold text-primary">{totalDishes}</div>
-                            <div className="text-xs text-muted-foreground font-medium">piatti</div>
+                            <div className="text-2xl font-bold text-primary">{totalDishes}</div>
+                            <div className="text-[10px] text-muted-foreground font-medium">piatti</div>
                           </div>
                         </div>
 
                         {progressPercent > 0 && (
-                          <div className="mt-3">
+                          <div className="mt-2.5">
                             <div className="flex items-center justify-between text-xs mb-1">
-                              <span className="text-muted-foreground font-medium">Progresso</span>
-                              <span className="text-green-600 font-bold">{completedDishes}/{totalDishes}</span>
+                              <span className="text-muted-foreground">Progresso</span>
+                              <span className="text-green-600 font-bold text-xs">{completedDishes}/{totalDishes}</span>
                             </div>
-                            <div className="h-2 bg-muted rounded-full overflow-hidden">
+                            <div className="h-1.5 bg-muted/50 rounded-full overflow-hidden">
                               <div 
-                                className="h-full bg-gradient-to-r from-green-500 to-green-400 rounded-full transition-all duration-500 ease-out shadow-sm"
+                                className="h-full bg-gradient-to-r from-green-500 to-green-400 rounded-full transition-all duration-300 ease-out"
                                 style={{ width: `${progressPercent}%` }}
                               />
                             </div>
@@ -669,7 +669,7 @@ const RestaurantDashboard = ({ user, onLogout }: RestaurantDashboardProps) => {
                         )}
                       </div>
 
-                      <div className="p-4 space-y-3 max-h-[420px] overflow-y-auto">
+                      <div className="p-3.5 space-y-2.5 max-h-[380px] overflow-y-auto">
                         {order.items.map((item) => {
                           const menuItem = restaurantMenuItems.find(m => m.id === item.menuItemId)
                           const completedQuantity = item.completedQuantity || 0
@@ -679,25 +679,25 @@ const RestaurantDashboard = ({ user, onLogout }: RestaurantDashboardProps) => {
                           return (
                             <div 
                               key={item.id} 
-                              className="bg-gradient-to-br from-white to-muted/30 rounded-xl p-4 border border-border/30 shadow-sm hover:shadow-md hover:border-primary/20 transition-all duration-200"
+                              className="bg-gradient-to-br from-white to-muted/20 rounded-lg p-3 border border-border/30 hover:border-primary/20 transition-all duration-150"
                             >
-                              <div className="flex items-start gap-3 mb-3">
+                              <div className="flex items-start gap-2.5 mb-2">
                                 <div className="relative flex-shrink-0">
-                                  <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-primary to-accent flex items-center justify-center text-white text-lg font-bold shadow-gold">
+                                  <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-primary to-accent flex items-center justify-center text-white text-sm font-bold shadow-sm">
                                     {item.quantity}
                                   </div>
                                   {completedQuantity > 0 && (
-                                    <div className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-green-500 flex items-center justify-center text-white text-xs font-bold border-2 border-white shadow-md">
+                                    <div className="absolute -top-0.5 -right-0.5 w-4 h-4 rounded-full bg-green-500 flex items-center justify-center text-white text-[10px] font-bold border-2 border-white shadow-sm">
                                       ✓
                                     </div>
                                   )}
                                 </div>
                                 <div className="flex-1 min-w-0">
-                                  <h4 className="font-bold text-base text-foreground mb-1 leading-tight">{menuItem?.name || 'Piatto'}</h4>
+                                  <h4 className="font-semibold text-sm text-foreground mb-0.5 leading-tight">{menuItem?.name || 'Piatto'}</h4>
                                   {item.notes && (
-                                    <div className="flex items-start gap-1 mt-1 bg-amber-50 border border-amber-200 rounded-lg px-2 py-1.5">
-                                      <span className="text-amber-600 text-xs flex-shrink-0 mt-0.5">💡</span>
-                                      <p className="text-xs text-amber-800 font-medium italic leading-tight">
+                                    <div className="flex items-start gap-1 mt-1 bg-amber-50 border border-amber-200 rounded-md px-2 py-1">
+                                      <span className="text-amber-600 text-[10px] flex-shrink-0 mt-0.5">💡</span>
+                                      <p className="text-[11px] text-amber-800 font-medium italic leading-tight">
                                         {item.notes}
                                       </p>
                                     </div>
@@ -706,14 +706,14 @@ const RestaurantDashboard = ({ user, onLogout }: RestaurantDashboardProps) => {
                               </div>
 
                               {completedQuantity > 0 && (
-                                <div className="mb-3 bg-green-50 border border-green-200 rounded-lg px-3 py-2">
+                                <div className="mb-2 bg-green-50 border border-green-200 rounded-md px-2.5 py-1.5">
                                   <div className="flex items-center justify-between text-xs mb-1">
-                                    <span className="text-green-700 font-semibold">✓ Completati</span>
-                                    <span className="text-green-700 font-bold">{completedQuantity}/{item.quantity}</span>
+                                    <span className="text-green-700 font-semibold text-[11px]">✓ Completati</span>
+                                    <span className="text-green-700 font-bold text-xs">{completedQuantity}/{item.quantity}</span>
                                   </div>
-                                  <div className="h-1.5 bg-green-100 rounded-full overflow-hidden">
+                                  <div className="h-1 bg-green-100 rounded-full overflow-hidden">
                                     <div 
-                                      className="h-full bg-gradient-to-r from-green-600 to-green-500 rounded-full transition-all duration-500"
+                                      className="h-full bg-gradient-to-r from-green-600 to-green-500 rounded-full transition-all duration-300"
                                       style={{ width: `${itemProgress}%` }}
                                     />
                                   </div>
@@ -724,9 +724,9 @@ const RestaurantDashboard = ({ user, onLogout }: RestaurantDashboardProps) => {
                                 <Button 
                                   onClick={() => handleCompleteDish(order.id, item.id)}
                                   size="sm"
-                                  className="w-full bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-200 font-bold text-sm h-10"
+                                  className="w-full bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white shadow-sm hover:shadow-md hover:scale-[1.02] transition-all duration-150 font-semibold text-xs h-8"
                                 >
-                                  <Check size={18} className="mr-2" />
+                                  <Check size={14} className="mr-1.5" weight="bold" />
                                   PRONTO ({remainingQuantity})
                                 </Button>
                               )}
@@ -739,17 +739,17 @@ const RestaurantDashboard = ({ user, onLogout }: RestaurantDashboardProps) => {
                 })}
                 
                 {restaurantOrders.length === 0 && (
-                  <div className="col-span-full text-center py-20">
-                    <div className="w-24 h-24 rounded-3xl bg-muted/30 flex items-center justify-center mx-auto mb-6">
-                      <Clock size={48} className="text-muted-foreground/40" />
+                  <div className="col-span-full text-center py-16">
+                    <div className="w-16 h-16 rounded-2xl bg-muted/20 flex items-center justify-center mx-auto mb-4">
+                      <Clock size={32} className="text-muted-foreground/40" weight="duotone" />
                     </div>
-                    <p className="text-2xl font-semibold text-muted-foreground">Nessun ordine attivo</p>
-                    <p className="text-sm text-muted-foreground mt-2">Gli ordini appariranno qui non appena arrivano</p>
+                    <p className="text-lg font-semibold text-muted-foreground">Nessun ordine attivo</p>
+                    <p className="text-xs text-muted-foreground mt-1">Gli ordini appariranno qui non appena arrivano</p>
                   </div>
                 )}
               </div>
             ) : (
-              <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+              <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
                 {(() => {
                   const dishGroups: Record<string, { item: MenuItem, orders: Array<{ orderId: string, tableId: string, tableName: string, quantity: number, completedQuantity: number, notes?: string, itemId: string }> }> = {}
                   
@@ -783,30 +783,30 @@ const RestaurantDashboard = ({ user, onLogout }: RestaurantDashboardProps) => {
                     return (
                       <div 
                         key={item.id}
-                        className="group bg-white rounded-2xl shadow-professional-lg border border-border/20 hover:shadow-professional-xl hover:scale-[1.02] transition-all duration-300 overflow-hidden animate-fade-in"
+                        className="group bg-white rounded-xl shadow-md border border-border/20 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 overflow-hidden"
                       >
-                        <div className="bg-gradient-to-br from-primary/10 via-accent/5 to-primary/5 p-5 border-b border-border/10">
-                          <div className="flex items-start gap-4 mb-3">
-                            <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary to-accent flex items-center justify-center text-white text-3xl font-bold shadow-gold-lg group-hover:scale-110 transition-transform duration-300 flex-shrink-0">
+                        <div className="bg-gradient-to-br from-primary/5 via-accent/5 to-primary/5 p-4 border-b border-border/10">
+                          <div className="flex items-start gap-3 mb-2.5">
+                            <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-primary to-accent flex items-center justify-center text-white text-xl font-bold shadow-md group-hover:scale-105 transition-transform duration-200 flex-shrink-0">
                               {totalQuantity}
                             </div>
                             <div className="flex-1 min-w-0">
-                              <h3 className="text-xl font-bold text-foreground leading-tight mb-1">{item.name}</h3>
-                              <div className="text-sm text-muted-foreground font-medium">
+                              <h3 className="text-base font-bold text-foreground leading-tight mb-0.5">{item.name}</h3>
+                              <div className="text-xs text-muted-foreground font-medium">
                                 {orders.length} {orders.length === 1 ? 'tavolo' : 'tavoli'}
                               </div>
                             </div>
                           </div>
 
                           {totalCompleted > 0 && (
-                            <div className="mt-3">
-                              <div className="flex items-center justify-between text-xs mb-1.5">
-                                <span className="text-muted-foreground font-medium">Progresso totale</span>
-                                <span className="text-green-600 font-bold">{totalCompleted}/{totalQuantity} pronti</span>
+                            <div className="mt-2.5">
+                              <div className="flex items-center justify-between text-xs mb-1">
+                                <span className="text-muted-foreground">Progresso totale</span>
+                                <span className="text-green-600 font-bold text-xs">{totalCompleted}/{totalQuantity} pronti</span>
                               </div>
-                              <div className="h-2 bg-muted rounded-full overflow-hidden">
+                              <div className="h-1.5 bg-muted/50 rounded-full overflow-hidden">
                                 <div 
-                                  className="h-full bg-gradient-to-r from-green-500 to-green-400 rounded-full transition-all duration-500 ease-out shadow-sm"
+                                  className="h-full bg-gradient-to-r from-green-500 to-green-400 rounded-full transition-all duration-300 ease-out"
                                   style={{ width: `${progressPercent}%` }}
                                 />
                               </div>
@@ -814,7 +814,7 @@ const RestaurantDashboard = ({ user, onLogout }: RestaurantDashboardProps) => {
                           )}
                         </div>
 
-                        <div className="p-4 space-y-3 max-h-[420px] overflow-y-auto">
+                        <div className="p-3.5 space-y-2.5 max-h-[380px] overflow-y-auto">
                           {orders.map((orderInfo) => {
                             const remaining = orderInfo.quantity - orderInfo.completedQuantity
                             const itemProgress = (orderInfo.completedQuantity / orderInfo.quantity) * 100
@@ -822,25 +822,25 @@ const RestaurantDashboard = ({ user, onLogout }: RestaurantDashboardProps) => {
                             return (
                               <div 
                                 key={`${orderInfo.orderId}-${orderInfo.itemId}`} 
-                                className="bg-gradient-to-br from-white to-muted/30 rounded-xl p-4 border border-border/30 shadow-sm hover:shadow-md hover:border-primary/20 transition-all duration-200"
+                                className="bg-gradient-to-br from-white to-muted/20 rounded-lg p-3 border border-border/30 hover:border-primary/20 transition-all duration-150"
                               >
-                                <div className="flex items-start gap-3 mb-3">
+                                <div className="flex items-start gap-2.5 mb-2">
                                   <div className="relative flex-shrink-0">
-                                    <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center text-foreground text-lg font-bold border-2 border-primary/30">
+                                    <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center text-foreground text-sm font-bold border border-primary/30">
                                       {orderInfo.quantity}
                                     </div>
                                     {orderInfo.completedQuantity > 0 && (
-                                      <div className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-green-500 flex items-center justify-center text-white text-xs font-bold border-2 border-white shadow-md">
+                                      <div className="absolute -top-0.5 -right-0.5 w-4 h-4 rounded-full bg-green-500 flex items-center justify-center text-white text-[10px] font-bold border-2 border-white shadow-sm">
                                         ✓
                                       </div>
                                     )}
                                   </div>
                                   <div className="flex-1 min-w-0">
-                                    <h4 className="font-bold text-base text-foreground mb-1">{orderInfo.tableName}</h4>
+                                    <h4 className="font-semibold text-sm text-foreground mb-0.5">{orderInfo.tableName}</h4>
                                     {orderInfo.notes && (
-                                      <div className="flex items-start gap-1 mt-1 bg-amber-50 border border-amber-200 rounded-lg px-2 py-1.5">
-                                        <span className="text-amber-600 text-xs flex-shrink-0 mt-0.5">💡</span>
-                                        <p className="text-xs text-amber-800 font-medium italic leading-tight">
+                                      <div className="flex items-start gap-1 mt-1 bg-amber-50 border border-amber-200 rounded-md px-2 py-1">
+                                        <span className="text-amber-600 text-[10px] flex-shrink-0 mt-0.5">💡</span>
+                                        <p className="text-[11px] text-amber-800 font-medium italic leading-tight">
                                           {orderInfo.notes}
                                         </p>
                                       </div>
@@ -849,14 +849,14 @@ const RestaurantDashboard = ({ user, onLogout }: RestaurantDashboardProps) => {
                                 </div>
 
                                 {orderInfo.completedQuantity > 0 && (
-                                  <div className="mb-3 bg-green-50 border border-green-200 rounded-lg px-3 py-2">
+                                  <div className="mb-2 bg-green-50 border border-green-200 rounded-md px-2.5 py-1.5">
                                     <div className="flex items-center justify-between text-xs mb-1">
-                                      <span className="text-green-700 font-semibold">✓ Completati</span>
-                                      <span className="text-green-700 font-bold">{orderInfo.completedQuantity}/{orderInfo.quantity}</span>
+                                      <span className="text-green-700 font-semibold text-[11px]">✓ Completati</span>
+                                      <span className="text-green-700 font-bold text-xs">{orderInfo.completedQuantity}/{orderInfo.quantity}</span>
                                     </div>
-                                    <div className="h-1.5 bg-green-100 rounded-full overflow-hidden">
+                                    <div className="h-1 bg-green-100 rounded-full overflow-hidden">
                                       <div 
-                                        className="h-full bg-gradient-to-r from-green-600 to-green-500 rounded-full transition-all duration-500"
+                                        className="h-full bg-gradient-to-r from-green-600 to-green-500 rounded-full transition-all duration-300"
                                         style={{ width: `${itemProgress}%` }}
                                       />
                                     </div>
@@ -867,9 +867,9 @@ const RestaurantDashboard = ({ user, onLogout }: RestaurantDashboardProps) => {
                                   <Button 
                                     onClick={() => handleCompleteDish(orderInfo.orderId, orderInfo.itemId)}
                                     size="sm"
-                                    className="w-full bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-200 font-bold text-sm h-10"
+                                    className="w-full bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white shadow-sm hover:shadow-md hover:scale-[1.02] transition-all duration-150 font-semibold text-xs h-8"
                                   >
-                                    <Check size={18} className="mr-2" />
+                                    <Check size={14} className="mr-1.5" weight="bold" />
                                     PRONTO ({remaining})
                                   </Button>
                                 )}
@@ -883,12 +883,12 @@ const RestaurantDashboard = ({ user, onLogout }: RestaurantDashboardProps) => {
                 })()}
 
                 {restaurantOrders.length === 0 && (
-                  <div className="col-span-full text-center py-20">
-                    <div className="w-24 h-24 rounded-3xl bg-muted/30 flex items-center justify-center mx-auto mb-6">
-                      <Clock size={48} className="text-muted-foreground/40" />
+                  <div className="col-span-full text-center py-16">
+                    <div className="w-16 h-16 rounded-2xl bg-muted/20 flex items-center justify-center mx-auto mb-4">
+                      <Clock size={32} className="text-muted-foreground/40" weight="duotone" />
                     </div>
-                    <p className="text-2xl font-semibold text-muted-foreground">Nessun ordine attivo</p>
-                    <p className="text-sm text-muted-foreground mt-2">Gli ordini appariranno qui non appena arrivano</p>
+                    <p className="text-lg font-semibold text-muted-foreground">Nessun ordine attivo</p>
+                    <p className="text-xs text-muted-foreground mt-1">Gli ordini appariranno qui non appena arrivano</p>
                   </div>
                 )}
               </div>
@@ -897,20 +897,20 @@ const RestaurantDashboard = ({ user, onLogout }: RestaurantDashboardProps) => {
             {/* Completed Orders Section */}
             {restaurantCompletedOrders.length > 0 && (
               <>
-                <Separator className="my-8 opacity-30" />
-                <div className="flex items-center justify-between mb-5">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-green-600 to-green-500 flex items-center justify-center text-white shadow-md">
-                      <Check size={20} />
+                <Separator className="my-6 opacity-20" />
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-green-600 to-green-500 flex items-center justify-center text-white shadow-sm">
+                      <Check size={16} weight="bold" />
                     </div>
-                    <h3 className="text-2xl font-bold text-foreground">Ordini Completati</h3>
+                    <h3 className="text-xl font-bold text-foreground">Ordini Completati</h3>
                   </div>
-                  <Badge variant="secondary" className="text-sm shadow-gold px-4 py-2 bg-green-50 border-green-200 text-green-700">
+                  <Badge variant="secondary" className="text-xs shadow-sm px-3 py-1 bg-green-50 border-green-200 text-green-700">
                     {restaurantCompletedOrders.length}
                   </Badge>
                 </div>
                 
-                <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+                <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
                   {restaurantCompletedOrders.map(order => {
                     const table = restaurantTables.find(t => t.id === order.tableId)
                     const totalItems = order.items.reduce((sum, item) => sum + item.quantity, 0)
@@ -918,25 +918,25 @@ const RestaurantDashboard = ({ user, onLogout }: RestaurantDashboardProps) => {
                     return (
                       <div 
                         key={order.id} 
-                        className="group bg-gradient-to-br from-green-50 via-emerald-50/50 to-green-50 rounded-xl p-4 shadow-professional border border-green-200/50 hover:shadow-professional-lg hover:scale-[1.02] transition-all duration-200 animate-fade-in"
+                        className="group bg-gradient-to-br from-green-50 via-emerald-50/50 to-green-50 rounded-lg p-3 shadow-sm border border-green-200/50 hover:shadow-md hover:-translate-y-0.5 transition-all duration-150"
                       >
-                        <div className="flex items-center gap-3 mb-3">
-                          <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-green-600 to-green-500 flex items-center justify-center text-white font-bold text-lg shadow-md group-hover:scale-110 transition-transform duration-200">
+                        <div className="flex items-center gap-2.5 mb-2.5">
+                          <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-green-600 to-green-500 flex items-center justify-center text-white font-bold text-base shadow-sm group-hover:scale-105 transition-transform duration-150">
                             ✓
                           </div>
                           <div className="flex-1 min-w-0">
-                            <h4 className="text-base font-bold text-foreground truncate">{table?.name || 'Tavolo'}</h4>
+                            <h4 className="text-sm font-bold text-foreground truncate">{table?.name || 'Tavolo'}</h4>
                             <p className="text-xs text-green-700 font-medium">{totalItems} {totalItems === 1 ? 'piatto' : 'piatti'}</p>
                           </div>
                         </div>
                         
-                        <div className="bg-white/70 rounded-lg px-3 py-2 mb-3 space-y-1 max-h-24 overflow-y-auto">
+                        <div className="bg-white/70 rounded-md px-2.5 py-2 mb-2.5 space-y-0.5 max-h-20 overflow-y-auto">
                           {order.items.map((item, index) => {
                             const menuItem = restaurantMenuItems.find(m => m.id === item.menuItemId)
                             return (
                               <div key={index} className="text-xs text-foreground/70 flex items-center gap-1">
-                                <span className="font-bold text-green-600 w-5 flex-shrink-0">{item.quantity}×</span>
-                                <span className="truncate">{menuItem?.name || 'Piatto'}</span>
+                                <span className="font-bold text-green-600 w-4 flex-shrink-0 text-[11px]">{item.quantity}×</span>
+                                <span className="truncate text-[11px]">{menuItem?.name || 'Piatto'}</span>
                               </div>
                             )
                           })}
@@ -946,9 +946,9 @@ const RestaurantDashboard = ({ user, onLogout }: RestaurantDashboardProps) => {
                           variant="outline"
                           onClick={() => handleUncompleteOrder(order.id)}
                           size="sm"
-                          className="w-full text-xs border-green-300 hover:bg-green-100 hover:border-green-400 shadow-sm h-8"
+                          className="w-full text-xs border-green-300 hover:bg-green-100 hover:border-green-400 h-7"
                         >
-                          <X size={14} className="mr-1" />
+                          <X size={12} className="mr-1" />
                           Riporta in Attesa
                         </Button>
                       </div>
@@ -961,21 +961,21 @@ const RestaurantDashboard = ({ user, onLogout }: RestaurantDashboardProps) => {
             {/* Order History Section */}
             {restaurantOrderHistory.length > 0 && (
               <>
-                <Separator className="my-8 opacity-30" />
-                <div className="flex items-center justify-between mb-5">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-muted to-muted-foreground/20 flex items-center justify-center text-foreground shadow-md">
-                      <ClockCounterClockwise size={20} />
+                <Separator className="my-6 opacity-20" />
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-muted to-muted-foreground/20 flex items-center justify-center text-foreground shadow-sm">
+                      <ClockCounterClockwise size={16} weight="duotone" />
                     </div>
-                    <h3 className="text-2xl font-bold text-foreground">Storico Ordini</h3>
+                    <h3 className="text-xl font-bold text-foreground">Storico Ordini</h3>
                   </div>
-                  <Badge variant="secondary" className="text-sm shadow-professional px-4 py-2">
+                  <Badge variant="secondary" className="text-xs shadow-sm px-3 py-1">
                     {restaurantOrderHistory.length} totali
                   </Badge>
                 </div>
                 
-                <div className="bg-white rounded-2xl shadow-professional-lg border border-border/20 overflow-hidden">
-                  <div className="max-h-[600px] overflow-y-auto">
+                <div className="bg-white rounded-xl shadow-md border border-border/20 overflow-hidden">
+                  <div className="max-h-[500px] overflow-y-auto">
                     <div className="divide-y divide-border/10">
                       {restaurantOrderHistory
                         .sort((a, b) => b.paidAt - a.paidAt)
@@ -986,57 +986,56 @@ const RestaurantDashboard = ({ user, onLogout }: RestaurantDashboardProps) => {
                           return (
                             <div 
                               key={order.id} 
-                              className="group flex items-center gap-4 p-4 hover:bg-muted/30 transition-all duration-200 animate-fade-in"
-                              style={{ animationDelay: `${index * 30}ms` }}
+                              className="group flex items-center gap-3 p-3 hover:bg-muted/20 transition-colors duration-150"
                             >
-                              <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-muted to-muted/50 flex items-center justify-center text-foreground font-bold text-lg shadow-sm group-hover:shadow-md group-hover:scale-105 transition-all duration-200 flex-shrink-0">
+                              <div className="w-11 h-11 rounded-lg bg-gradient-to-br from-muted to-muted/50 flex items-center justify-center text-foreground font-bold text-base shadow-sm group-hover:shadow-md group-hover:scale-105 transition-all duration-150 flex-shrink-0">
                                 {order.tableName.match(/\d+/)?.[0] || order.tableName.slice(-1)}
                               </div>
                               
                               <div className="flex-1 min-w-0">
-                                <div className="flex items-center gap-2 mb-1">
-                                  <h4 className="font-bold text-base text-foreground">{order.tableName}</h4>
-                                  <span className="inline-flex items-center justify-center px-2 py-0.5 rounded-full bg-primary/10 text-primary text-xs font-bold">
+                                <div className="flex items-center gap-1.5 mb-0.5">
+                                  <h4 className="font-semibold text-sm text-foreground">{order.tableName}</h4>
+                                  <span className="inline-flex items-center justify-center px-1.5 py-0.5 rounded-md bg-primary/10 text-primary text-[11px] font-bold">
                                     {totalItems}
                                   </span>
                                   {order.customerCount && (
-                                    <span className="text-xs text-muted-foreground">
+                                    <span className="text-[11px] text-muted-foreground">
                                       • {order.customerCount} {order.customerCount === 1 ? 'persona' : 'persone'}
                                     </span>
                                   )}
                                 </div>
-                                <div className="flex items-center gap-2 text-xs text-muted-foreground mb-1.5">
-                                  <Calendar size={12} />
+                                <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground mb-1">
+                                  <Calendar size={10} />
                                   <span>{new Date(order.paidAt).toLocaleDateString('it-IT', { day: '2-digit', month: 'short', year: 'numeric' })}</span>
                                   <span>•</span>
-                                  <Clock size={12} />
+                                  <Clock size={10} />
                                   <span>{formatTime(order.timestamp)}</span>
                                 </div>
-                                <div className="flex items-center gap-1.5 flex-wrap">
+                                <div className="flex items-center gap-1 flex-wrap">
                                   {order.items.slice(0, 3).map((item, idx) => (
                                     <span 
                                       key={idx} 
-                                      className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-muted/50 text-xs text-foreground/70"
+                                      className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded bg-muted/40 text-[11px] text-foreground/70"
                                     >
                                       <span className="font-bold text-primary">{item.quantity}×</span>
-                                      <span className="truncate max-w-[120px]">{item.name}</span>
+                                      <span className="truncate max-w-[100px]">{item.name}</span>
                                     </span>
                                   ))}
                                   {order.items.length > 3 && (
-                                    <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-muted text-xs text-muted-foreground font-medium">
+                                    <span className="inline-flex items-center px-1.5 py-0.5 rounded bg-muted text-[11px] text-muted-foreground font-medium">
                                       +{order.items.length - 3}
                                     </span>
                                   )}
                                 </div>
                               </div>
                               
-                              <div className="flex items-center gap-4 flex-shrink-0">
+                              <div className="flex items-center gap-3 flex-shrink-0">
                                 <div className="text-right">
-                                  <div className="text-2xl font-bold text-primary">€{order.total.toFixed(2)}</div>
+                                  <div className="text-lg font-bold text-primary">€{order.total.toFixed(2)}</div>
                                 </div>
                                 <Badge 
                                   variant="outline" 
-                                  className="bg-gradient-to-br from-green-50 to-emerald-50 border-green-300 text-green-700 font-semibold shadow-sm px-3 py-1"
+                                  className="bg-gradient-to-br from-green-50 to-emerald-50 border-green-300 text-green-700 font-semibold px-2.5 py-0.5 text-[11px]"
                                 >
                                   Pagato
                                 </Badge>
@@ -1049,8 +1048,8 @@ const RestaurantDashboard = ({ user, onLogout }: RestaurantDashboardProps) => {
                   </div>
                   
                   {restaurantOrderHistory.length > 20 && (
-                    <div className="p-4 bg-muted/20 border-t border-border/10 text-center">
-                      <p className="text-sm text-muted-foreground">
+                    <div className="p-3 bg-muted/10 border-t border-border/10 text-center">
+                      <p className="text-xs text-muted-foreground">
                         Mostrati i primi 20 ordini • Totale: {restaurantOrderHistory.length}
                       </p>
                     </div>
