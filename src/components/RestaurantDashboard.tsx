@@ -57,6 +57,7 @@ const RestaurantDashboard = ({ user, onLogout }: RestaurantDashboardProps) => {
   const [showQrDialog, setShowQrDialog] = useState(false)
   const [customerCount, setCustomerCount] = useState('')
   const [selectedOrderHistory, setSelectedOrderHistory] = useState<OrderHistory | null>(null)
+  const [historyDateFilter, setHistoryDateFilter] = useState<string>('')
   
   const restaurantMenuItems = menuItems?.filter(item => item.restaurantId === user.restaurantId) || []
   const restaurantTables = tables?.filter(table => table.restaurantId === user.restaurantId) || []
@@ -734,12 +735,11 @@ const RestaurantDashboard = ({ user, onLogout }: RestaurantDashboardProps) => {
                                   <Button 
                                     onClick={() => handleCompleteDish(order.id, item.id)}
                                     size="sm"
-                                    className="flex-shrink-0 bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white shadow-sm hover:shadow-md hover:scale-105 transition-all duration-150 font-bold text-xs h-12 px-4"
+                                    className="flex-shrink-0 bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white shadow-sm hover:shadow-md hover:scale-105 transition-all duration-150 font-semibold h-9 px-3"
                                   >
-                                    <div className="flex flex-col items-center gap-0.5">
-                                      <Check size={16} weight="bold" />
-                                      <span className="text-[10px] leading-none">PRONTO</span>
-                                      <span className="text-xs leading-none">({remainingQuantity})</span>
+                                    <div className="flex items-center gap-1.5">
+                                      <Check size={14} weight="bold" />
+                                      <span className="text-xs">Pronto ({remainingQuantity})</span>
                                     </div>
                                   </Button>
                                 )}
@@ -871,12 +871,11 @@ const RestaurantDashboard = ({ user, onLogout }: RestaurantDashboardProps) => {
                                     <Button 
                                       onClick={() => handleCompleteDish(orderInfo.orderId, orderInfo.itemId)}
                                       size="sm"
-                                      className="flex-shrink-0 bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white shadow-sm hover:shadow-md hover:scale-105 transition-all duration-150 font-bold text-xs h-12 px-4"
+                                      className="flex-shrink-0 bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white shadow-sm hover:shadow-md hover:scale-105 transition-all duration-150 font-semibold h-9 px-3"
                                     >
-                                      <div className="flex flex-col items-center gap-0.5">
-                                        <Check size={16} weight="bold" />
-                                        <span className="text-[10px] leading-none">PRONTO</span>
-                                        <span className="text-xs leading-none">({remaining})</span>
+                                      <div className="flex items-center gap-1.5">
+                                        <Check size={14} weight="bold" />
+                                        <span className="text-xs">Pronto ({remaining})</span>
                                       </div>
                                     </Button>
                                   )}
@@ -1773,15 +1772,175 @@ const RestaurantDashboard = ({ user, onLogout }: RestaurantDashboardProps) => {
 
           {/* History Tab */}
           <TabsContent value="history" className="space-y-4">
-            <div className="flex items-center justify-between">
-              <h2 className="text-2xl font-bold text-foreground">Storico Ordini</h2>
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center gap-3">
+                <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-primary to-accent flex items-center justify-center text-white shadow-gold">
+                  <ClockCounterClockwise size={20} weight="duotone" />
+                </div>
+                <div>
+                  <h2 className="text-2xl font-bold text-foreground">Storico Ordini</h2>
+                  <p className="text-xs text-muted-foreground mt-0.5">Visualizza gli ordini passati</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <Input
+                  type="date"
+                  value={historyDateFilter}
+                  onChange={(e) => setHistoryDateFilter(e.target.value)}
+                  className="w-[180px] h-9 shadow-sm hover:shadow-md border hover:border-primary/30 transition-all duration-200"
+                  placeholder="Filtra per data"
+                />
+                {historyDateFilter && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setHistoryDateFilter('')}
+                    className="h-9 px-3"
+                  >
+                    <X size={16} />
+                  </Button>
+                )}
+                <div className="flex items-center gap-2 px-4 py-2 rounded-lg bg-gradient-to-br from-primary/5 to-accent/5 border border-primary/20 shadow-sm">
+                  <ClockCounterClockwise size={16} className="text-primary" weight="duotone" />
+                  <div className="text-right">
+                    <div className="text-xl font-bold text-primary">
+                      {historyDateFilter 
+                        ? restaurantOrderHistory.filter(h => {
+                            const orderDate = new Date(h.paidAt).toISOString().split('T')[0]
+                            return orderDate === historyDateFilter
+                          }).length
+                        : restaurantOrderHistory.length
+                      }
+                    </div>
+                    <div className="text-[10px] text-muted-foreground font-medium leading-none">
+                      {(historyDateFilter 
+                        ? restaurantOrderHistory.filter(h => {
+                            const orderDate = new Date(h.paidAt).toISOString().split('T')[0]
+                            return orderDate === historyDateFilter
+                          }).length
+                        : restaurantOrderHistory.length
+                      ) === 1 ? 'ordine' : 'ordini'}
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
             
-            {restaurantOrderHistory.length === 0 && (
+            {restaurantOrderHistory.length === 0 ? (
               <Card>
-                <CardContent className="text-center py-8">
-                  <ClockCounterClockwise size={48} className="mx-auto text-muted-foreground mb-4" />
-                  <p className="text-muted-foreground">Nessun ordine nello storico</p>
+                <CardContent className="text-center py-16">
+                  <div className="w-16 h-16 rounded-2xl bg-muted/20 flex items-center justify-center mx-auto mb-4">
+                    <ClockCounterClockwise size={32} className="text-muted-foreground/40" weight="duotone" />
+                  </div>
+                  <p className="text-lg font-semibold text-muted-foreground">Nessun ordine nello storico</p>
+                  <p className="text-xs text-muted-foreground mt-1">Gli ordini pagati appariranno qui</p>
+                </CardContent>
+              </Card>
+            ) : (
+              <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+                {restaurantOrderHistory
+                  .filter(history => {
+                    if (!historyDateFilter) return true
+                    const orderDate = new Date(history.paidAt).toISOString().split('T')[0]
+                    return orderDate === historyDateFilter
+                  })
+                  .sort((a, b) => b.paidAt - a.paidAt)
+                  .map(history => {
+                    const totalItems = history.items.reduce((sum, item) => sum + item.quantity, 0)
+                    
+                    return (
+                      <Card 
+                        key={history.id}
+                        className="group bg-white rounded-xl shadow-md border border-border/20 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 overflow-hidden cursor-pointer"
+                        onClick={() => setSelectedOrderHistory(history)}
+                      >
+                        <div className="bg-gradient-to-br from-green-50 to-emerald-50 p-4 border-b border-green-200/30">
+                          <div className="flex items-center justify-between mb-2.5">
+                            <div className="flex items-center gap-2.5">
+                              <div className="w-11 h-11 rounded-lg bg-gradient-to-br from-green-600 to-emerald-600 flex items-center justify-center text-white font-bold text-lg shadow-md group-hover:scale-105 transition-transform duration-200">
+                                {history.tableName.match(/\d+/)?.[0] || history.tableName.slice(-1) || '?'}
+                              </div>
+                              <div>
+                                <h3 className="text-lg font-bold text-foreground">{history.tableName}</h3>
+                                <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                                  <Clock size={11} weight="duotone" />
+                                  <span>
+                                    {new Date(history.paidAt).toLocaleDateString('it-IT', { 
+                                      day: '2-digit', 
+                                      month: 'short',
+                                      hour: '2-digit',
+                                      minute: '2-digit'
+                                    })}
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+                            <div className="text-right">
+                              <div className="text-2xl font-bold text-green-700">€{history.total.toFixed(2)}</div>
+                              <div className="text-[10px] text-muted-foreground font-medium">{totalItems} piatti</div>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="p-3.5 space-y-2 max-h-[280px] overflow-y-auto">
+                          {history.items.slice(0, 5).map((item, idx) => (
+                            <div 
+                              key={idx}
+                              className="bg-gradient-to-br from-white to-muted/20 rounded-lg p-2.5 border border-border/30"
+                            >
+                              <div className="flex items-center justify-between gap-2">
+                                <div className="flex items-center gap-2.5 flex-1 min-w-0">
+                                  <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center text-foreground font-bold text-sm border border-primary/30 flex-shrink-0">
+                                    {item.quantity}
+                                  </div>
+                                  <span className="font-semibold text-sm text-foreground truncate">{item.name}</span>
+                                </div>
+                                <span className="text-sm font-bold text-primary flex-shrink-0">€{(item.price * item.quantity).toFixed(2)}</span>
+                              </div>
+                            </div>
+                          ))}
+                          {history.items.length > 5 && (
+                            <div className="text-center text-xs text-muted-foreground pt-1">
+                              +{history.items.length - 5} altri piatti
+                            </div>
+                          )}
+                        </div>
+
+                        {(history.customerName || history.customerCount) && (
+                          <div className="px-3.5 pb-3.5">
+                            <div className="bg-primary/5 rounded-lg p-2.5 border border-primary/20">
+                              <div className="flex items-center gap-2 text-xs">
+                                {history.customerName && (
+                                  <div className="flex items-center gap-1">
+                                    <span className="text-muted-foreground">👤</span>
+                                    <span className="font-semibold">{history.customerName}</span>
+                                  </div>
+                                )}
+                                {history.customerCount && (
+                                  <div className="flex items-center gap-1">
+                                    <span className="text-muted-foreground">•</span>
+                                    <span className="font-semibold">{history.customerCount} persone</span>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        )}
+                      </Card>
+                    )
+                  })}
+              </div>
+            )}
+            
+            {historyDateFilter && restaurantOrderHistory.filter(h => {
+              const orderDate = new Date(h.paidAt).toISOString().split('T')[0]
+              return orderDate === historyDateFilter
+            }).length === 0 && restaurantOrderHistory.length > 0 && (
+              <Card>
+                <CardContent className="text-center py-12">
+                  <Calendar size={40} className="mx-auto text-muted-foreground/40 mb-3" weight="duotone" />
+                  <p className="text-base font-semibold text-muted-foreground">Nessun ordine in questa data</p>
+                  <p className="text-xs text-muted-foreground mt-1">Prova a selezionare un'altra data</p>
                 </CardContent>
               </Card>
             )}
@@ -2006,6 +2165,9 @@ const RestaurantDashboard = ({ user, onLogout }: RestaurantDashboardProps) => {
                       </Button>
                       <Button
                         onClick={() => {
+                          const tableInfo = selectedTable
+                          const tableCustomerCount = tableInfo?.customerCount
+                          
                           const orderHistoryEntries = tableOrders.map(order => ({
                             id: order.id,
                             tableId: order.tableId,
@@ -2023,7 +2185,11 @@ const RestaurantDashboard = ({ user, onLogout }: RestaurantDashboardProps) => {
                             }),
                             total: order.total,
                             timestamp: order.timestamp,
-                            paidAt: Date.now()
+                            paidAt: Date.now(),
+                            customerCount: tableCustomerCount,
+                            customerName: undefined,
+                            customerPhone: undefined,
+                            reservationId: tableInfo?.reservationId
                           }))
                           
                           setOrderHistory([...(orderHistory || []), ...orderHistoryEntries])
