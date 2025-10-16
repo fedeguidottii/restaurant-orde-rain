@@ -678,7 +678,7 @@ const RestaurantDashboard = ({ user, onLogout }: RestaurantDashboardProps) => {
                         )}
                       </div>
 
-                      <div className="p-3.5 space-y-3 max-h-[380px] overflow-y-auto">
+                      <div className="p-3.5 space-y-3.5 max-h-[380px] overflow-y-auto">
                         {order.items.map((item) => {
                           const menuItem = restaurantMenuItems.find(m => m.id === item.menuItemId)
                           const completedQuantity = item.completedQuantity || 0
@@ -688,11 +688,11 @@ const RestaurantDashboard = ({ user, onLogout }: RestaurantDashboardProps) => {
                           return (
                             <div 
                               key={item.id} 
-                              className="bg-gradient-to-br from-white to-muted/20 rounded-xl p-3 border border-border/30 hover:border-primary/20 transition-all duration-150"
+                              className="bg-gradient-to-br from-white to-muted/20 rounded-xl p-3.5 border-2 border-border/40 hover:border-primary/30 transition-all duration-150 shadow-sm"
                             >
-                              <div className="flex items-start gap-2.5 mb-2.5">
+                              <div className="flex items-start gap-3">
                                 <div className="relative flex-shrink-0">
-                                  <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center text-foreground text-lg font-bold border-2 border-primary/30">
+                                  <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center text-foreground text-lg font-bold border-2 border-primary/30">
                                     {item.quantity}
                                   </div>
                                   {completedQuantity > 0 && (
@@ -701,44 +701,49 @@ const RestaurantDashboard = ({ user, onLogout }: RestaurantDashboardProps) => {
                                     </div>
                                   )}
                                 </div>
-                                <div className="flex-1 min-w-0">
-                                  <h4 className="font-bold text-base text-foreground mb-0.5 leading-tight">{menuItem?.name || 'Piatto'}</h4>
-                                  {item.notes && (
-                                    <div className="flex items-start gap-1.5 mt-1.5 bg-amber-50 border border-amber-200 rounded-lg px-2.5 py-1.5">
-                                      <span className="text-amber-600 text-xs flex-shrink-0 mt-0.5">💡</span>
-                                      <p className="text-xs text-amber-800 font-medium italic leading-tight">
-                                        {item.notes}
-                                      </p>
+                                <div className="flex-1 min-w-0 flex flex-col gap-2">
+                                  <div>
+                                    <h4 className="font-bold text-base text-foreground mb-0.5 leading-tight">{menuItem?.name || 'Piatto'}</h4>
+                                    {item.notes && (
+                                      <div className="flex items-start gap-1.5 mt-1.5 bg-amber-50 border border-amber-200 rounded-lg px-2.5 py-1.5">
+                                        <span className="text-amber-600 text-xs flex-shrink-0 mt-0.5">💡</span>
+                                        <p className="text-xs text-amber-800 font-medium italic leading-tight">
+                                          {item.notes}
+                                        </p>
+                                      </div>
+                                    )}
+                                  </div>
+
+                                  {completedQuantity > 0 && (
+                                    <div className="bg-green-50 border border-green-200 rounded-lg px-3 py-2">
+                                      <div className="flex items-center justify-between text-xs mb-1.5">
+                                        <span className="text-green-700 font-semibold">✓ Pronti</span>
+                                        <span className="text-green-700 font-bold">{completedQuantity}/{item.quantity}</span>
+                                      </div>
+                                      <div className="h-2 bg-green-100 rounded-full overflow-hidden">
+                                        <div 
+                                          className="h-full bg-gradient-to-r from-green-600 to-green-500 rounded-full transition-all duration-500"
+                                          style={{ width: `${itemProgress}%` }}
+                                        />
+                                      </div>
                                     </div>
                                   )}
                                 </div>
+                                
+                                {remainingQuantity > 0 && (
+                                  <Button 
+                                    onClick={() => handleCompleteDish(order.id, item.id)}
+                                    size="sm"
+                                    className="flex-shrink-0 bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white shadow-sm hover:shadow-md hover:scale-105 transition-all duration-150 font-bold text-xs h-12 px-4"
+                                  >
+                                    <div className="flex flex-col items-center gap-0.5">
+                                      <Check size={16} weight="bold" />
+                                      <span className="text-[10px] leading-none">PRONTO</span>
+                                      <span className="text-xs leading-none">({remainingQuantity})</span>
+                                    </div>
+                                  </Button>
+                                )}
                               </div>
-
-                              {completedQuantity > 0 && (
-                                <div className="mb-2.5 bg-green-50 border border-green-200 rounded-lg px-3 py-2">
-                                  <div className="flex items-center justify-between text-xs mb-1.5">
-                                    <span className="text-green-700 font-semibold">✓ Pronti</span>
-                                    <span className="text-green-700 font-bold">{completedQuantity}/{item.quantity}</span>
-                                  </div>
-                                  <div className="h-2 bg-green-100 rounded-full overflow-hidden">
-                                    <div 
-                                      className="h-full bg-gradient-to-r from-green-600 to-green-500 rounded-full transition-all duration-500"
-                                      style={{ width: `${itemProgress}%` }}
-                                    />
-                                  </div>
-                                </div>
-                              )}
-                              
-                              {remainingQuantity > 0 && (
-                                <Button 
-                                  onClick={() => handleCompleteDish(order.id, item.id)}
-                                  size="sm"
-                                  className="w-full bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white shadow-sm hover:shadow-md hover:scale-[1.02] transition-all duration-150 font-bold text-sm h-10"
-                                >
-                                  <Check size={16} className="mr-2" weight="bold" />
-                                  {menuItem?.name} PRONTO ({remainingQuantity})
-                                </Button>
-                              )}
                             </div>
                           )
                         })}
@@ -812,7 +817,7 @@ const RestaurantDashboard = ({ user, onLogout }: RestaurantDashboardProps) => {
                           )}
                         </div>
 
-                        <div className="p-3.5 space-y-2.5 max-h-[380px] overflow-y-auto">
+                        <div className="p-3.5 space-y-3.5 max-h-[380px] overflow-y-auto">
                           {orders.map((orderInfo) => {
                             const remaining = orderInfo.quantity - orderInfo.completedQuantity
                             const itemProgress = (orderInfo.completedQuantity / orderInfo.quantity) * 100
@@ -820,11 +825,11 @@ const RestaurantDashboard = ({ user, onLogout }: RestaurantDashboardProps) => {
                             return (
                               <div 
                                 key={`${orderInfo.orderId}-${orderInfo.itemId}`} 
-                                className="bg-gradient-to-br from-white to-muted/30 rounded-xl p-4 border border-border/30 shadow-sm hover:shadow-md hover:border-primary/20 transition-all duration-200"
+                                className="bg-gradient-to-br from-white to-muted/30 rounded-xl p-3.5 border-2 border-border/40 shadow-sm hover:shadow-md hover:border-primary/30 transition-all duration-200"
                               >
-                                <div className="flex items-start gap-3 mb-3">
+                                <div className="flex items-start gap-3">
                                   <div className="relative flex-shrink-0">
-                                    <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center text-foreground text-lg font-bold border-2 border-primary/30">
+                                    <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center text-foreground text-lg font-bold border-2 border-primary/30">
                                       {orderInfo.quantity}
                                     </div>
                                     {orderInfo.completedQuantity > 0 && (
@@ -833,44 +838,49 @@ const RestaurantDashboard = ({ user, onLogout }: RestaurantDashboardProps) => {
                                       </div>
                                     )}
                                   </div>
-                                  <div className="flex-1 min-w-0">
-                                    <h4 className="font-bold text-base text-foreground mb-1">{orderInfo.tableName}</h4>
-                                    {orderInfo.notes && (
-                                      <div className="flex items-start gap-1 mt-1 bg-amber-50 border border-amber-200 rounded-lg px-2 py-1.5">
-                                        <span className="text-amber-600 text-xs flex-shrink-0 mt-0.5">💡</span>
-                                        <p className="text-xs text-amber-800 font-medium italic leading-tight">
-                                          {orderInfo.notes}
-                                        </p>
+                                  <div className="flex-1 min-w-0 flex flex-col gap-2">
+                                    <div>
+                                      <h4 className="font-bold text-base text-foreground mb-1">{orderInfo.tableName}</h4>
+                                      {orderInfo.notes && (
+                                        <div className="flex items-start gap-1 mt-1 bg-amber-50 border border-amber-200 rounded-lg px-2 py-1.5">
+                                          <span className="text-amber-600 text-xs flex-shrink-0 mt-0.5">💡</span>
+                                          <p className="text-xs text-amber-800 font-medium italic leading-tight">
+                                            {orderInfo.notes}
+                                          </p>
+                                        </div>
+                                      )}
+                                    </div>
+
+                                    {orderInfo.completedQuantity > 0 && (
+                                      <div className="bg-green-50 border border-green-200 rounded-lg px-3 py-2">
+                                        <div className="flex items-center justify-between text-xs mb-1">
+                                          <span className="text-green-700 font-semibold">✓ Completati</span>
+                                          <span className="text-green-700 font-bold">{orderInfo.completedQuantity}/{orderInfo.quantity}</span>
+                                        </div>
+                                        <div className="h-1.5 bg-green-100 rounded-full overflow-hidden">
+                                          <div 
+                                            className="h-full bg-gradient-to-r from-green-600 to-green-500 rounded-full transition-all duration-300"
+                                            style={{ width: `${itemProgress}%` }}
+                                          />
+                                        </div>
                                       </div>
                                     )}
                                   </div>
+
+                                  {remaining > 0 && (
+                                    <Button 
+                                      onClick={() => handleCompleteDish(orderInfo.orderId, orderInfo.itemId)}
+                                      size="sm"
+                                      className="flex-shrink-0 bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white shadow-sm hover:shadow-md hover:scale-105 transition-all duration-150 font-bold text-xs h-12 px-4"
+                                    >
+                                      <div className="flex flex-col items-center gap-0.5">
+                                        <Check size={16} weight="bold" />
+                                        <span className="text-[10px] leading-none">PRONTO</span>
+                                        <span className="text-xs leading-none">({remaining})</span>
+                                      </div>
+                                    </Button>
+                                  )}
                                 </div>
-
-                                {orderInfo.completedQuantity > 0 && (
-                                  <div className="mb-3 bg-green-50 border border-green-200 rounded-lg px-3 py-2">
-                                    <div className="flex items-center justify-between text-xs mb-1">
-                                      <span className="text-green-700 font-semibold">✓ Completati</span>
-                                      <span className="text-green-700 font-bold">{orderInfo.completedQuantity}/{orderInfo.quantity}</span>
-                                    </div>
-                                    <div className="h-1.5 bg-green-100 rounded-full overflow-hidden">
-                                      <div 
-                                        className="h-full bg-gradient-to-r from-green-600 to-green-500 rounded-full transition-all duration-300"
-                                        style={{ width: `${itemProgress}%` }}
-                                      />
-                                    </div>
-                                  </div>
-                                )}
-
-                                {remaining > 0 && (
-                                  <Button 
-                                    onClick={() => handleCompleteDish(orderInfo.orderId, orderInfo.itemId)}
-                                    size="sm"
-                                    className="w-full bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white shadow-sm hover:shadow-md hover:scale-[1.02] transition-all duration-150 font-semibold text-xs h-8"
-                                  >
-                                    <Check size={14} className="mr-1.5" weight="bold" />
-                                    PRONTO ({remaining})
-                                  </Button>
-                                )}
                               </div>
                             )
                           })}
@@ -1996,7 +2006,10 @@ const RestaurantDashboard = ({ user, onLogout }: RestaurantDashboardProps) => {
                       </Button>
                       <Button
                         onClick={() => {
-                          const orderHistoryEntries: OrderHistory[] = tableOrders.map(order => ({
+                          const allTableOrders = [...restaurantOrders, ...restaurantCompletedOrders]
+                            .filter(o => o.tableId === selectedTable?.id)
+                          
+                          const orderHistoryEntries = allTableOrders.map(order => ({
                             id: order.id,
                             tableId: order.tableId,
                             tableName: selectedTable?.name || 'Unknown',
