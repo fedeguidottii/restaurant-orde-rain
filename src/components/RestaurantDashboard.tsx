@@ -17,6 +17,7 @@ import type { User, Table, MenuItem, Order, Restaurant, Reservation, OrderHistor
 import TimelineReservations from './TimelineReservations'
 import ReservationsManager from './ReservationsManager'
 import AnalyticsCharts from './AnalyticsCharts'
+import QRCodeGenerator from './QRCodeGenerator'
 
 interface RestaurantDashboardProps {
   user: User
@@ -137,12 +138,15 @@ const RestaurantDashboard = ({ user, onLogout }: RestaurantDashboardProps) => {
       ? currentRestaurant.allYouCanEat.maxOrders 
       : undefined
 
+    const newPin = generatePin()
+    const updatedTable = tables?.find(t => t.id === tableId)
+
     setTables(tables?.map(t => 
       t.id === tableId 
         ? { 
             ...t, 
             isActive: true, 
-            pin: generatePin(), 
+            pin: newPin, 
             status: 'waiting-order',
             customerCount: customerCount,
             remainingOrders: remainingOrders
@@ -151,8 +155,12 @@ const RestaurantDashboard = ({ user, onLogout }: RestaurantDashboardProps) => {
     ) || [])
     
     toast.success(`Tavolo attivato per ${customerCount} persone`)
-    setSelectedTable(null)
     setCustomerCount('')
+    
+    if (updatedTable) {
+      setSelectedTable({ ...updatedTable, pin: newPin, isActive: true })
+      setShowQrDialog(true)
+    }
   }
 
   const handleDeleteTable = (tableId: string) => {
@@ -1575,23 +1583,38 @@ const RestaurantDashboard = ({ user, onLogout }: RestaurantDashboardProps) => {
                         </Select>
                       </div>
                       <div>
-                        <Label htmlFor="dishImage">URL Immagine (opzionale)</Label>
+                        <Label htmlFor="dishImage">Immagine Piatto (opzionale)</Label>
                         <Input
                           id="dishImage"
-                          value={newMenuItem.image}
-                          onChange={(e) => setNewMenuItem(prev => ({ ...prev, image: e.target.value }))}
-                          placeholder="https://esempio.com/immagine.jpg"
+                          type="file"
+                          accept="image/*"
+                          onChange={(e) => {
+                            const file = e.target.files?.[0]
+                            if (file) {
+                              const reader = new FileReader()
+                              reader.onloadend = () => {
+                                setNewMenuItem(prev => ({ ...prev, image: reader.result as string }))
+                              }
+                              reader.readAsDataURL(file)
+                            }
+                          }}
+                          className="cursor-pointer"
                         />
                         {newMenuItem.image && (
-                          <div className="mt-2">
+                          <div className="mt-3 relative group">
                             <img 
                               src={newMenuItem.image} 
                               alt="Anteprima" 
-                              className="w-full h-32 object-cover rounded-lg"
-                              onError={(e) => {
-                                (e.target as HTMLImageElement).style.display = 'none'
-                              }}
+                              className="w-full h-40 object-cover rounded-lg border-2 border-border"
                             />
+                            <Button
+                              variant="destructive"
+                              size="sm"
+                              className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"
+                              onClick={() => setNewMenuItem(prev => ({ ...prev, image: '' }))}
+                            >
+                              <X size={14} />
+                            </Button>
                           </div>
                         )}
                       </div>
@@ -2115,64 +2138,57 @@ const RestaurantDashboard = ({ user, onLogout }: RestaurantDashboardProps) => {
 
       {/* QR Code Dialog */}
       <Dialog open={showQrDialog} onOpenChange={setShowQrDialog}>
-        <DialogContent>
+        <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>QR Code - {selectedTable?.name}</DialogTitle>
+            <DialogTitle className="text-2xl">QR Code - {selectedTable?.name}</DialogTitle>
             <DialogDescription>
-              Scansiona questo codice per accedere al menu del tavolo
+              QR code fisso per il tavolo. Il PIN cambia ad ogni attivazione.
             </DialogDescription>
           </DialogHeader>
-          <div className="text-center py-8">
-            <div className="mx-auto w-64 h-64 bg-white border-2 border-primary rounded-lg flex items-center justify-center mb-4">
-              <div className="text-center">
-                <QrCode size={120} className="mx-auto mb-4 text-primary" />
-                <p className="text-xs font-mono text-muted-foreground break-all px-4">
-                  {selectedTable?.qrCode}
-                </p>
+          <div className="text-center py-6">
+            <div className="mx-auto w-72 h-72 bg-white border-4 border-primary rounded-2xl flex items-center justify-center mb-6 shadow-xl p-4">
+              {selectedTable?.qrCode ? (
+                <QRCodeGenerator value={selectedTable.qrCode} size={240} />
+              ) : (
+                <QrCode size={160} className="text-primary" weight="duotone" />
+              )}
+            </div>
+            <div className="space-y-4 bg-gradient-to-br from-primary/10 to-accent/10 rounded-xl p-5 border-2 border-primary/30">
+              <div>
+                <p className="text-sm text-muted-foreground mb-2">PIN Temporaneo</p>
+                <p className="text-5xl font-bold text-primary tracking-wider">{selectedTable?.pin}</p>
+                <p className="text-xs text-muted-foreground mt-2">Il PIN cambia ogni volta che attivi il tavolo</p>
               </div>
             </div>
-            <div className="space-y-2">
-              <p className="text-sm text-muted-foreground">
-                URL per test: <button 
-                  onClick={() => {
-                    if (selectedTable?.qrCode) {
-                      navigator.clipboard.writeText(selectedTable.qrCode)
-                      toast.success('Link copiato!')
-                    }
-                  }}
-                  className="font-mono text-primary hover:underline cursor-pointer"
-                >
-                  {selectedTable?.qrCode}
-                </button>
-              </p>
-              <p className="text-sm text-muted-foreground">
-                PIN attuale: <strong className="text-2xl font-bold text-primary">{selectedTable?.pin}</strong>
-              </p>
-              <div className="flex gap-2 mt-4">
-                <Button 
-                  onClick={() => {
-                    if (selectedTable?.qrCode) {
-                      window.open(selectedTable.qrCode, '_blank')
-                    }
-                  }}
-                  className="flex-1"
-                >
-                  Testa QR Code
-                </Button>
-                <Button 
-                  variant="outline"
-                  onClick={() => {
-                    if (selectedTable?.qrCode) {
-                      navigator.clipboard.writeText(selectedTable.qrCode)
-                      toast.success('Link copiato negli appunti!')
-                    }
-                  }}
-                  className="flex-1"
-                >
-                  Copia Link
-                </Button>
-              </div>
+            <div className="flex gap-2 mt-6">
+              <Button 
+                onClick={() => {
+                  if (selectedTable?.qrCode) {
+                    window.open(selectedTable.qrCode, '_blank')
+                  }
+                }}
+                className="flex-1 bg-gradient-to-r from-primary to-accent hover:from-primary/90 hover:to-accent/90"
+                size="lg"
+              >
+                Testa QR Code
+              </Button>
+              <Button 
+                variant="outline"
+                onClick={() => {
+                  if (selectedTable?.qrCode) {
+                    navigator.clipboard.writeText(selectedTable.qrCode)
+                    toast.success('Link copiato negli appunti!')
+                  }
+                }}
+                className="flex-1"
+                size="lg"
+              >
+                Copia Link
+              </Button>
             </div>
+            <p className="text-xs text-muted-foreground mt-4">
+              💡 Stampa questo QR e attaccalo sul tavolo. Il codice QR è fisso e non cambia mai.
+            </p>
           </div>
         </DialogContent>
       </Dialog>
@@ -2551,23 +2567,38 @@ const RestaurantDashboard = ({ user, onLogout }: RestaurantDashboardProps) => {
               </Select>
             </div>
             <div>
-              <Label htmlFor="editDishImage">URL Immagine (opzionale)</Label>
+              <Label htmlFor="editDishImage">Immagine Piatto (opzionale)</Label>
               <Input
                 id="editDishImage"
-                value={editMenuItemData.image}
-                onChange={(e) => setEditMenuItemData(prev => ({ ...prev, image: e.target.value }))}
-                placeholder="https://esempio.com/immagine.jpg"
+                type="file"
+                accept="image/*"
+                onChange={(e) => {
+                  const file = e.target.files?.[0]
+                  if (file) {
+                    const reader = new FileReader()
+                    reader.onloadend = () => {
+                      setEditMenuItemData(prev => ({ ...prev, image: reader.result as string }))
+                    }
+                    reader.readAsDataURL(file)
+                  }
+                }}
+                className="cursor-pointer"
               />
               {editMenuItemData.image && (
-                <div className="mt-2">
+                <div className="mt-3 relative group">
                   <img 
                     src={editMenuItemData.image} 
                     alt="Anteprima" 
-                    className="w-full h-32 object-cover rounded-lg"
-                    onError={(e) => {
-                      (e.target as HTMLImageElement).style.display = 'none'
-                    }}
+                    className="w-full h-40 object-cover rounded-lg border-2 border-border"
                   />
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"
+                    onClick={() => setEditMenuItemData(prev => ({ ...prev, image: '' }))}
+                  >
+                    <X size={14} />
+                  </Button>
                 </div>
               )}
             </div>

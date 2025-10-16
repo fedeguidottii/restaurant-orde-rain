@@ -38,9 +38,11 @@
 ## Essential Features
 
 ### Sistema QR Code + PIN
-- **Functionality**: Ogni tavolo ha un QR code univoco e PIN temporaneo per l'accesso
-- **Purpose**: Garantire sicurezza e associazione corretta ordine-tavolo
-- **Success Criteria**: PIN cambia automaticamente ad ogni nuovo servizio, accesso negato con PIN errato
+- **Functionality**: Ogni tavolo ha un QR code fisso stampabile e PIN temporaneo che cambia ad ogni attivazione
+- **Purpose**: QR fisso da attaccare sui tavoli, PIN temporaneo per sicurezza che si rinnova automaticamente
+- **Trigger**: Attivazione tavolo → Generazione nuovo PIN → Visualizzazione QR code fisso con nuovo PIN
+- **Progression**: Scansione QR fisso → Richiesta PIN temporaneo → Verifica PIN → Accesso menu
+- **Success Criteria**: QR code rimane identico tra attivazioni, PIN cambia automaticamente, visualizzazione immediata del QR all'attivazione tavolo
 
 ### Dashboard Ristoratore Multi-Sezione
 - **Functionality**: Interfaccia unificata per gestire ordini, tavoli, menu, analitiche e prenotazioni
@@ -48,9 +50,9 @@
 - **Success Criteria**: Navigazione fluida tra sezioni, aggiornamenti in tempo reale
 
 ### Menu Digitale Dinamico
-- **Functionality**: Menu completamente gestibile dal ristoratore con categorie, prezzi e disponibilità
-- **Purpose**: Controllo totale sull'offerta e aggiornamenti immediati
-- **Success Criteria**: Modifiche visibili istantaneamente ai clienti
+- **Functionality**: Menu completamente gestibile dal ristoratore con categorie, prezzi, disponibilità e immagini caricate direttamente
+- **Purpose**: Controllo totale sull'offerta con immagini dei piatti caricate dal dispositivo invece di link esterni
+- **Success Criteria**: Modifiche visibili istantaneamente ai clienti, upload immagini tramite file picker, possibilità di modificare nome tavoli e dettagli piatti
 
 ### Gestione Ordini in Tempo Reale
 - **Functionality**: Ordini ricevuti immediatamente con stati di avanzamento, visualizzazione per tavolo o per piatto con filtri categoria

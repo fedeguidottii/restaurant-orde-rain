@@ -176,8 +176,7 @@ function App() {
           price: 8.50,
           category: 'Antipasti',
           isActive: true,
-          restaurantId: 'restaurant-1',
-          image: 'https://images.unsplash.com/photo-1572695157366-5e585ab2b69f?w=400&h=300&fit=crop&crop=center'
+          restaurantId: 'restaurant-1'
         },
         {
           id: 'item-2',
@@ -186,8 +185,7 @@ function App() {
           price: 14.00,
           category: 'Antipasti',
           isActive: true,
-          restaurantId: 'restaurant-1',
-          image: 'https://images.unsplash.com/photo-1544124499-58912cbddaad?w=400&h=300&fit=crop&crop=center'
+          restaurantId: 'restaurant-1'
         },
         {
           id: 'item-3',
@@ -196,8 +194,7 @@ function App() {
           price: 12.00,
           category: 'Primi Piatti',
           isActive: true,
-          restaurantId: 'restaurant-1',
-          image: 'https://images.unsplash.com/photo-1551183053-bf91a1d81141?w=400&h=300&fit=crop&crop=center'
+          restaurantId: 'restaurant-1'
         },
         {
           id: 'item-4',
@@ -206,8 +203,7 @@ function App() {
           price: 16.00,
           category: 'Primi Piatti',
           isActive: true,
-          restaurantId: 'restaurant-1',
-          image: 'https://images.unsplash.com/photo-1476124369491-e7addf5db371?w=400&h=300&fit=crop&crop=center'
+          restaurantId: 'restaurant-1'
         },
         {
           id: 'item-5',
@@ -216,8 +212,7 @@ function App() {
           price: 45.00,
           category: 'Secondi Piatti',
           isActive: true,
-          restaurantId: 'restaurant-1',
-          image: 'https://images.unsplash.com/photo-1546833999-b9f581a1996d?w=400&h=300&fit=crop&crop=center'
+          restaurantId: 'restaurant-1'
         },
         {
           id: 'item-6',
@@ -226,8 +221,7 @@ function App() {
           price: 24.00,
           category: 'Secondi Piatti',
           isActive: true,
-          restaurantId: 'restaurant-1',
-          image: 'https://images.unsplash.com/photo-1519708227418-c8fd9a32b7a2?w=400&h=300&fit=crop&crop=center'
+          restaurantId: 'restaurant-1'
         },
         {
           id: 'item-7',
@@ -236,8 +230,7 @@ function App() {
           price: 7.00,
           category: 'Dolci',
           isActive: true,
-          restaurantId: 'restaurant-1',
-          image: 'https://images.unsplash.com/photo-1571877227200-a0d98ea607e9?w=400&h=300&fit=crop&crop=center'
+          restaurantId: 'restaurant-1'
         },
         {
           id: 'item-8',
@@ -246,8 +239,7 @@ function App() {
           price: 6.50,
           category: 'Dolci',
           isActive: true,
-          restaurantId: 'restaurant-1',
-          image: 'https://images.unsplash.com/photo-1488477181946-6428a0291777?w=400&h=300&fit=crop&crop=center'
+          restaurantId: 'restaurant-1'
         },
         {
           id: 'item-9',
