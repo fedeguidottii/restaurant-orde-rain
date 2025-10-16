@@ -194,14 +194,16 @@ export default function CustomerMenu({ tableId, onExit }: Props) {
       }
     })
 
+    const baseTimestamp = Date.now()
+
     const order: Order = {
-      id: `order-${Date.now()}`,
+      id: `order-${baseTimestamp}`,
       tableId,
       restaurantId: table!.restaurantId,
       items: cart.map((item, index) => {
         const menuItem = restaurantMenuItems.find(m => m.id === item.menuItemId)
         return {
-          id: `${Date.now()}-${index}`,
+          id: `${baseTimestamp}-${index}`,
           menuItemId: item.menuItemId,
           quantity: item.quantity,
           notes: item.notes,
@@ -210,7 +212,7 @@ export default function CustomerMenu({ tableId, onExit }: Props) {
         }
       }),
       status: 'waiting',
-      timestamp: Date.now(),
+      timestamp: baseTimestamp,
       total: regularTotal,
       coverCharge: coverCharge > 0 ? coverCharge : undefined,
       allYouCanEatCharge: allYouCanEatCharge > 0 ? allYouCanEatCharge : undefined,

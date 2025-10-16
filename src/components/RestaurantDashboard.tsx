@@ -807,7 +807,8 @@ const RestaurantDashboard = ({ user, onLogout }: RestaurantDashboardProps) => {
                 <div className="space-y-6">
                   {(() => {
                     const dishGroups: Record<string, { 
-                      item: MenuItem, 
+                      item: MenuItem,
+                      notes?: string,
                       orders: Array<{ 
                         orderId: string, 
                         tableId: string, 
@@ -824,11 +825,13 @@ const RestaurantDashboard = ({ user, onLogout }: RestaurantDashboardProps) => {
                       order.items.forEach(item => {
                         const menuItem = restaurantMenuItems.find(m => m.id === item.menuItemId)
                         if (menuItem) {
-                          if (!dishGroups[menuItem.id]) {
-                            dishGroups[menuItem.id] = { item: menuItem, orders: [] }
+                          const groupKey = `${menuItem.id}___${item.notes || 'no-notes'}`
+                          
+                          if (!dishGroups[groupKey]) {
+                            dishGroups[groupKey] = { item: menuItem, notes: item.notes, orders: [] }
                           }
                           const table = restaurantTables.find(t => t.id === order.tableId)
-                          dishGroups[menuItem.id].orders.push({
+                          dishGroups[groupKey].orders.push({
                             orderId: order.id,
                             tableId: order.tableId,
                             tableName: table?.name || 'Tavolo',
@@ -872,7 +875,7 @@ const RestaurantDashboard = ({ user, onLogout }: RestaurantDashboardProps) => {
 
                     const elementsToRender: React.ReactElement[] = []
 
-                    sortedDishGroups.forEach(({ item, orders }, index) => {
+                    sortedDishGroups.forEach(({ item, notes, orders }, index) => {
                       const totalQuantity = orders.reduce((sum, o) => sum + o.quantity, 0)
                       const totalCompleted = orders.reduce((sum, o) => sum + o.completedQuantity, 0)
                       const totalRemaining = totalQuantity - totalCompleted
@@ -884,7 +887,7 @@ const RestaurantDashboard = ({ user, onLogout }: RestaurantDashboardProps) => {
 
                       elementsToRender.push(
                         <div 
-                          key={item.id}
+                          key={`${item.id}-${notes || 'no-notes'}`}
                           className="group bg-white rounded-xl shadow-md border border-border/20 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 overflow-hidden"
                         >
                           <div className="p-3 border-b border-border/10">
@@ -894,6 +897,13 @@ const RestaurantDashboard = ({ user, onLogout }: RestaurantDashboardProps) => {
                               </div>
                               <div className="flex-1 min-w-0">
                                 <h3 className="text-base font-bold text-foreground leading-tight">{item.name}</h3>
+                                {notes && (
+                                  <div className="mt-1.5 bg-amber-50/80 border border-amber-200 rounded px-2 py-1">
+                                    <p className="text-[11px] text-amber-800 italic leading-tight font-medium">
+                                      💡 {notes}
+                                    </p>
+                                  </div>
+                                )}
                                 <div className="flex items-center gap-2 mt-1">
                                   {selectedCategoryFilter === 'all' && (
                                     <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-5 border-primary/30 bg-primary/5 text-primary font-medium">
@@ -944,13 +954,6 @@ const RestaurantDashboard = ({ user, onLogout }: RestaurantDashboardProps) => {
                                           <span className="text-[10px]">{getTimeAgo(orderInfo.timestamp)}</span>
                                         </div>
                                       </div>
-                                      {orderInfo.notes && (
-                                        <div className="mt-1.5 bg-amber-50/80 border border-amber-200 rounded px-2 py-1">
-                                          <p className="text-[10px] text-amber-800 italic leading-tight font-medium">
-                                            💡 {orderInfo.notes}
-                                          </p>
-                                        </div>
-                                      )}
                                     </div>
 
                                     {!isFullyCompleted && (
