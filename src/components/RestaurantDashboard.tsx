@@ -980,7 +980,7 @@ const RestaurantDashboard = ({ user, onLogout }: RestaurantDashboardProps) => {
                                       : 'bg-gradient-to-br from-white to-muted/30 border-border/40 hover:shadow-md hover:border-primary/30'
                                   }`}
                                 >
-                                  <div className="flex items-start gap-2">
+                                  <div className="flex items-center gap-2">
                                     <div className={`w-9 h-9 rounded-lg flex items-center justify-center text-base font-bold border flex-shrink-0 ${
                                       isFullyCompleted 
                                         ? 'bg-green-500 text-white border-green-600' 
@@ -989,7 +989,7 @@ const RestaurantDashboard = ({ user, onLogout }: RestaurantDashboardProps) => {
                                       {isFullyCompleted ? '✓' : remaining}
                                     </div>
                                     <div className="flex-1 min-w-0">
-                                      <div className="flex items-center gap-2 mb-1">
+                                      <div className="flex items-center gap-2">
                                         <h4 className="text-sm font-bold text-foreground leading-tight flex-1">{orderInfo.tableName}</h4>
                                         <div className={`flex items-center gap-1 text-xs font-bold px-1.5 py-0.5 rounded border flex-shrink-0 ${getTimeColor(orderInfo.timestamp)}`}>
                                           <Clock size={10} weight="fill" />
@@ -997,17 +997,16 @@ const RestaurantDashboard = ({ user, onLogout }: RestaurantDashboardProps) => {
                                         </div>
                                       </div>
                                     </div>
+                                    {!isFullyCompleted && (
+                                      <Button
+                                        onClick={() => handleCompleteDish(orderInfo.orderId, orderInfo.itemId)}
+                                        size="sm"
+                                        className="flex-shrink-0 bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white shadow-sm hover:shadow-md hover:scale-105 transition-all duration-150 font-semibold h-8 px-3"
+                                      >
+                                        <Check size={14} weight="bold" />
+                                      </Button>
+                                    )}
                                   </div>
-
-                                  {!isFullyCompleted && (
-                                    <Button
-                                      onClick={() => handleCompleteDish(orderInfo.orderId, orderInfo.itemId)}
-                                      size="sm"
-                                      className="flex-shrink-0 bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white shadow-sm hover:shadow-md hover:scale-105 transition-all duration-150 font-semibold h-8 px-3 mt-2"
-                                    >
-                                      <Check size={14} weight="bold" />
-                                    </Button>
-                                  )}
                                 </div>
                               )
                             })}
