@@ -13,41 +13,53 @@
   /* Professional subtle shadows with enhanced depth and smoothness */
   .shadow-professional {
     box-shadow: 
-      0 1px 3px 0 rgba(0, 0, 0, 0.08),
+      0 1px 3px 0 rgba(0, 0, 0, 0.06),
       0 4px 12px -2px rgba(0, 0, 0, 0.04),
-      0 8px 24px -4px rgba(0, 0, 0, 0.03);
+      0 8px 24px -4px rgba(0, 0, 0, 0.02);
   }
   
   .shadow-professional-lg {
     box-shadow: 
-      0 2px 6px -1px rgba(0, 0, 0, 0.1),
+      0 2px 8px -1px rgba(0, 0, 0, 0.08),
       0 8px 24px -4px rgba(0, 0, 0, 0.06),
       0 16px 48px -8px rgba(0, 0, 0, 0.04);
   }
   
   .shadow-professional-xl {
     box-shadow: 
-      0 4px 12px -2px rgba(0, 0, 0, 0.12),
-      0 12px 32px -8px rgba(0, 0, 0, 0.08),
-      0 24px 64px -12px rgba(0, 0, 0, 0.06);
+      0 4px 16px -2px rgba(0, 0, 0, 0.1),
+      0 12px 36px -8px rgba(0, 0, 0, 0.08),
+      0 24px 72px -12px rgba(0, 0, 0, 0.06);
   }
 
   /* Gold accent shadows for important elements */
   .shadow-gold {
-    box-shadow: 0 4px 16px -2px rgba(201, 161, 82, 0.15), 0 2px 8px -1px rgba(201, 161, 82, 0.1);
+    box-shadow: 
+      0 2px 8px -2px rgba(201, 161, 82, 0.2), 
+      0 4px 16px -4px rgba(201, 161, 82, 0.12),
+      0 1px 2px 0 rgba(0, 0, 0, 0.05);
   }
   
   .shadow-gold-lg {
-    box-shadow: 0 8px 32px -8px rgba(201, 161, 82, 0.2), 0 4px 16px -4px rgba(201, 161, 82, 0.15);
+    box-shadow: 
+      0 4px 16px -4px rgba(201, 161, 82, 0.25), 
+      0 8px 32px -8px rgba(201, 161, 82, 0.15),
+      0 2px 4px 0 rgba(0, 0, 0, 0.06);
   }
 
   /* Liquid shadows and effects for enhanced professional feel */
   .shadow-liquid {
-    box-shadow: 0 8px 32px -8px rgba(201, 161, 82, 0.15), 0 4px 16px -4px rgba(0, 0, 0, 0.08);
+    box-shadow: 
+      0 4px 20px -4px rgba(201, 161, 82, 0.18), 
+      0 8px 32px -8px rgba(0, 0, 0, 0.08),
+      0 1px 3px 0 rgba(0, 0, 0, 0.05);
   }
   
   .shadow-liquid-lg {
-    box-shadow: 0 20px 64px -12px rgba(201, 161, 82, 0.2), 0 8px 32px -8px rgba(0, 0, 0, 0.12);
+    box-shadow: 
+      0 8px 32px -8px rgba(201, 161, 82, 0.22), 
+      0 16px 64px -12px rgba(0, 0, 0, 0.1),
+      0 2px 8px 0 rgba(0, 0, 0, 0.06);
   }
 
   /* Liquid gradient background */
@@ -102,17 +114,61 @@
 
   /* Smooth animations */
   .animate-fade-in {
-    animation: fadeIn 0.5s ease-out;
+    animation: fadeIn 0.4s ease-out forwards;
+    opacity: 0;
   }
   
   @keyframes fadeIn {
     from {
       opacity: 0;
-      transform: translateY(10px);
+      transform: translateY(12px);
     }
     to {
       opacity: 1;
       transform: translateY(0);
+    }
+  }
+
+  .animate-slide-in {
+    animation: slideIn 0.5s ease-out forwards;
+  }
+
+  @keyframes slideIn {
+    from {
+      opacity: 0;
+      transform: translateX(-20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateX(0);
+    }
+  }
+
+  .animate-scale-in {
+    animation: scaleIn 0.3s ease-out forwards;
+  }
+
+  @keyframes scaleIn {
+    from {
+      opacity: 0;
+      transform: scale(0.95);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+
+  .animate-pulse-subtle {
+    animation: pulseSubtle 2s ease-in-out infinite;
+  }
+
+  @keyframes pulseSubtle {
+    0%, 100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.8;
     }
   }
 
@@ -124,6 +180,32 @@
   .focus-ring:focus {
     outline: none;
     box-shadow: 0 0 0 3px oklch(0.78 0.12 85 / 0.3);
+  }
+
+  /* Custom scrollbar */
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: oklch(0.97 0.005 85);
+    border-radius: 100px;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: oklch(0.75 0.12 85 / 0.4);
+    border-radius: 100px;
+    transition: background 0.2s ease;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: oklch(0.75 0.12 85 / 0.6);
+  }
+
+  /* Smooth scroll behavior */
+  * {
+    scroll-behavior: smooth;
   }
 }
 
