@@ -1033,7 +1033,7 @@ const RestaurantDashboard = ({ user, onLogout }: RestaurantDashboardProps) => {
                                   </span>
                                   {order.customerCount && (
                                     <span className="text-[11px] text-muted-foreground">
-                                      • {order.customerCount} {order.customerCount === 1 ? 'persona' : 'persone'}
+                                      {order.customerCount} persone
                                     </span>
                                   )}
                                 </div>
