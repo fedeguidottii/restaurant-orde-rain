@@ -397,17 +397,15 @@ const TimelineReservations = ({ user, tables, reservations, setReservations }: T
                 id="guests"
                 type="number"
                 min="1"
-                max="20"
                 value={newReservation.guests}
                 onChange={(e) => setNewReservation(prev => ({ ...prev, guests: parseInt(e.target.value) || 1 }))}
               />
             </div>
-            <div className="flex gap-2 pt-2">
+            <div className="flex gap-3 mt-6">
               <Button 
                 variant="outline"
                 onClick={() => {
                   setShowReservationDialog(false)
-                  setSelectedTimeSlot(null)
                   setNewReservation({
                     customerName: '',
                     customerPhone: '',
@@ -425,7 +423,7 @@ const TimelineReservations = ({ user, tables, reservations, setReservations }: T
                 onClick={handleCreateReservation}
                 className="flex-1"
               >
-                Conferma
+                Crea Prenotazione
               </Button>
             </div>
           </div>
