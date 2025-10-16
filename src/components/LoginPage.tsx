@@ -36,7 +36,6 @@ export default function LoginPage({ onLogin, onTableAccess, customerMode = false
   const handleLogin = async () => {
     setLoading(true)
     
-    // Try admin login first
     const adminUser = (users || []).find(u => u.username === username && u.role === 'admin')
     if (adminUser && password === 'admin123') {
       onLogin(adminUser)
@@ -45,7 +44,6 @@ export default function LoginPage({ onLogin, onTableAccess, customerMode = false
       return
     }
     
-    // Try restaurant login
     const restaurantUser = (users || []).find(u => u.username === username && u.role === 'restaurant')
     if (restaurantUser && password === 'restaurant123') {
       onLogin(restaurantUser)
@@ -53,8 +51,6 @@ export default function LoginPage({ onLogin, onTableAccess, customerMode = false
       setLoading(false)
       return
     }
-    
-    // Try waiter login (could be added later)
     
     toast.error('Credenziali non valide')
     setLoading(false)
@@ -89,9 +85,9 @@ export default function LoginPage({ onLogin, onTableAccess, customerMode = false
 
             <Card className="shadow-liquid-lg bg-order-card border-liquid">
               <CardHeader>
-                <CardTitle className="text-xl">Accesso Cliente</CardTitle>
+                <CardTitle className="text-xl">Accesso al Tavolo</CardTitle>
                 <CardDescription>
-                  Inserisci il PIN temporaneo fornito dal cameriere
+                  Il tuo codice tavolo è stato rilevato automaticamente
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
@@ -102,13 +98,13 @@ export default function LoginPage({ onLogin, onTableAccess, customerMode = false
                     value={pin}
                     onChange={(e) => setPin(e.target.value)}
                     placeholder="Inserisci il PIN a 4 cifre"
-                    className="shadow-liquid text-center text-2xl font-bold tracking-widest"
                     maxLength={4}
                     autoFocus
+                    className="shadow-liquid text-center text-2xl font-bold tracking-widest"
                   />
                 </div>
                 <Button 
-                  onClick={handleTableAccess} 
+                  onClick={handleTableAccess}
                   disabled={loading || !pin || pin.length !== 4}
                   className="w-full bg-liquid-gradient shadow-liquid-lg hover:shadow-[0_12px_48px_-12px_rgba(201,161,82,0.5)] transition-all duration-300 text-lg font-bold py-6"
                 >
@@ -122,11 +118,11 @@ export default function LoginPage({ onLogin, onTableAccess, customerMode = false
                   <div className="text-xs text-muted-foreground space-y-2">
                     <div className="flex items-center gap-2">
                       <div className="w-6 h-6 bg-primary/20 rounded-full flex items-center justify-center text-primary font-bold text-xs">1</div>
-                      <span>Scansiona il QR code sul tavolo</span>
+                      <span>Chiedi il PIN al cameriere</span>
                     </div>
                     <div className="flex items-center gap-2">
                       <div className="w-6 h-6 bg-primary/20 rounded-full flex items-center justify-center text-primary font-bold text-xs">2</div>
-                      <span>Chiedi il PIN al cameriere</span>
+                      <span>Inserisci il PIN temporaneo fornito</span>
                     </div>
                     <div className="flex items-center gap-2">
                       <div className="w-6 h-6 bg-primary/20 rounded-full flex items-center justify-center text-primary font-bold text-xs">3</div>
@@ -190,7 +186,7 @@ export default function LoginPage({ onLogin, onTableAccess, customerMode = false
                       />
                     </div>
                     <Button 
-                      onClick={handleTableAccess} 
+                      onClick={handleTableAccess}
                       disabled={loading || !tableCode || !pin}
                       className="w-full bg-liquid-gradient shadow-liquid-lg hover:shadow-[0_12px_48px_-12px_rgba(201,161,82,0.5)] transition-all duration-300 text-lg font-bold py-3"
                     >
