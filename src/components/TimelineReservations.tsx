@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { useKV } from '@github/spark/hooks'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Badge } from '@/components/ui/badge'
@@ -342,12 +342,15 @@ const TimelineReservations = ({ user, tables, reservations, setReservations }: T
 
       {/* Reservation Dialog */}
       <Dialog open={showReservationDialog} onOpenChange={setShowReservationDialog}>
-        <DialogContent>
+        <DialogContent className="max-w-lg">
           <DialogHeader>
             <DialogTitle>Nuova Prenotazione</DialogTitle>
+            <DialogDescription>
+              Compila i dati per creare una nuova prenotazione
+            </DialogDescription>
           </DialogHeader>
-          <div className="space-y-4">
-            <div>
+          <div className="space-y-4 mt-4">
+            <div className="space-y-2">
               <Label htmlFor="customerName">Nome Cliente *</Label>
               <Input
                 id="customerName"
@@ -356,7 +359,7 @@ const TimelineReservations = ({ user, tables, reservations, setReservations }: T
                 placeholder="Nome e cognome"
               />
             </div>
-            <div>
+            <div className="space-y-2">
               <Label htmlFor="customerPhone">Telefono *</Label>
               <Input
                 id="customerPhone"
@@ -365,22 +368,23 @@ const TimelineReservations = ({ user, tables, reservations, setReservations }: T
                 placeholder="Numero di telefono"
               />
             </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="tableSelect">Tavolo</Label>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-2">
+                <Label htmlFor="tableSelect">Tavolo *</Label>
                 <select
                   id="tableSelect"
                   value={newReservation.tableId}
                   onChange={(e) => setNewReservation(prev => ({ ...prev, tableId: e.target.value }))}
-                  className="w-full h-10 px-3 border border-input rounded-md bg-background"
+                  className="w-full h-10 px-3 border border-input rounded-md bg-background text-sm"
                 >
+                  <option value="">Seleziona</option>
                   {restaurantTables.map((table) => (
                     <option key={table.id} value={table.id}>{table.name}</option>
                   ))}
                 </select>
               </div>
-              <div>
-                <Label htmlFor="reservationTime">Orario</Label>
+              <div className="space-y-2">
+                <Label htmlFor="reservationTime">Orario *</Label>
                 <Input
                   id="reservationTime"
                   type="time"
@@ -389,8 +393,8 @@ const TimelineReservations = ({ user, tables, reservations, setReservations }: T
                 />
               </div>
             </div>
-            <div>
-              <Label htmlFor="guests">Numero di persone</Label>
+            <div className="space-y-2">
+              <Label htmlFor="guests">Numero di persone *</Label>
               <Input
                 id="guests"
                 type="number"
@@ -400,13 +404,7 @@ const TimelineReservations = ({ user, tables, reservations, setReservations }: T
                 onChange={(e) => setNewReservation(prev => ({ ...prev, guests: parseInt(e.target.value) || 1 }))}
               />
             </div>
-            <div className="flex gap-2">
-              <Button 
-                onClick={handleCreateReservation}
-                className="flex-1"
-              >
-                Crea Prenotazione
-              </Button>
+            <div className="flex gap-2 pt-2">
               <Button 
                 variant="outline"
                 onClick={() => {
@@ -421,8 +419,15 @@ const TimelineReservations = ({ user, tables, reservations, setReservations }: T
                     duration: 120
                   })
                 }}
+                className="flex-1"
               >
                 Annulla
+              </Button>
+              <Button 
+                onClick={handleCreateReservation}
+                className="flex-1"
+              >
+                Crea Prenotazione
               </Button>
             </div>
           </div>

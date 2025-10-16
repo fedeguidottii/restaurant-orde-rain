@@ -1222,25 +1222,16 @@ const RestaurantDashboard = ({ user, onLogout }: RestaurantDashboardProps) => {
                             Conto
                           </Button>
                         </div>
-                        <div className="flex gap-2">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="text-xs h-8 w-8 p-0"
-                            title="Modifica tavolo"
-                          >
-                            <PencilSimple size={14} />
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleDeleteTable(table.id)}
-                            className="text-xs text-destructive hover:bg-destructive/10 h-8 w-8 p-0"
-                            title="Elimina tavolo"
-                          >
-                            <Trash size={14} />
-                          </Button>
-                        </div>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleDeleteTable(table.id)}
+                          className="w-full text-xs text-destructive hover:bg-destructive/10 h-8"
+                          title="Elimina tavolo"
+                        >
+                          <Trash size={14} className="mr-1" />
+                          Elimina Tavolo
+                        </Button>
                       </>
                     ) : (
                       <>
@@ -1259,16 +1250,8 @@ const RestaurantDashboard = ({ user, onLogout }: RestaurantDashboardProps) => {
                           <Button
                             variant="outline"
                             size="sm"
-                            className="text-xs h-8 w-8 p-0"
-                            title="Modifica tavolo"
-                          >
-                            <PencilSimple size={14} />
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
                             onClick={() => handleDeleteTable(table.id)}
-                            className="text-xs text-destructive hover:bg-destructive/10 h-8 w-8 p-0"
+                            className="flex-1 text-xs text-destructive hover:bg-destructive/10 h-8"
                             title="Elimina tavolo"
                           >
                             <Trash size={14} />
@@ -1509,26 +1492,15 @@ const RestaurantDashboard = ({ user, onLogout }: RestaurantDashboardProps) => {
                   <div key={category.id} className="space-y-4">
                     <div className="flex items-center justify-between">
                       <h3 className="text-xl font-semibold text-primary">{category.name}</h3>
-                      <div className="flex items-center gap-2">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleEditCategory(category)}
-                          className="h-8 w-8 p-0"
-                          title="Modifica nome categoria"
-                        >
-                          <PencilSimple size={16} />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleToggleCategory(category.id)}
-                          className="h-8 w-8 p-0"
-                          title={category.isActive ? 'Disattiva categoria' : 'Attiva categoria'}
-                        >
-                          {category.isActive ? <Eye size={16} /> : <EyeSlash size={16} />}
-                        </Button>
-                      </div>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleToggleCategory(category.id)}
+                        className="h-8 w-8 p-0"
+                        title={category.isActive ? 'Disattiva categoria' : 'Attiva categoria'}
+                      >
+                        {category.isActive ? <Eye size={16} /> : <EyeSlash size={16} />}
+                      </Button>
                     </div>
                     <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
                       {categoryItems.map((item) => (
@@ -1576,13 +1548,6 @@ const RestaurantDashboard = ({ user, onLogout }: RestaurantDashboardProps) => {
                                 title={item.isActive ? 'Disattiva piatto' : 'Attiva piatto'}
                               >
                                 {item.isActive ? <EyeSlash size={14} /> : <Eye size={14} />}
-                              </Button>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                className="h-8 w-8 p-0"
-                              >
-                                <PencilSimple size={14} />
                               </Button>
                               <Button
                                 variant="outline"
@@ -1745,7 +1710,7 @@ const RestaurantDashboard = ({ user, onLogout }: RestaurantDashboardProps) => {
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <div className="flex items-center space-x-2">
+                  <div className="flex items-center space-x-3">
                     <input
                       type="checkbox"
                       id="enableAllYouCanEat"
@@ -1765,14 +1730,16 @@ const RestaurantDashboard = ({ user, onLogout }: RestaurantDashboardProps) => {
                           ) || [])
                         }
                       }}
-                      className="rounded"
+                      className="w-4 h-4 rounded"
                     />
-                    <Label htmlFor="enableAllYouCanEat">Abilita modalità All You Can Eat</Label>
+                    <Label htmlFor="enableAllYouCanEat" className="cursor-pointer">
+                      Abilita modalità All You Can Eat
+                    </Label>
                   </div>
 
                   {currentRestaurant?.allYouCanEat.enabled && (
-                    <div className="grid gap-4 md:grid-cols-2">
-                      <div>
+                    <div className="grid gap-4 md:grid-cols-2 pt-2">
+                      <div className="space-y-2">
                         <Label htmlFor="allYouCanEatPrice">Prezzo per Persona (€)</Label>
                         <Input
                           id="allYouCanEatPrice"
@@ -1797,8 +1764,8 @@ const RestaurantDashboard = ({ user, onLogout }: RestaurantDashboardProps) => {
                           placeholder="25.00"
                         />
                       </div>
-                      <div>
-                        <Label htmlFor="maxOrders">Numero Massimo Ordini per Tavolo</Label>
+                      <div className="space-y-2">
+                        <Label htmlFor="maxOrders">Numero Massimo Ordini</Label>
                         <Input
                           id="maxOrders"
                           type="number"
@@ -1826,10 +1793,12 @@ const RestaurantDashboard = ({ user, onLogout }: RestaurantDashboardProps) => {
                     </div>
                   )}
 
-                  <p className="text-sm text-muted-foreground">
-                    Con All You Can Eat attivo, i clienti pagano un prezzo fisso e possono ordinare liberamente 
-                    entro il limite di ordini impostato. I piatti esclusi verranno addebitati separatamente.
-                  </p>
+                  <div className="bg-muted/30 p-3 rounded-lg mt-3">
+                    <p className="text-sm text-muted-foreground">
+                      Con All You Can Eat attivo, i clienti pagano un prezzo fisso e possono ordinare liberamente 
+                      entro il limite di ordini impostato. I piatti esclusi verranno addebitati separatamente.
+                    </p>
+                  </div>
                 </CardContent>
               </Card>
             </div>
