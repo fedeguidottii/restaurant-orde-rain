@@ -834,14 +834,14 @@ const RestaurantDashboard = ({ user, onLogout }: RestaurantDashboardProps) => {
                               {totalQuantity}
                             </div>
                             <div className="flex-1 min-w-0">
-                              <h3 className="font-bold text-base text-foreground truncate mb-0.5">{item.name}</h3>
+                              <h3 className="text-base font-bold text-foreground leading-tight">{item.name}</h3>
                               <p className="text-xs text-muted-foreground">
                                 {orders.length} {orders.length === 1 ? 'tavolo' : 'tavoli'}
                               </p>
                             </div>
                           </div>
 
-                          {totalCompleted > 0 && (
+                          {progressPercent > 0 && (
                             <div className="mt-2">
                               <div className="flex items-center justify-between text-[11px] mb-1">
                                 <span className="text-muted-foreground">Progresso totale</span>
@@ -860,7 +860,6 @@ const RestaurantDashboard = ({ user, onLogout }: RestaurantDashboardProps) => {
                         <div className="p-2.5 space-y-1.5 max-h-[380px] overflow-y-auto">
                           {ordersToShow.map((orderInfo) => {
                             const remaining = orderInfo.quantity - orderInfo.completedQuantity
-                            const itemProgress = orderInfo.quantity > 0 ? (orderInfo.completedQuantity / orderInfo.quantity) * 100 : 0
                             
                             return (
                               <div 
@@ -880,7 +879,7 @@ const RestaurantDashboard = ({ user, onLogout }: RestaurantDashboardProps) => {
                                   </div>
                                   <div className="flex-1 min-w-0 flex flex-col gap-1.5">
                                     <div>
-                                      <h4 className="font-bold text-sm text-foreground">{orderInfo.tableName}</h4>
+                                      <h4 className="font-bold text-sm text-foreground leading-tight">{orderInfo.tableName}</h4>
                                       {orderInfo.notes && (
                                         <div className="flex items-start gap-1 mt-1 bg-amber-50 border border-amber-200 rounded px-2 py-1">
                                           <span className="text-amber-600 text-[10px] flex-shrink-0 mt-0.5">💡</span>
@@ -894,13 +893,13 @@ const RestaurantDashboard = ({ user, onLogout }: RestaurantDashboardProps) => {
                                     {orderInfo.completedQuantity > 0 && (
                                       <div className="bg-green-50 border border-green-200 rounded px-2 py-1">
                                         <div className="flex items-center justify-between text-[11px] mb-0.5">
-                                          <span className="text-green-700 font-medium">Progresso</span>
+                                          <span className="text-green-700 font-semibold">✓ Pronti</span>
                                           <span className="text-green-700 font-bold">{orderInfo.completedQuantity}/{orderInfo.quantity}</span>
                                         </div>
                                         <div className="h-1.5 bg-green-100 rounded-full overflow-hidden">
                                           <div 
-                                            className="h-full bg-green-500 transition-all duration-300"
-                                            style={{ width: `${itemProgress}%` }}
+                                            className="h-full bg-gradient-to-r from-green-600 to-green-500 rounded-full transition-all duration-500"
+                                            style={{ width: `${(orderInfo.completedQuantity / orderInfo.quantity) * 100}%` }}
                                           />
                                         </div>
                                       </div>
@@ -908,7 +907,7 @@ const RestaurantDashboard = ({ user, onLogout }: RestaurantDashboardProps) => {
                                   </div>
 
                                   {remaining > 0 && (
-                                    <Button 
+                                    <Button
                                       onClick={() => handleCompleteDish(orderInfo.orderId, orderInfo.itemId)}
                                       size="sm"
                                       className="flex-shrink-0 bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white shadow-sm hover:shadow-md hover:scale-105 transition-all duration-150 font-semibold h-8 px-2.5"
@@ -923,16 +922,21 @@ const RestaurantDashboard = ({ user, onLogout }: RestaurantDashboardProps) => {
                               </div>
                             )
                           })}
-                          {!isExpanded && orders.length > 3 && (
+                          
+                          {orders.length > 3 && (
                             <button
                               onClick={() => {
                                 const newExpanded = new Set(expandedDishOrders)
-                                newExpanded.add(item.id)
+                                if (isExpanded) {
+                                  newExpanded.delete(item.id)
+                                } else {
+                                  newExpanded.add(item.id)
+                                }
                                 setExpandedDishOrders(newExpanded)
                               }}
                               className="w-full text-center py-1.5 text-xs text-primary font-semibold hover:bg-primary/5 rounded-lg transition-colors duration-150"
                             >
-                              +{orders.length - 3} altri tavoli
+                              {isExpanded ? 'Mostra meno' : `+${orders.length - 3} altri tavoli`}
                             </button>
                           )}
                         </div>
@@ -942,8 +946,6 @@ const RestaurantDashboard = ({ user, onLogout }: RestaurantDashboardProps) => {
                 })()}
               </div>
             )}
-
-            {/* Completed Orders Section */}
             {restaurantCompletedOrders.length > 0 && (
               <>
                 <Separator className="my-6 opacity-20" />
@@ -1763,7 +1765,6 @@ const RestaurantDashboard = ({ user, onLogout }: RestaurantDashboardProps) => {
                           id="allYouCanEatPrice"
                           type="number"
                           step="1.00"
-                          min="0"
                           value={currentRestaurant?.allYouCanEat.pricePerPerson || 0}
                           onChange={(e) => {
                             if (currentRestaurant) {
@@ -1773,7 +1774,7 @@ const RestaurantDashboard = ({ user, onLogout }: RestaurantDashboardProps) => {
                                       ...r, 
                                       allYouCanEat: { 
                                         ...r.allYouCanEat, 
-                                        pricePerPerson: parseFloat(e.target.value) || 0 
+                                        pricePerPerson: parseFloat(e.target.value) || 0
                                       } 
                                     }
                                   : r
