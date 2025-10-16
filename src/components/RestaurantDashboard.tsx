@@ -2006,10 +2006,7 @@ const RestaurantDashboard = ({ user, onLogout }: RestaurantDashboardProps) => {
                       </Button>
                       <Button
                         onClick={() => {
-                          const allTableOrders = [...restaurantOrders, ...restaurantCompletedOrders]
-                            .filter(o => o.tableId === selectedTable?.id)
-                          
-                          const orderHistoryEntries = allTableOrders.map(order => ({
+                          const orderHistoryEntries = tableOrders.map(order => ({
                             id: order.id,
                             tableId: order.tableId,
                             tableName: selectedTable?.name || 'Unknown',
