@@ -322,24 +322,6 @@ const TimelineReservations = ({ user, tables, reservations, setReservations }: T
         </CardContent>
       </Card>
 
-      {/* Instructions */}
-      <Card className="bg-muted/30">
-        <CardContent className="p-4">
-          <div className="flex items-start gap-3">
-            <Clock size={20} className="text-primary mt-0.5" />
-            <div className="text-sm text-muted-foreground">
-              <p><strong>Come usare:</strong></p>
-              <ul className="mt-1 space-y-1">
-                <li>• Clicca su una zona vuota della timeline per creare una prenotazione</li>
-                <li>• La linea rossa indica l'ora attuale (solo per oggi)</li>
-                <li>• Passa il mouse sui blocchi colorati per vedere i dettagli</li>
-                <li>• Clicca sulla X per eliminare una prenotazione</li>
-              </ul>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
       {/* Reservation Dialog */}
       <Dialog open={showReservationDialog} onOpenChange={setShowReservationDialog}>
         <DialogContent>
