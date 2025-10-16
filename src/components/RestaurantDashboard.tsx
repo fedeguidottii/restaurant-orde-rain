@@ -734,60 +734,91 @@ const RestaurantDashboard = ({ user, onLogout }: RestaurantDashboardProps) => {
                       </div>
 
                       <div className="p-2.5 space-y-1.5 max-h-[600px] overflow-y-auto scrollbar-thin">
-                        {order.items.map((item) => {
-                          const menuItem = restaurantMenuItems.find(m => m.id === item.menuItemId)
-                          const completedQuantity = item.completedQuantity || 0
-                          const remainingQuantity = item.quantity - completedQuantity
-                          const isFullyCompleted = completedQuantity >= item.quantity
-                          
-                          return (
-                            <div 
-                              key={item.id} 
-                              className={`bg-gradient-to-br rounded-lg p-2.5 border transition-all duration-150 shadow-sm ${
-                                isFullyCompleted 
-                                  ? 'from-green-50 to-green-100 border-green-300 opacity-60' 
-                                  : 'from-white to-muted/20 border-border/40 hover:border-primary/30'
-                              }`}
-                            >
-                              <div className="flex items-start gap-2.5">
-                                <div className="relative flex-shrink-0">
-                                  <div className={`w-9 h-9 rounded-lg flex items-center justify-center text-base font-bold border ${
-                                    isFullyCompleted 
-                                      ? 'bg-green-500 text-white border-green-600' 
-                                      : 'bg-gradient-to-br from-primary/20 to-accent/20 text-foreground border-primary/30'
-                                  }`}>
-                                    {isFullyCompleted ? '✓' : remainingQuantity}
-                                  </div>
-                                </div>
-                                <div className="flex-1 min-w-0">
-                                  <div className="flex items-start justify-between gap-2">
-                                    <h4 className="font-bold text-sm text-foreground leading-tight">
-                                      {remainingQuantity > 1 && `${remainingQuantity}× `}{menuItem?.name || 'Piatto'}
-                                    </h4>
-                                  </div>
-                                  {item.notes && (
-                                    <div className="flex items-start gap-1 mt-1.5 bg-amber-50 border border-amber-200 rounded px-2 py-1">
-                                      <span className="text-amber-600 text-[10px] flex-shrink-0 mt-0.5">💡</span>
-                                      <p className="text-[11px] text-amber-800 font-medium italic leading-tight">
-                                        {item.notes}
-                                      </p>
+                        {(() => {
+                          const groupedItems: Array<{
+                            menuItemId: string
+                            menuItem: MenuItem | undefined
+                            notes?: string
+                            items: typeof order.items
+                          }> = []
+
+                          order.items.forEach(item => {
+                            const key = `${item.menuItemId}-${item.notes || ''}`
+                            let group = groupedItems.find(g => `${g.menuItemId}-${g.notes || ''}` === key)
+                            
+                            if (!group) {
+                              group = {
+                                menuItemId: item.menuItemId,
+                                menuItem: restaurantMenuItems.find(m => m.id === item.menuItemId),
+                                notes: item.notes,
+                                items: []
+                              }
+                              groupedItems.push(group)
+                            }
+                            
+                            group.items.push(item)
+                          })
+
+                          return groupedItems.map((group, groupIndex) => {
+                            const totalQuantity = group.items.reduce((sum, item) => sum + item.quantity, 0)
+                            const completedQuantity = group.items.reduce((sum, item) => sum + (item.completedQuantity || 0), 0)
+                            const remainingQuantity = totalQuantity - completedQuantity
+                            const isFullyCompleted = completedQuantity >= totalQuantity
+
+                            return (
+                              <div 
+                                key={groupIndex} 
+                                className={`bg-gradient-to-br rounded-lg p-2.5 border transition-all duration-150 shadow-sm ${
+                                  isFullyCompleted 
+                                    ? 'from-green-50 to-green-100 border-green-300 opacity-60' 
+                                    : 'from-white to-muted/20 border-border/40 hover:border-primary/30'
+                                }`}
+                              >
+                                <div className="flex items-start gap-2.5">
+                                  <div className="relative flex-shrink-0">
+                                    <div className={`w-9 h-9 rounded-lg flex items-center justify-center text-base font-bold border ${
+                                      isFullyCompleted 
+                                        ? 'bg-green-500 text-white border-green-600' 
+                                        : 'bg-gradient-to-br from-primary/20 to-accent/20 text-foreground border-primary/30'
+                                    }`}>
+                                      {isFullyCompleted ? '✓' : remainingQuantity}
                                     </div>
+                                  </div>
+                                  <div className="flex-1 min-w-0">
+                                    <div className="flex items-start justify-between gap-2">
+                                      <h4 className="font-bold text-sm text-foreground leading-tight">
+                                        {remainingQuantity > 1 && `${remainingQuantity}× `}{group.menuItem?.name || 'Piatto'}
+                                      </h4>
+                                    </div>
+                                    {group.notes && (
+                                      <div className="flex items-start gap-1 mt-1.5 bg-amber-50 border border-amber-200 rounded px-2 py-1">
+                                        <span className="text-amber-600 text-[10px] flex-shrink-0 mt-0.5">💡</span>
+                                        <p className="text-[11px] text-amber-800 font-medium italic leading-tight">
+                                          {group.notes}
+                                        </p>
+                                      </div>
+                                    )}
+                                  </div>
+                                  
+                                  {!isFullyCompleted && (
+                                    <Button 
+                                      onClick={() => {
+                                        const firstIncompleteItem = group.items.find(item => (item.completedQuantity || 0) < item.quantity)
+                                        if (firstIncompleteItem) {
+                                          handleCompleteDish(order.id, firstIncompleteItem.id)
+                                        }
+                                      }}
+                                      size="sm"
+                                      className="flex-shrink-0 bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white shadow-sm hover:shadow-md hover:scale-105 transition-all duration-150 font-semibold h-8 px-3"
+                                    >
+                                      <Check size={14} weight="bold" />
+                                    </Button>
                                   )}
                                 </div>
-                                
-                                {!isFullyCompleted && (
-                                  <Button 
-                                    onClick={() => handleCompleteDish(order.id, item.id)}
-                                    size="sm"
-                                    className="flex-shrink-0 bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white shadow-sm hover:shadow-md hover:scale-105 transition-all duration-150 font-semibold h-8 px-3"
-                                  >
-                                    <Check size={14} weight="bold" />
-                                  </Button>
-                                )}
                               </div>
-                            </div>
-                          )
-                        })}
+                            )
+                          })
+                        })()}
                       </div>
                     </div>
                   )
@@ -874,7 +905,7 @@ const RestaurantDashboard = ({ user, onLogout }: RestaurantDashboardProps) => {
                     const groupedByDish: Record<string, typeof dishOrders> = {}
 
                     sortedDishOrders.forEach((dishOrder) => {
-                      const key = `${dishOrder.item.id}___${dishOrder.notes || 'no-notes'}`
+                      const key = dishOrder.item.id
                       if (!groupedByDish[key]) {
                         groupedByDish[key] = []
                       }
@@ -885,7 +916,6 @@ const RestaurantDashboard = ({ user, onLogout }: RestaurantDashboardProps) => {
                       if (orders.length === 0) return
                       
                       const item = orders[0].item
-                      const notes = orders[0].notes
                       const totalQuantity = orders.reduce((sum, o) => sum + o.quantity, 0)
                       const totalCompleted = orders.reduce((sum, o) => sum + o.completedQuantity, 0)
                       const totalRemaining = totalQuantity - totalCompleted
@@ -897,7 +927,7 @@ const RestaurantDashboard = ({ user, onLogout }: RestaurantDashboardProps) => {
 
                       elementsToRender.push(
                         <div 
-                          key={`${item.id}-${notes || 'no-notes'}`}
+                          key={item.id}
                           className="group bg-white rounded-xl shadow-md border border-border/20 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 overflow-hidden"
                         >
                           <div className="p-3 border-b border-border/10">
@@ -907,13 +937,6 @@ const RestaurantDashboard = ({ user, onLogout }: RestaurantDashboardProps) => {
                               </div>
                               <div className="flex-1 min-w-0">
                                 <h3 className="text-base font-bold text-foreground leading-tight">{item.name}</h3>
-                                {notes && (
-                                  <div className="mt-1.5 bg-amber-50/80 border border-amber-200 rounded px-2 py-1">
-                                    <p className="text-[11px] text-amber-800 italic leading-tight font-medium">
-                                      💡 {notes}
-                                    </p>
-                                  </div>
-                                )}
                                 <div className="flex items-center gap-2 mt-1">
                                   {selectedCategoryFilter === 'all' && (
                                     <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-5 border-primary/30 bg-primary/5 text-primary font-medium">
@@ -957,13 +980,21 @@ const RestaurantDashboard = ({ user, onLogout }: RestaurantDashboardProps) => {
                                       {isFullyCompleted ? '✓' : remaining}
                                     </div>
                                     <div className="flex-1 min-w-0">
-                                      <div className="flex items-center gap-2">
+                                      <div className="flex items-center gap-2 mb-1">
                                         <h4 className="text-sm font-bold text-foreground leading-tight flex-1">{orderInfo.tableName}</h4>
                                         <div className={`flex items-center gap-1 text-xs font-bold px-1.5 py-0.5 rounded border flex-shrink-0 ${getTimeColor(orderInfo.timestamp)}`}>
                                           <Clock size={10} weight="fill" />
                                           <span className="text-[10px]">{getTimeAgo(orderInfo.timestamp)}</span>
                                         </div>
                                       </div>
+                                      {orderInfo.notes && (
+                                        <div className="flex items-start gap-1 bg-amber-50 border border-amber-200 rounded px-2 py-1">
+                                          <span className="text-amber-600 text-[10px] flex-shrink-0 mt-0.5">💡</span>
+                                          <p className="text-[11px] text-amber-800 font-medium italic leading-tight">
+                                            {orderInfo.notes}
+                                          </p>
+                                        </div>
+                                      )}
                                     </div>
 
                                     {!isFullyCompleted && (
