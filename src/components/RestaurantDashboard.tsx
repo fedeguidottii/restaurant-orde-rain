@@ -2135,7 +2135,12 @@ const RestaurantDashboard = ({ user, onLogout }: RestaurantDashboardProps) => {
     </div>
 
       {/* QR Code Dialog */}
-      <Dialog open={showQrDialog} onOpenChange={setShowQrDialog}>
+      <Dialog open={!!selectedTable && showQrDialog} onOpenChange={(open) => {
+        if (!open) {
+          setShowQrDialog(false)
+          setSelectedTable(null)
+        }
+      }}>
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle className="text-2xl">QR Code - {selectedTable?.name}</DialogTitle>
