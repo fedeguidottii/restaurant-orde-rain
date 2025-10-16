@@ -806,32 +806,25 @@ const RestaurantDashboard = ({ user, onLogout }: RestaurantDashboardProps) => {
                 
                 <div className="space-y-6">
                   {(() => {
-                    const dishGroups: Record<string, { 
+                    const dishOrders: Array<{ 
                       item: MenuItem,
-                      notes?: string,
-                      orders: Array<{ 
-                        orderId: string, 
-                        tableId: string, 
-                        tableName: string, 
-                        quantity: number, 
-                        completedQuantity: number, 
-                        notes?: string, 
-                        itemId: string,
-                        timestamp: number
-                      }> 
-                    }> = {}
+                      orderId: string, 
+                      tableId: string, 
+                      tableName: string, 
+                      quantity: number, 
+                      completedQuantity: number, 
+                      notes?: string, 
+                      itemId: string,
+                      timestamp: number
+                    }> = []
                     
                     restaurantOrders.forEach(order => {
                       order.items.forEach(item => {
                         const menuItem = restaurantMenuItems.find(m => m.id === item.menuItemId)
                         if (menuItem) {
-                          const groupKey = `${menuItem.id}___${item.notes || 'no-notes'}`
-                          
-                          if (!dishGroups[groupKey]) {
-                            dishGroups[groupKey] = { item: menuItem, notes: item.notes, orders: [] }
-                          }
                           const table = restaurantTables.find(t => t.id === order.tableId)
-                          dishGroups[groupKey].orders.push({
+                          dishOrders.push({
+                            item: menuItem,
                             orderId: order.id,
                             tableId: order.tableId,
                             tableName: table?.name || 'Tavolo',
@@ -845,11 +838,11 @@ const RestaurantDashboard = ({ user, onLogout }: RestaurantDashboardProps) => {
                       })
                     })
 
-                    const filteredDishGroups = selectedCategoryFilter === 'all' 
-                      ? Object.values(dishGroups)
-                      : Object.values(dishGroups).filter(({ item }) => item.category === selectedCategoryFilter)
+                    const filteredDishOrders = selectedCategoryFilter === 'all' 
+                      ? dishOrders
+                      : dishOrders.filter(({ item }) => item.category === selectedCategoryFilter)
 
-                    const sortedDishGroups = filteredDishGroups.sort((a, b) => {
+                    const sortedDishOrders = filteredDishOrders.sort((a, b) => {
                       const categoryA = restaurantCategories.find(c => c.name === a.item.category)
                       const categoryB = restaurantCategories.find(c => c.name === b.item.category)
                       const orderA = categoryA?.order ?? 999
@@ -858,10 +851,14 @@ const RestaurantDashboard = ({ user, onLogout }: RestaurantDashboardProps) => {
                       if (orderA !== orderB) {
                         return orderA - orderB
                       }
-                      return a.item.name.localeCompare(b.item.name)
+                      
+                      const nameCompare = a.item.name.localeCompare(b.item.name)
+                      if (nameCompare !== 0) return nameCompare
+                      
+                      return orderSortMode === 'oldest' ? a.timestamp - b.timestamp : b.timestamp - a.timestamp
                     })
 
-                    if (sortedDishGroups.length === 0) {
+                    if (sortedDishOrders.length === 0) {
                       return (
                         <div className="col-span-full text-center py-16">
                           <div className="w-16 h-16 rounded-2xl bg-muted/20 flex items-center justify-center mx-auto mb-4">
@@ -874,8 +871,21 @@ const RestaurantDashboard = ({ user, onLogout }: RestaurantDashboardProps) => {
                     }
 
                     const elementsToRender: React.ReactElement[] = []
+                    const groupedByDish: Record<string, typeof dishOrders> = {}
 
-                    sortedDishGroups.forEach(({ item, notes, orders }, index) => {
+                    sortedDishOrders.forEach((dishOrder) => {
+                      const key = `${dishOrder.item.id}___${dishOrder.notes || 'no-notes'}`
+                      if (!groupedByDish[key]) {
+                        groupedByDish[key] = []
+                      }
+                      groupedByDish[key].push(dishOrder)
+                    })
+
+                    Object.values(groupedByDish).forEach((orders) => {
+                      if (orders.length === 0) return
+                      
+                      const item = orders[0].item
+                      const notes = orders[0].notes
                       const totalQuantity = orders.reduce((sum, o) => sum + o.quantity, 0)
                       const totalCompleted = orders.reduce((sum, o) => sum + o.completedQuantity, 0)
                       const totalRemaining = totalQuantity - totalCompleted
