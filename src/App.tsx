@@ -340,40 +340,67 @@ function App() {
           tableId: 'table-2',
           restaurantId: 'restaurant-1',
           items: [
-            { id: 'item-1-1', menuItemId: 'item-1', quantity: 2, notes: 'Senza aglio', completedQuantity: 0 },
-            { id: 'item-1-2', menuItemId: 'item-3', quantity: 1, completedQuantity: 0 },
-            { id: 'item-1-3', menuItemId: 'item-9', quantity: 1, completedQuantity: 0 }
+            { id: 'item-1-1', menuItemId: 'item-1', quantity: 3, notes: 'Senza aglio', completedQuantity: 0 },
+            { id: 'item-1-2', menuItemId: 'item-2', quantity: 2, completedQuantity: 1 },
+            { id: 'item-1-3', menuItemId: 'item-3', quantity: 2, completedQuantity: 0 },
+            { id: 'item-1-4', menuItemId: 'item-4', quantity: 1, completedQuantity: 0 },
+            { id: 'item-1-5', menuItemId: 'item-7', quantity: 2, completedQuantity: 0 },
+            { id: 'item-1-6', menuItemId: 'item-9', quantity: 1, completedQuantity: 0 },
+            { id: 'item-1-7', menuItemId: 'item-10', quantity: 3, completedQuantity: 0 }
           ],
           status: 'preparing',
-          timestamp: Date.now() - 15 * 60 * 1000, // 15 minutes ago
-          total: 42.00
+          timestamp: Date.now() - 15 * 60 * 1000,
+          total: 115.50
         },
         {
           id: 'order-2',
           tableId: 'table-3',
           restaurantId: 'restaurant-1',
           items: [
-            { id: 'item-2-1', menuItemId: 'item-2', quantity: 1, completedQuantity: 0 },
-            { id: 'item-2-2', menuItemId: 'item-4', quantity: 2, completedQuantity: 0 },
-            { id: 'item-2-3', menuItemId: 'item-6', quantity: 1, completedQuantity: 0 },
-            { id: 'item-2-4', menuItemId: 'item-10', quantity: 2, completedQuantity: 0 }
+            { id: 'item-2-1', menuItemId: 'item-1', quantity: 4, notes: 'Ben caldo', completedQuantity: 2 },
+            { id: 'item-2-2', menuItemId: 'item-2', quantity: 2, completedQuantity: 0 },
+            { id: 'item-2-3', menuItemId: 'item-3', quantity: 3, completedQuantity: 0 },
+            { id: 'item-2-4', menuItemId: 'item-4', quantity: 2, completedQuantity: 1 },
+            { id: 'item-2-5', menuItemId: 'item-5', quantity: 1, notes: 'Cottura al sangue', completedQuantity: 0 },
+            { id: 'item-2-6', menuItemId: 'item-6', quantity: 1, completedQuantity: 0 },
+            { id: 'item-2-7', menuItemId: 'item-7', quantity: 3, completedQuantity: 0 },
+            { id: 'item-2-8', menuItemId: 'item-8', quantity: 2, completedQuantity: 0 },
+            { id: 'item-2-9', menuItemId: 'item-9', quantity: 2, completedQuantity: 0 },
+            { id: 'item-2-10', menuItemId: 'item-10', quantity: 4, completedQuantity: 0 }
           ],
           status: 'waiting',
-          timestamp: Date.now() - 8 * 60 * 1000, // 8 minutes ago
-          total: 70.00
+          timestamp: Date.now() - 8 * 60 * 1000,
+          total: 245.00
         },
         {
           id: 'order-3',
           tableId: 'table-5',
           restaurantId: 'restaurant-1',
           items: [
-            { id: 'item-3-1', menuItemId: 'item-5', quantity: 1, notes: 'Cottura media', completedQuantity: 0 },
-            { id: 'item-3-2', menuItemId: 'item-7', quantity: 2, completedQuantity: 0 },
-            { id: 'item-3-3', menuItemId: 'item-9', quantity: 1, completedQuantity: 0 }
+            { id: 'item-3-1', menuItemId: 'item-1', quantity: 2, completedQuantity: 0 },
+            { id: 'item-3-2', menuItemId: 'item-3', quantity: 4, notes: 'Extra parmigiano', completedQuantity: 2 },
+            { id: 'item-3-3', menuItemId: 'item-5', quantity: 2, notes: 'Cottura media', completedQuantity: 0 },
+            { id: 'item-3-4', menuItemId: 'item-7', quantity: 4, completedQuantity: 0 },
+            { id: 'item-3-5', menuItemId: 'item-9', quantity: 2, completedQuantity: 0 }
           ],
           status: 'preparing',
-          timestamp: Date.now() - 22 * 60 * 1000, // 22 minutes ago
-          total: 77.00
+          timestamp: Date.now() - 22 * 60 * 1000,
+          total: 162.00
+        },
+        {
+          id: 'order-4',
+          tableId: 'table-1',
+          restaurantId: 'restaurant-1',
+          items: [
+            { id: 'item-4-1', menuItemId: 'item-2', quantity: 3, completedQuantity: 0 },
+            { id: 'item-4-2', menuItemId: 'item-4', quantity: 3, completedQuantity: 0 },
+            { id: 'item-4-3', menuItemId: 'item-6', quantity: 2, notes: 'Senza contorno', completedQuantity: 0 },
+            { id: 'item-4-4', menuItemId: 'item-8', quantity: 3, completedQuantity: 0 },
+            { id: 'item-4-5', menuItemId: 'item-10', quantity: 4, completedQuantity: 0 }
+          ],
+          status: 'waiting',
+          timestamp: Date.now() - 5 * 60 * 1000,
+          total: 133.50
         }
       ]
       

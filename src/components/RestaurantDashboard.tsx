@@ -58,6 +58,7 @@ const RestaurantDashboard = ({ user, onLogout }: RestaurantDashboardProps) => {
   const [customerCount, setCustomerCount] = useState('')
   const [selectedOrderHistory, setSelectedOrderHistory] = useState<OrderHistory | null>(null)
   const [historyDateFilter, setHistoryDateFilter] = useState<string>('')
+  const [selectedCategoryFilter, setSelectedCategoryFilter] = useState<string>('all')
   
   const restaurantMenuItems = menuItems?.filter(item => item.restaurantId === user.restaurantId) || []
   const restaurantTables = tables?.filter(table => table.restaurantId === user.restaurantId) || []
@@ -610,6 +611,29 @@ const RestaurantDashboard = ({ user, onLogout }: RestaurantDashboardProps) => {
                     </SelectItem>
                   </SelectContent>
                 </Select>
+                {orderViewMode === 'dish' && (
+                  <Select value={selectedCategoryFilter} onValueChange={setSelectedCategoryFilter}>
+                    <SelectTrigger className="w-[180px] h-9 shadow-sm hover:shadow-md border hover:border-primary/30 transition-all duration-200">
+                      <SelectValue placeholder="Tutte le categorie" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">
+                        <div className="flex items-center gap-2">
+                          <BookOpen size={14} />
+                          <span className="text-sm">Tutte le categorie</span>
+                        </div>
+                      </SelectItem>
+                      {restaurantCategories
+                        .filter(cat => cat.isActive)
+                        .sort((a, b) => a.order - b.order)
+                        .map(category => (
+                          <SelectItem key={category.id} value={category.name}>
+                            <span className="text-sm">{category.name}</span>
+                          </SelectItem>
+                        ))}
+                    </SelectContent>
+                  </Select>
+                )}
                 <div className="flex items-center gap-2 px-4 py-2 rounded-lg bg-gradient-to-br from-primary/5 to-accent/5 border border-primary/20 shadow-sm">
                   <Clock size={16} className="text-primary" weight="duotone" />
                   <div className="text-right">
@@ -784,7 +808,35 @@ const RestaurantDashboard = ({ user, onLogout }: RestaurantDashboardProps) => {
                     })
                   })
 
-                  return Object.values(dishGroups).map(({ item, orders }) => {
+                  const filteredDishGroups = selectedCategoryFilter === 'all' 
+                    ? Object.values(dishGroups)
+                    : Object.values(dishGroups).filter(({ item }) => item.category === selectedCategoryFilter)
+
+                  const sortedDishGroups = filteredDishGroups.sort((a, b) => {
+                    const categoryA = restaurantCategories.find(c => c.name === a.item.category)
+                    const categoryB = restaurantCategories.find(c => c.name === b.item.category)
+                    const orderA = categoryA?.order ?? 999
+                    const orderB = categoryB?.order ?? 999
+                    
+                    if (orderA !== orderB) {
+                      return orderA - orderB
+                    }
+                    return a.item.name.localeCompare(b.item.name)
+                  })
+
+                  if (sortedDishGroups.length === 0) {
+                    return (
+                      <div className="col-span-full text-center py-16">
+                        <div className="w-16 h-16 rounded-2xl bg-muted/20 flex items-center justify-center mx-auto mb-4">
+                          <BookOpen size={32} className="text-muted-foreground/40" weight="duotone" />
+                        </div>
+                        <p className="text-lg font-semibold text-muted-foreground">Nessun piatto in questa categoria</p>
+                        <p className="text-xs text-muted-foreground mt-1">Seleziona un'altra categoria per vedere i piatti</p>
+                      </div>
+                    )
+                  }
+
+                  return sortedDishGroups.map(({ item, orders }) => {
                     const totalQuantity = orders.reduce((sum, o) => sum + o.quantity, 0)
                     const totalCompleted = orders.reduce((sum, o) => sum + o.completedQuantity, 0)
                     const progressPercent = totalQuantity > 0 ? (totalCompleted / totalQuantity) * 100 : 0
@@ -801,9 +853,14 @@ const RestaurantDashboard = ({ user, onLogout }: RestaurantDashboardProps) => {
                             </div>
                             <div className="flex-1 min-w-0">
                               <h3 className="text-base font-bold text-foreground leading-tight">{item.name}</h3>
-                              <p className="text-xs text-muted-foreground">
-                                {orders.length} {orders.length === 1 ? 'tavolo' : 'tavoli'}
-                              </p>
+                              <div className="flex items-center gap-2 mt-1">
+                                <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-5 border-primary/30 bg-primary/5 text-primary font-medium">
+                                  {item.category}
+                                </Badge>
+                                <p className="text-xs text-muted-foreground">
+                                  {orders.length} {orders.length === 1 ? 'tavolo' : 'tavoli'}
+                                </p>
+                              </div>
                             </div>
                           </div>
 
