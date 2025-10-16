@@ -818,7 +818,7 @@ const RestaurantDashboard = ({ user, onLogout }: RestaurantDashboardProps) => {
                         className="group bg-white rounded-xl shadow-md border border-border/20 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 overflow-hidden"
                       >
                         <div 
-                          className="bg-gradient-to-br from-primary/5 via-accent/5 to-primary/5 p-3.5 border-b border-border/10 cursor-pointer hover:bg-primary/10 transition-colors duration-150"
+                          className="p-3 cursor-pointer hover:bg-muted/20 transition-colors duration-150"
                           onClick={() => {
                             const newExpanded = new Set(expandedDishOrders)
                             if (isExpanded) {
@@ -834,10 +834,10 @@ const RestaurantDashboard = ({ user, onLogout }: RestaurantDashboardProps) => {
                               {totalQuantity}
                             </div>
                             <div className="flex-1 min-w-0">
-                              <h3 className="text-sm font-bold text-foreground leading-tight mb-0.5">{item.name}</h3>
-                              <div className="text-[11px] text-muted-foreground font-medium">
+                              <h3 className="font-bold text-base text-foreground truncate mb-0.5">{item.name}</h3>
+                              <p className="text-xs text-muted-foreground">
                                 {orders.length} {orders.length === 1 ? 'tavolo' : 'tavoli'}
-                              </div>
+                              </p>
                             </div>
                           </div>
 
@@ -849,7 +849,7 @@ const RestaurantDashboard = ({ user, onLogout }: RestaurantDashboardProps) => {
                               </div>
                               <div className="h-1.5 bg-muted/50 rounded-full overflow-hidden">
                                 <div 
-                                  className="h-full bg-gradient-to-r from-green-500 to-green-400 rounded-full transition-all duration-300 ease-out"
+                                  className="h-full bg-gradient-to-r from-green-500 to-green-600 transition-all duration-300"
                                   style={{ width: `${progressPercent}%` }}
                                 />
                               </div>
@@ -860,7 +860,7 @@ const RestaurantDashboard = ({ user, onLogout }: RestaurantDashboardProps) => {
                         <div className="p-2.5 space-y-1.5 max-h-[380px] overflow-y-auto">
                           {ordersToShow.map((orderInfo) => {
                             const remaining = orderInfo.quantity - orderInfo.completedQuantity
-                            const itemProgress = (orderInfo.completedQuantity / orderInfo.quantity) * 100
+                            const itemProgress = orderInfo.quantity > 0 ? (orderInfo.completedQuantity / orderInfo.quantity) * 100 : 0
                             
                             return (
                               <div 
@@ -894,12 +894,12 @@ const RestaurantDashboard = ({ user, onLogout }: RestaurantDashboardProps) => {
                                     {orderInfo.completedQuantity > 0 && (
                                       <div className="bg-green-50 border border-green-200 rounded px-2 py-1">
                                         <div className="flex items-center justify-between text-[11px] mb-0.5">
-                                          <span className="text-green-700 font-semibold">✓ Completati</span>
+                                          <span className="text-green-700 font-medium">Progresso</span>
                                           <span className="text-green-700 font-bold">{orderInfo.completedQuantity}/{orderInfo.quantity}</span>
                                         </div>
                                         <div className="h-1.5 bg-green-100 rounded-full overflow-hidden">
                                           <div 
-                                            className="h-full bg-gradient-to-r from-green-600 to-green-500 rounded-full transition-all duration-300"
+                                            className="h-full bg-green-500 transition-all duration-300"
                                             style={{ width: `${itemProgress}%` }}
                                           />
                                         </div>
@@ -958,7 +958,6 @@ const RestaurantDashboard = ({ user, onLogout }: RestaurantDashboardProps) => {
                     {restaurantCompletedOrders.length}
                   </Badge>
                 </div>
-                
                 <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
                   {restaurantCompletedOrders.map(order => {
                     const table = restaurantTables.find(t => t.id === order.tableId)
