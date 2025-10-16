@@ -601,13 +601,13 @@ const RestaurantDashboard = ({ user, onLogout }: RestaurantDashboardProps) => {
                   <p className="text-xs text-muted-foreground mt-0.5">Gestisci gli ordini in tempo reale</p>
                 </div>
               </div>
-              <div className="flex gap-2">
+              <div className="flex flex-wrap items-center gap-2">
                 <div className="flex items-center gap-2 bg-white rounded-lg p-1 shadow-sm border border-border/30">
                   <Button
                     variant={orderViewMode === 'table' ? 'default' : 'ghost'}
                     size="sm"
                     onClick={() => setOrderViewMode('table')}
-                    className="h-7 px-3"
+                    className="h-8 px-3 whitespace-nowrap"
                   >
                     <MapPin size={14} className="mr-1.5" />
                     <span className="text-xs font-medium">Tavoli</span>
@@ -616,7 +616,7 @@ const RestaurantDashboard = ({ user, onLogout }: RestaurantDashboardProps) => {
                     variant={orderViewMode === 'dish' ? 'default' : 'ghost'}
                     size="sm"
                     onClick={() => setOrderViewMode('dish')}
-                    className="h-7 px-3"
+                    className="h-8 px-3 whitespace-nowrap"
                   >
                     <List size={14} className="mr-1.5" />
                     <span className="text-xs font-medium">Piatti</span>
@@ -624,14 +624,14 @@ const RestaurantDashboard = ({ user, onLogout }: RestaurantDashboardProps) => {
                 </div>
                 {orderViewMode === 'dish' && (
                   <Select value={selectedCategoryFilter} onValueChange={setSelectedCategoryFilter}>
-                    <SelectTrigger className="w-[180px] h-9 shadow-sm hover:shadow-md border hover:border-primary/30 transition-all duration-200">
+                    <SelectTrigger className="w-[200px] h-8 shadow-sm hover:shadow-md border hover:border-primary/30 transition-all duration-200">
                       <SelectValue placeholder="Tutte le categorie" />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="all">
                         <div className="flex items-center gap-2">
                           <BookOpen size={14} />
-                          <span className="text-sm">Tutte</span>
+                          <span className="text-sm whitespace-nowrap">Tutte le categorie</span>
                         </div>
                       </SelectItem>
                       {restaurantCategories
@@ -639,36 +639,36 @@ const RestaurantDashboard = ({ user, onLogout }: RestaurantDashboardProps) => {
                         .sort((a, b) => a.order - b.order)
                         .map(category => (
                           <SelectItem key={category.id} value={category.name}>
-                            <span className="text-sm">{category.name}</span>
+                            <span className="text-sm whitespace-nowrap">{category.name}</span>
                           </SelectItem>
                         ))}
                     </SelectContent>
                   </Select>
                 )}
                 <Select value={orderSortMode} onValueChange={(value: 'oldest' | 'newest') => setOrderSortMode(value)}>
-                  <SelectTrigger className="w-[140px] h-9 shadow-sm hover:shadow-md border hover:border-primary/30 transition-all duration-200">
+                  <SelectTrigger className="w-[160px] h-8 shadow-sm hover:shadow-md border hover:border-primary/30 transition-all duration-200">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="oldest">
                       <div className="flex items-center gap-2">
                         <ClockCounterClockwise size={14} />
-                        <span className="text-sm">Meno Recenti</span>
+                        <span className="text-sm whitespace-nowrap">Meno recenti</span>
                       </div>
                     </SelectItem>
                     <SelectItem value="newest">
                       <div className="flex items-center gap-2">
                         <Clock size={14} />
-                        <span className="text-sm">Più Recenti</span>
+                        <span className="text-sm whitespace-nowrap">Più recenti</span>
                       </div>
                     </SelectItem>
                   </SelectContent>
                 </Select>
-                <div className="flex items-center gap-2 px-4 py-2 rounded-lg bg-gradient-to-br from-primary/5 to-accent/5 border border-primary/20 shadow-sm">
+                <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-gradient-to-br from-primary/5 to-accent/5 border border-primary/20 shadow-sm">
                   <Clock size={16} className="text-primary" weight="duotone" />
                   <div className="text-right">
                     <div className="text-xl font-bold text-primary">{restaurantOrders.length}</div>
-                    <div className="text-[10px] text-muted-foreground font-medium leading-none">
+                    <div className="text-[10px] text-muted-foreground font-medium leading-none whitespace-nowrap">
                       {restaurantOrders.length === 1 ? 'ordine' : 'ordini'}
                     </div>
                   </div>
@@ -870,22 +870,9 @@ const RestaurantDashboard = ({ user, onLogout }: RestaurantDashboardProps) => {
                       )
                     }
 
-                    let currentCategory = ''
                     const elementsToRender: React.ReactElement[] = []
 
                     sortedDishGroups.forEach(({ item, orders }, index) => {
-                      if (selectedCategoryFilter === 'all' && item.category !== currentCategory) {
-                        currentCategory = item.category
-                        elementsToRender.push(
-                          <div key={`category-${currentCategory}`} className="bg-gradient-to-r from-primary/10 to-accent/10 rounded-lg p-3 border-l-4 border-primary">
-                            <h3 className="text-xl font-bold text-primary flex items-center gap-2">
-                              <BookOpen size={20} weight="duotone" />
-                              {currentCategory}
-                            </h3>
-                          </div>
-                        )
-                      }
-
                       const totalQuantity = orders.reduce((sum, o) => sum + o.quantity, 0)
                       const totalCompleted = orders.reduce((sum, o) => sum + o.completedQuantity, 0)
                       const totalRemaining = totalQuantity - totalCompleted
