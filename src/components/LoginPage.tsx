@@ -13,32 +13,25 @@ import { QrCode, Users, Crown } from '@phosphor-icons/react'
 interface Props {
   onLogin: (user: User) => void
   onTableAccess: (tableId: string) => void
+  customerMode?: boolean
+  presetTableId?: string
 }
 
-export default function LoginPage({ onLogin, onTableAccess }: Props) {
+export default function LoginPage({ onLogin, onTableAccess, customerMode = false, presetTableId = '' }: Props) {
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
-  const [tableCode, setTableCode] = useState('')
+  const [tableCode, setTableCode] = useState(presetTableId)
   const [pin, setPin] = useState('')
   const [loading, setLoading] = useState(false)
 
   const [users] = useKV<User[]>('users', [])
   const [tables] = useKV<Table[]>('tables', [])
 
-  // Check for QR code parameters in URL
   useEffect(() => {
-    const urlParams = new URLSearchParams(window.location.search)
-    const tableId = urlParams.get('table')
-    const tablePIN = urlParams.get('pin')
-    if (tableId) {
-      setTableCode(tableId)
-      if (tablePIN) {
-        setPin(tablePIN)
-      }
-      // Clear the URL parameters
-      window.history.replaceState({}, document.title, window.location.pathname)
+    if (presetTableId) {
+      setTableCode(presetTableId)
     }
-  }, [])
+  }, [presetTableId])
 
   const handleLogin = async () => {
     setLoading(true)
@@ -84,60 +77,40 @@ export default function LoginPage({ onLogin, onTableAccess }: Props) {
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-secondary/20 to-primary/10 flex items-center justify-center p-4">
       <div className="w-full max-w-md">
-        <div className="text-center mb-8">
-          <div className="w-16 h-16 bg-liquid-gradient rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-liquid-lg">
-            <Users weight="bold" size={32} className="text-primary-foreground" />
-          </div>
-          <h1 className="text-3xl font-bold text-foreground mb-2">Restaurant Manager</h1>
-          <p className="text-muted-foreground">Sistema di gestione ordini per ristoranti</p>
-        </div>
+        {customerMode ? (
+          <>
+            <div className="text-center mb-8">
+              <div className="w-16 h-16 bg-liquid-gradient rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-liquid-lg">
+                <QrCode weight="bold" size={32} className="text-primary-foreground" />
+              </div>
+              <h1 className="text-3xl font-bold text-foreground mb-2">Benvenuto!</h1>
+              <p className="text-muted-foreground">Inserisci il PIN del tavolo per accedere al menù</p>
+            </div>
 
-        <Tabs defaultValue="customer" className="w-full">
-          <TabsList className="grid w-full grid-cols-2 mb-6 shadow-liquid bg-order-card">
-            <TabsTrigger value="customer" className="flex items-center gap-2">
-              <QrCode size={16} />
-              Cliente
-            </TabsTrigger>
-            <TabsTrigger value="staff" className="flex items-center gap-2">
-              <Crown size={16} />
-              Staff
-            </TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="customer">
             <Card className="shadow-liquid-lg bg-order-card border-liquid">
               <CardHeader>
                 <CardTitle className="text-xl">Accesso Cliente</CardTitle>
                 <CardDescription>
-                  Scansiona il QR code del tavolo o inserisci i dati manualmente
+                  Inserisci il PIN temporaneo fornito dal cameriere
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="tableCode">Codice Tavolo</Label>
-                  <Input
-                    id="tableCode"
-                    value={tableCode}
-                    onChange={(e) => setTableCode(e.target.value)}
-                    placeholder="table-xxxxx"
-                    className="shadow-liquid"
-                  />
-                </div>
                 <div className="space-y-2">
                   <Label htmlFor="pin">PIN Temporaneo</Label>
                   <Input
                     id="pin"
                     value={pin}
                     onChange={(e) => setPin(e.target.value)}
-                    placeholder="PIN a 4 cifre"
-                    className="shadow-liquid text-center text-xl font-bold"
+                    placeholder="Inserisci il PIN a 4 cifre"
+                    className="shadow-liquid text-center text-2xl font-bold tracking-widest"
                     maxLength={4}
+                    autoFocus
                   />
                 </div>
                 <Button 
                   onClick={handleTableAccess} 
-                  disabled={loading || !tableCode || !pin}
-                  className="w-full bg-liquid-gradient shadow-liquid-lg hover:shadow-[0_12px_48px_-12px_rgba(201,161,82,0.5)] transition-all duration-300 text-lg font-bold py-3"
+                  disabled={loading || !pin || pin.length !== 4}
+                  className="w-full bg-liquid-gradient shadow-liquid-lg hover:shadow-[0_12px_48px_-12px_rgba(201,161,82,0.5)] transition-all duration-300 text-lg font-bold py-6"
                 >
                   {loading ? 'Accesso in corso...' : 'Accedi al Menù'}
                 </Button>
@@ -153,7 +126,7 @@ export default function LoginPage({ onLogin, onTableAccess }: Props) {
                     </div>
                     <div className="flex items-center gap-2">
                       <div className="w-6 h-6 bg-primary/20 rounded-full flex items-center justify-center text-primary font-bold text-xs">2</div>
-                      <span>Inserisci il PIN temporaneo fornito dal cameriere</span>
+                      <span>Chiedi il PIN al cameriere</span>
                     </div>
                     <div className="flex items-center gap-2">
                       <div className="w-6 h-6 bg-primary/20 rounded-full flex items-center justify-center text-primary font-bold text-xs">3</div>
@@ -163,62 +136,146 @@ export default function LoginPage({ onLogin, onTableAccess }: Props) {
                 </div>
               </CardContent>
             </Card>
-          </TabsContent>
+          </>
+        ) : (
+          <>
+            <div className="text-center mb-8">
+              <div className="w-16 h-16 bg-liquid-gradient rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-liquid-lg">
+                <Users weight="bold" size={32} className="text-primary-foreground" />
+              </div>
+              <h1 className="text-3xl font-bold text-foreground mb-2">Restaurant Manager</h1>
+              <p className="text-muted-foreground">Sistema di gestione ordini per ristoranti</p>
+            </div>
 
-          <TabsContent value="staff">
-            <Card className="shadow-liquid-lg bg-order-card border-liquid">
-              <CardHeader>
-                <CardTitle className="text-xl">Accesso Staff</CardTitle>
-                <CardDescription>
-                  Accedi come amministratore o gestore del ristorante
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="username">Nome Utente</Label>
-                  <Input
-                    id="username"
-                    value={username}
-                    onChange={(e) => setUsername(e.target.value)}
-                    placeholder="admin o nome ristorante"
-                    className="shadow-liquid"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="password">Password</Label>
-                  <Input
-                    id="password"
-                    type="password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    placeholder="Password"
-                    className="shadow-liquid"
-                  />
-                </div>
-                <Button 
-                  onClick={handleLogin} 
-                  disabled={loading || !username || !password}
-                  className="w-full bg-liquid-gradient shadow-liquid-lg hover:shadow-[0_12px_48px_-12px_rgba(201,161,82,0.5)] transition-all duration-300 text-lg font-bold py-3"
-                >
-                  {loading ? 'Accesso in corso...' : 'Accedi'}
-                </Button>
-                
-                <div className="text-center pt-4 border-t">
-                  <div className="space-y-2 text-xs text-muted-foreground">
-                    <div>
-                      <Badge variant="outline" className="mr-2">Admin</Badge>
-                      Username: admin | Password: admin123
+            <Tabs defaultValue="customer" className="w-full">
+              <TabsList className="grid w-full grid-cols-2 mb-6 shadow-liquid bg-order-card">
+                <TabsTrigger value="customer" className="flex items-center gap-2">
+                  <QrCode size={16} />
+                  Cliente
+                </TabsTrigger>
+                <TabsTrigger value="staff" className="flex items-center gap-2">
+                  <Crown size={16} />
+                  Staff
+                </TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="customer">
+                <Card className="shadow-liquid-lg bg-order-card border-liquid">
+                  <CardHeader>
+                    <CardTitle className="text-xl">Accesso Cliente</CardTitle>
+                    <CardDescription>
+                      Scansiona il QR code del tavolo o inserisci i dati manualmente
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="tableCode">Codice Tavolo</Label>
+                      <Input
+                        id="tableCode"
+                        value={tableCode}
+                        onChange={(e) => setTableCode(e.target.value)}
+                        placeholder="table-xxxxx"
+                        className="shadow-liquid"
+                      />
                     </div>
-                    <div>
-                      <Badge variant="outline" className="mr-2">Ristorante</Badge>
-                      Usa il nome del tuo ristorante | Password: restaurant123
+                    <div className="space-y-2">
+                      <Label htmlFor="pin-manual">PIN Temporaneo</Label>
+                      <Input
+                        id="pin-manual"
+                        value={pin}
+                        onChange={(e) => setPin(e.target.value)}
+                        placeholder="PIN a 4 cifre"
+                        className="shadow-liquid text-center text-xl font-bold"
+                        maxLength={4}
+                      />
                     </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-        </Tabs>
+                    <Button 
+                      onClick={handleTableAccess} 
+                      disabled={loading || !tableCode || !pin}
+                      className="w-full bg-liquid-gradient shadow-liquid-lg hover:shadow-[0_12px_48px_-12px_rgba(201,161,82,0.5)] transition-all duration-300 text-lg font-bold py-3"
+                    >
+                      {loading ? 'Accesso in corso...' : 'Accedi al Menù'}
+                    </Button>
+                    
+                    <div className="text-center pt-4 border-t">
+                      <p className="text-sm text-muted-foreground mb-3">
+                        Come funziona:
+                      </p>
+                      <div className="text-xs text-muted-foreground space-y-2">
+                        <div className="flex items-center gap-2">
+                          <div className="w-6 h-6 bg-primary/20 rounded-full flex items-center justify-center text-primary font-bold text-xs">1</div>
+                          <span>Scansiona il QR code sul tavolo</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <div className="w-6 h-6 bg-primary/20 rounded-full flex items-center justify-center text-primary font-bold text-xs">2</div>
+                          <span>Inserisci il PIN temporaneo fornito dal cameriere</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <div className="w-6 h-6 bg-primary/20 rounded-full flex items-center justify-center text-primary font-bold text-xs">3</div>
+                          <span>Ordina direttamente dal tuo dispositivo</span>
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+
+              <TabsContent value="staff">
+                <Card className="shadow-liquid-lg bg-order-card border-liquid">
+                  <CardHeader>
+                    <CardTitle className="text-xl">Accesso Staff</CardTitle>
+                    <CardDescription>
+                      Accedi come amministratore o gestore del ristorante
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="username">Nome Utente</Label>
+                      <Input
+                        id="username"
+                        value={username}
+                        onChange={(e) => setUsername(e.target.value)}
+                        placeholder="admin o nome ristorante"
+                        className="shadow-liquid"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="password">Password</Label>
+                      <Input
+                        id="password"
+                        type="password"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        placeholder="Password"
+                        className="shadow-liquid"
+                      />
+                    </div>
+                    <Button 
+                      onClick={handleLogin} 
+                      disabled={loading || !username || !password}
+                      className="w-full bg-liquid-gradient shadow-liquid-lg hover:shadow-[0_12px_48px_-12px_rgba(201,161,82,0.5)] transition-all duration-300 text-lg font-bold py-3"
+                    >
+                      {loading ? 'Accesso in corso...' : 'Accedi'}
+                    </Button>
+                    
+                    <div className="text-center pt-4 border-t">
+                      <div className="space-y-2 text-xs text-muted-foreground">
+                        <div>
+                          <Badge variant="outline" className="mr-2">Admin</Badge>
+                          Username: admin | Password: admin123
+                        </div>
+                        <div>
+                          <Badge variant="outline" className="mr-2">Ristorante</Badge>
+                          Usa il nome del tuo ristorante | Password: restaurant123
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+            </Tabs>
+          </>
+        )}
       </div>
     </div>
   )

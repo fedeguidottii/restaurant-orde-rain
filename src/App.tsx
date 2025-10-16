@@ -120,6 +120,8 @@ export interface Reservation {
 function App() {
   const [currentUser, setCurrentUser] = useKV<User | null>('currentUser', null)
   const [currentTable, setCurrentTable] = useKV<string | null>('currentTable', null)
+  const [isCustomerMode, setIsCustomerMode] = useState(false)
+  const [customerTableId, setCustomerTableId] = useState<string | null>(null)
 
   // Initialize default data
   const [users, setUsers] = useKV<User[]>('users', [])
@@ -451,6 +453,18 @@ function App() {
     }
   }, [menuItems, orders, setOrders, tables, reservations, setReservations])
 
+  // Check for QR code parameters in URL on mount
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search)
+    const tableId = urlParams.get('table')
+    
+    if (tableId) {
+      setIsCustomerMode(true)
+      setCustomerTableId(tableId)
+      window.history.replaceState({}, document.title, window.location.pathname)
+    }
+  }, [])
+
   const handleLogin = (user: User) => {
     setCurrentUser(user)
   }
@@ -458,11 +472,27 @@ function App() {
   const handleLogout = () => {
     setCurrentUser(null)
     setCurrentTable(null)
+    setIsCustomerMode(false)
+    setCustomerTableId(null)
   }
 
   const handleTableAccess = (tableId: string) => {
     setCurrentTable(tableId)
     setCurrentUser({ id: 'customer', username: 'Customer', role: 'customer' })
+  }
+
+  if (isCustomerMode && customerTableId) {
+    return (
+      <>
+        <LoginPage 
+          onLogin={handleLogin} 
+          onTableAccess={handleTableAccess}
+          customerMode={true}
+          presetTableId={customerTableId}
+        />
+        <Toaster position="top-center" />
+      </>
+    )
   }
 
   if (!currentUser) {
