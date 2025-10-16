@@ -139,7 +139,7 @@ export default function LoginPage({ onLogin, onTableAccess, customerMode = false
                 <Users weight="bold" size={32} className="text-primary-foreground" />
               </div>
               <h1 className="text-3xl font-bold text-foreground mb-2">Sistema Gestione Ristorante</h1>
-              <p className="text-muted-foreground">Accedi al sistema</p>
+              <p className="text-muted-foreground">Scegli la modalità di accesso</p>
             </div>
 
             <Tabs defaultValue="customer" className="w-full">
@@ -203,7 +203,7 @@ export default function LoginPage({ onLogin, onTableAccess, customerMode = false
                         </div>
                         <div className="flex items-center gap-2">
                           <div className="w-6 h-6 bg-primary/20 rounded-full flex items-center justify-center text-primary font-bold text-xs">2</div>
-                          <span>Inserisci il PIN temporaneo fornito dal cameriere</span>
+                          <span>Inserisci il PIN temporaneo fornito</span>
                         </div>
                         <div className="flex items-center gap-2">
                           <div className="w-6 h-6 bg-primary/20 rounded-full flex items-center justify-center text-primary font-bold text-xs">3</div>
@@ -230,7 +230,7 @@ export default function LoginPage({ onLogin, onTableAccess, customerMode = false
                         id="username"
                         value={username}
                         onChange={(e) => setUsername(e.target.value)}
-                        placeholder="admin o nome ristorante"
+                        placeholder="Nome utente"
                         className="shadow-liquid"
                       />
                     </div>
