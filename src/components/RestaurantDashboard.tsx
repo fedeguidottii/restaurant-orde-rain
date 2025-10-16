@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useKV } from '@github/spark/hooks'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
@@ -10,12 +10,14 @@ import { Textarea } from '@/components/ui/textarea'
 import { Badge } from '@/components/ui/badge'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Separator } from '@/components/ui/separator'
+import { Switch } from '@/components/ui/switch'
 import { toast } from 'sonner'
-import { Plus, MapPin, BookOpen, Clock, ChartBar, Gear, SignOut, Trash, Eye, EyeSlash, QrCode, PencilSimple, Calendar, List, ClockCounterClockwise, Check, X } from '@phosphor-icons/react'
+import { Plus, MapPin, BookOpen, Clock, ChartBar, Gear, SignOut, Trash, Eye, EyeSlash, QrCode, PencilSimple, Calendar, List, ClockCounterClockwise, Check, X, CaretDown } from '@phosphor-icons/react'
 import type { User, Table, MenuItem, Order, Restaurant, Reservation, OrderHistory, MenuCategory } from '../App'
 import TimelineReservations from './TimelineReservations'
 import ReservationsManager from './ReservationsManager'
 import AnalyticsCharts from './AnalyticsCharts'
+import QRCodeLib from 'qrcode'
 
 interface RestaurantDashboardProps {
   user: User
@@ -24,7 +26,7 @@ interface RestaurantDashboardProps {
 
 const RestaurantDashboard = ({ user, onLogout }: RestaurantDashboardProps) => {
   const [activeSection, setActiveSection] = useState('orders')
-  const [sidebarExpanded, setSidebarExpanded] = useState(false)
+  const [sidebarExpanded, setSidebarExpanded] = useState(true)
   const [activeTab, setActiveTab] = useState('orders')
   
   const [tables, setTables] = useKV<Table[]>('tables', [])
@@ -45,114 +47,143 @@ const RestaurantDashboard = ({ user, onLogout }: RestaurantDashboardProps) => {
     image: ''
   })
   const [newCategory, setNewCategory] = useState('')
-  const [draggedCategory, setDraggedCategory] = useState<MenuCategory | null>(null)
   const [editingCategory, setEditingCategory] = useState<MenuCategory | null>(null)
   const [editCategoryName, setEditCategoryName] = useState('')
-  const [showCategoryDialog, setShowCategoryDialog] = useState(false)
-  const [showMenuDialog, setShowMenuDialog] = useState(false)
   const [selectedTable, setSelectedTable] = useState<Table | null>(null)
   const [showTableDialog, setShowTableDialog] = useState(false)
-  const [orderViewMode, setOrderViewMode] = useState<'table' | 'dish'>('table')
-  const [showCompletedOrders, setShowCompletedOrders] = useState(false)
+  const [showMenuDialog, setShowMenuDialog] = useState(false)
+  const [showCategoryDialog, setShowCategoryDialog] = useState(false)
   const [showQrDialog, setShowQrDialog] = useState(false)
-  const [customerCount, setCustomerCount] = useState('')
+  const [qrCodeDataUrl, setQrCodeDataUrl] = useState('')
+  const [orderViewMode, setOrderViewMode] = useState<'table' | 'dish'>('table')
   
-  const restaurantMenuItems = menuItems?.filter(item => item.restaurantId === user.restaurantId) || []
-  const restaurantTables = tables?.filter(table => table.restaurantId === user.restaurantId) || []
-  const restaurantOrders = orders?.filter(order => order.restaurantId === user.restaurantId) || []
-  const restaurantCompletedOrders = completedOrders?.filter(order => order.restaurantId === user.restaurantId) || []
-  const restaurantReservations = reservations?.filter(reservation => reservation.restaurantId === user.restaurantId) || []
-  const restaurantOrderHistory = orderHistory?.filter(history => history.restaurantId === user.restaurantId) || []
-  const restaurantCategories = categories?.filter(cat => cat.restaurantId === user.restaurantId) || []
-
-  // Get current restaurant
+  const restaurantTables = tables?.filter(t => t.restaurantId === user.restaurantId) || []
+  const restaurantMenuItems = menuItems?.filter(m => m.restaurantId === user.restaurantId) || []
+  const restaurantOrders = orders?.filter(o => o.restaurantId === user.restaurantId) || []
+  const restaurantCategories = categories?.filter(c => c.restaurantId === user.restaurantId)?.sort((a, b) => a.order - b.order) || []
   const currentRestaurant = restaurants?.find(r => r.id === user.restaurantId)
 
-  const generatePin = () => Math.floor(1000 + Math.random() * 9000).toString()
-  const generateQrCode = (tableId: string) => `${window.location.origin}?table=${tableId}`
+  const generateQrCode = (tableId: string) => {
+    return `${window.location.origin}?table=${tableId}`
+  }
 
-  const handleCreateTable = () => {
+  const generatePin = () => {
+    return Math.floor(1000 + Math.random() * 9000).toString()
+  }
+
+  const handleCreateTable = async () => {
     if (!newTableName.trim()) {
-      toast.error('Inserisci un nome per il tavolo')
+      toast.error('Inserisci il nome del tavolo')
       return
     }
 
-    const tableId = Date.now().toString()
+    const tableId = `table-${Date.now()}`
     const newTable: Table = {
       id: tableId,
-      name: newTableName,
-      isActive: false, // Start as empty/inactive
+      name: newTableName.trim(),
+      isActive: false,
       pin: generatePin(),
       qrCode: generateQrCode(tableId),
       restaurantId: user.restaurantId!,
       status: 'available'
     }
 
-    setTables([...(tables || []), newTable])
-    setNewTableName('')
+    setTables(prev => [...(prev || []), newTable])
+    setNewTableName('') // Reset the input field
+    setShowTableDialog(false)
     toast.success('Tavolo creato con successo')
   }
 
-  const handleToggleTable = (tableId: string) => {
+  const handleToggleTable = async (tableId: string) => {
     const table = tables?.find(t => t.id === tableId)
     if (!table) return
-    
-    if (table.isActive) {
-      // Deactivate table - just mark as inactive, don't change PIN
-      setTables(tables?.map(t => 
-        t.id === tableId 
-          ? { ...t, isActive: false, status: 'available', customerCount: undefined, remainingOrders: undefined }
-          : t
-      ) || [])
-      toast.success('Tavolo disattivato')
-    } else {
-      // For activation, we need customer count - this will be handled by the dialog
+
+    if (!table.isActive) {
+      // Activating table - generate QR and PIN
+      await generateQRCode(table.qrCode)
       setSelectedTable(table)
-      // Don't activate immediately, wait for customer count input
     }
+
+    setTables(prev => prev?.map(t => 
+      t.id === tableId ? { ...t, isActive: !t.isActive } : t
+    ) || [])
+
+    toast.success(table.isActive ? 'Tavolo disattivato' : 'Tavolo attivato')
   }
 
-  const handleActivateTable = (tableId: string, customerCount: number) => {
-    if (!customerCount || customerCount <= 0) {
-      toast.error('Inserisci un numero valido di clienti')
+  const handleCreateCategory = async () => {
+    if (!newCategory.trim()) {
+      toast.error('Inserisci il nome della categoria')
       return
     }
 
-    const remainingOrders = currentRestaurant?.allYouCanEat.enabled 
-      ? currentRestaurant.allYouCanEat.maxOrders 
-      : undefined
+    const categoryId = `category-${Date.now()}`
+    const maxOrder = Math.max(...(restaurantCategories.map(c => c.order) || [0]))
+    
+    const category: MenuCategory = {
+      id: categoryId,
+      name: newCategory,
+      isActive: true,
+      restaurantId: user.restaurantId!,
+      order: maxOrder + 1
+    }
 
-    setTables(tables?.map(t => 
-      t.id === tableId 
-        ? { 
-            ...t, 
-            isActive: true, 
-            pin: generatePin(), 
-            status: 'waiting-order',
-            customerCount: customerCount,
-            remainingOrders: remainingOrders
-          }
-        : t
+    setCategories(prev => [...(prev || []), category])
+    setNewCategory('')
+    toast.success('Categoria creata con successo')
+  }
+
+  const handleEditCategory = (category: MenuCategory) => {
+    setEditingCategory(category)
+    setEditCategoryName(category.name)
+  }
+
+  const handleSaveEditCategory = () => {
+    if (!editCategoryName.trim() || !editingCategory) {
+      toast.error('Inserisci il nome della categoria')
+      return
+    }
+
+    setCategories(prev => prev?.map(c => 
+      c.id === editingCategory.id ? { ...c, name: editCategoryName.trim() } : c
     ) || [])
     
-    toast.success(`Tavolo attivato per ${customerCount} persone`)
-    setSelectedTable(null)
-    setCustomerCount('')
+    setEditingCategory(null)
+    setEditCategoryName('')
+    toast.success('Categoria modificata con successo')
   }
 
-  const handleDeleteTable = (tableId: string) => {
-    setTables(tables?.filter(table => table.id !== tableId) || [])
-    toast.success('Tavolo eliminato')
-  }
+  const handleDeleteCategory = (categoryId: string) => {
+    // Check if category has items
+    const hasItems = restaurantMenuItems.some(item => {
+      const category = restaurantCategories.find(c => c.id === categoryId)
+      return category && item.category === category.name
+    })
 
-  const handleCreateMenuItem = () => {
-    if (!newMenuItem.name.trim() || !newMenuItem.description.trim() || !newMenuItem.price || !newMenuItem.category) {
-      toast.error('Compila tutti i campi')
+    if (hasItems) {
+      toast.error('Non puoi eliminare una categoria che contiene piatti')
       return
     }
 
-    const menuItem: MenuItem = {
-      id: Date.now().toString(),
+    setCategories(prev => prev?.filter(c => c.id !== categoryId) || [])
+    toast.success('Categoria eliminata con successo')
+  }
+
+  const handleToggleCategoryVisibility = (categoryId: string) => {
+    setCategories(prev => prev?.map(c => 
+      c.id === categoryId ? { ...c, isActive: !c.isActive } : c
+    ) || [])
+  }
+
+  const handleCreateMenuItem = async () => {
+    if (!newMenuItem.name || !newMenuItem.category || !newMenuItem.price) {
+      toast.error('Compila tutti i campi obbligatori')
+      return
+    }
+
+    const itemId = `item-${Date.now()}`
+    const item: MenuItem = {
+      id: itemId,
       name: newMenuItem.name,
       description: newMenuItem.description,
       price: parseFloat(newMenuItem.price),
@@ -162,7 +193,7 @@ const RestaurantDashboard = ({ user, onLogout }: RestaurantDashboardProps) => {
       image: newMenuItem.image || undefined
     }
 
-    setMenuItems([...(menuItems || []), menuItem])
+    setMenuItems(prev => [...(prev || []), item])
     setNewMenuItem({
       name: '',
       description: '',
@@ -171,1613 +202,864 @@ const RestaurantDashboard = ({ user, onLogout }: RestaurantDashboardProps) => {
       image: ''
     })
     setShowMenuDialog(false)
-    toast.success('Piatto aggiunto al menù')
+    toast.success('Piatto creato con successo')
   }
 
-  const handleToggleMenuItem = (itemId: string) => {
-    setMenuItems(menuItems?.map(item => 
-      item.id === itemId 
-        ? { ...item, isActive: !item.isActive }
-        : item
-    ) || [])
-  }
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      if (file.size > 5 * 1024 * 1024) { // 5MB limit
+        toast.error('L\'immagine deve essere inferiore a 5MB')
+        return
+      }
 
-  const handleDeleteMenuItem = (itemId: string) => {
-    setMenuItems(menuItems?.filter(item => item.id !== itemId) || [])
-    toast.success('Piatto rimosso')
-  }
-
-  const handleToggleAllYouCanEatExclusion = (itemId: string) => {
-    setMenuItems(menuItems?.map(item => 
-      item.id === itemId 
-        ? { ...item, excludeFromAllYouCanEat: !item.excludeFromAllYouCanEat }
-        : item
-    ) || [])
-    
-    const item = menuItems?.find(item => item.id === itemId)
-    if (item) {
-      toast.success(
-        item.excludeFromAllYouCanEat 
-          ? 'Piatto incluso in All You Can Eat' 
-          : 'Piatto escluso da All You Can Eat'
-      )
+      const reader = new FileReader()
+      reader.onload = (event) => {
+        const result = event.target?.result as string
+        setNewMenuItem(prev => ({ ...prev, image: result }))
+      }
+      reader.readAsDataURL(file)
     }
   }
 
-  const handleCompleteOrder = (orderId: string) => {
-    const order = restaurantOrders.find(o => o.id === orderId)
-    if (order) {
-      setOrders(orders?.filter(o => o.id !== orderId) || [])
-      setCompletedOrders([...(completedOrders || []), { ...order, status: 'completed' }])
-      toast.success('Ordine completato')
-    }
-  }
-
-  const handleCompleteDish = (orderId: string, itemId: string) => {
-    setOrders(orders?.map(order => {
-      if (order.id === orderId) {
-        const updatedItems = order.items.map(item => {
-          if (item.id === itemId) {
-            const newCompletedQuantity = (item.completedQuantity || 0) + 1
-            return {
-              ...item,
-              completedQuantity: Math.min(newCompletedQuantity, item.quantity)
-            }
-          }
-          return item
-        })
-        
-        // Check if all items in the order are fully completed
-        const allCompleted = updatedItems.every(item => (item.completedQuantity || 0) >= item.quantity)
-        
-        return {
-          ...order,
-          items: updatedItems,
-          status: allCompleted ? 'completed' as const : order.status
+  const handleCompleteOrderItem = (orderId: string, itemId: string) => {
+    setOrders(prev => prev?.map(order => {
+      if (order.id !== orderId) return order
+      
+      const updatedItems = order.items.map(item => {
+        if (item.id === itemId) {
+          const newCompletedQuantity = (item.completedQuantity || 0) + 1
+          return { ...item, completedQuantity: newCompletedQuantity }
         }
+        return item
+      })
+      
+      // Check if all items are completed
+      const allItemsCompleted = updatedItems.every(item => 
+        (item.completedQuantity || 0) >= item.quantity
+      )
+      
+      const updatedOrder = { ...order, items: updatedItems }
+      
+      // If all items completed, move to completed orders
+      if (allItemsCompleted) {
+        setTimeout(() => {
+          setCompletedOrders(prev => [...(prev || []), { ...updatedOrder, status: 'completed' as const }])
+          setOrders(prev => prev?.filter(o => o.id !== orderId) || [])
+        }, 100)
       }
-      return order
+      
+      return updatedOrder
     }) || [])
+    
+    toast.success('Piatto completato')
+  }
 
-    // Move fully completed orders to completed orders list
-    const orderToCheck = orders?.find(o => o.id === orderId)
-    if (orderToCheck) {
-      const updatedOrder = {
-        ...orderToCheck,
-        items: orderToCheck.items.map(item => {
-          if (item.id === itemId) {
-            const newCompletedQuantity = (item.completedQuantity || 0) + 1
-            return {
-              ...item,
-              completedQuantity: Math.min(newCompletedQuantity, item.quantity)
-            }
-          }
-          return item
-        })
-      }
-      
-      const allCompleted = updatedOrder.items.every(item => (item.completedQuantity || 0) >= item.quantity)
-      
-      if (allCompleted) {
-        setOrders(orders?.filter(o => o.id !== orderId) || [])
-        setCompletedOrders([...(completedOrders || []), { ...updatedOrder, status: 'completed' }])
-        toast.success('Ordine completato')
-      } else {
-        toast.success('Piatto pronto')
-      }
+  const handleUpdateRestaurantSettings = (updates: Partial<Restaurant>) => {
+    setRestaurants(prev => prev?.map(r => r.id === user.restaurantId ? { ...r, ...updates } : r) || [])
+    toast.success('Impostazioni aggiornate')
+  }
+
+  const generateQRCode = async (url: string) => {
+    try {
+      const dataUrl = await QRCodeLib.toDataURL(url, {
+        width: 256,
+        margin: 2,
+        color: {
+          dark: '#000000',
+          light: '#FFFFFF'
+        },
+        errorCorrectionLevel: 'M'
+      })
+      setQrCodeDataUrl(dataUrl)
+    } catch (error) {
+      console.error('Error generating QR code:', error)
+      toast.error('Errore nella generazione del QR code')
     }
   }
 
-  const handleUncompleteOrder = (orderId: string) => {
-    const order = restaurantCompletedOrders.find(o => o.id === orderId)
-    if (order) {
-      setCompletedOrders(completedOrders?.filter(o => o.id !== orderId) || [])
-      setOrders([...(orders || []), { ...order, status: 'served' }])
-      toast.success('Ordine riportato in attesa')
-    }
+  const handleShowQrCode = async (table: Table) => {
+    setSelectedTable(table)
+    await generateQRCode(table.qrCode)
+    setShowQrDialog(true)
   }
 
-  const handleCreateCategory = () => {
-    if (!newCategory.trim()) {
-      toast.error('Inserisci un nome per la categoria')
-      return
-    }
-    
-    if (categories?.some(cat => cat.name === newCategory)) {
-      toast.error('Categoria già esistente')
-      return
-    }
-
-    const newCategoryObj: MenuCategory = {
-      id: Date.now().toString(),
-      name: newCategory,
-      isActive: true,
-      restaurantId: user.restaurantId!,
-      order: (restaurantCategories?.length || 0) + 1
-    }
-
-    setCategories([...(categories || []), newCategoryObj])
-    setNewCategory('')
-    toast.success('Categoria aggiunta')
-  }
-
-  const handleDeleteCategory = (categoryName: string) => {
-    const categoryItems = restaurantMenuItems.filter(item => item.category === categoryName).length
-    if (categoryItems > 0) {
-      toast.error('Non puoi eliminare una categoria che contiene piatti')
-      return
-    }
-    
-    setCategories(categories?.filter(cat => cat.name !== categoryName) || [])
-    toast.success('Categoria eliminata')
-  }
-
-  const handleToggleCategory = (categoryId: string) => {
-    setCategories(categories?.map(cat => 
-      cat.id === categoryId 
-        ? { ...cat, isActive: !cat.isActive }
-        : cat
-    ) || [])
-  }
-
-  const handleEditCategory = (category: MenuCategory) => {
-    setEditingCategory(category)
-    setEditCategoryName(category.name)
-  }
-
-  const handleSaveCategory = () => {
-    if (!editingCategory || !editCategoryName.trim()) return
-    
-    // Check if new name already exists (excluding current category)
-    const nameExists = categories?.some(cat => 
-      cat.name.toLowerCase() === editCategoryName.trim().toLowerCase() && 
-      cat.id !== editingCategory.id
-    )
-    
-    if (nameExists) {
-      toast.error('Esiste già una categoria con questo nome')
-      return
-    }
-    
-    // Update category name
-    setCategories(categories?.map(cat => 
-      cat.id === editingCategory.id 
-        ? { ...cat, name: editCategoryName.trim() }
-        : cat
-    ) || [])
-    
-    // Update menu items with the new category name
-    setMenuItems(menuItems?.map(item => 
-      item.category === editingCategory.name && item.restaurantId === user.restaurantId
-        ? { ...item, category: editCategoryName.trim() }
-        : item
-    ) || [])
-    
-    setEditingCategory(null)
-    setEditCategoryName('')
-    toast.success('Categoria modificata')
-  }
-
-  const handleCancelEdit = () => {
-    setEditingCategory(null)
-    setEditCategoryName('')
-  }
-
-  const handleDragStart = (e: React.DragEvent, category: MenuCategory) => {
-    setDraggedCategory(category)
-  }
-
-  const handleDragOver = (e: React.DragEvent) => {
-    e.preventDefault()
-  }
-
-  const handleDrop = (e: React.DragEvent, targetCategory: MenuCategory) => {
-    e.preventDefault()
-    
-    if (!draggedCategory || draggedCategory.id === targetCategory.id) return
-    
-    const newCategories = [...(categories || [])]
-    const draggedIndex = newCategories.findIndex(cat => cat.id === draggedCategory.id)
-    const targetIndex = newCategories.findIndex(cat => cat.id === targetCategory.id)
-    
-    // Remove dragged item and insert at target position
-    const [draggedItem] = newCategories.splice(draggedIndex, 1)
-    newCategories.splice(targetIndex, 0, draggedItem)
-    
-    // Update order values
-    const updatedCategories = newCategories.map((cat, index) => ({
-      ...cat,
-      order: index + 1
-    }))
-    
-    setCategories(updatedCategories)
-    setDraggedCategory(null)
-    toast.success('Ordine categorie aggiornato')
-  }
-
-  const handleDragEnd = () => {
-    setDraggedCategory(null)
-  }
-
-  const getTimeAgo = (timestamp: number) => {
+  const formatTimeAgo = (timestamp: number) => {
     const now = Date.now()
     const diff = now - timestamp
-    const minutes = Math.floor(diff / 60000)
+    const minutes = Math.floor(diff / (1000 * 60))
     const hours = Math.floor(minutes / 60)
     
-    if (hours >= 1) {
-      return `${hours}h ${minutes % 60}min fa`
-    } else if (minutes >= 60) {
-      return `1h fa`
-    } else if (minutes < 1) {
-      return 'Appena ora'
+    if (hours > 0) {
+      return `${hours}h${minutes % 60 > 0 ? ` ${minutes % 60}min` : ''} fa`
     }
-    return `${minutes}min fa`
+    return `${minutes} min fa`
   }
 
-  const formatTime = (timestamp: number) => {
-    return new Date(timestamp).toLocaleTimeString('it-IT', {
-      hour: '2-digit',
-      minute: '2-digit'
-    })
-  }
-
-  // Handle sidebar auto-expand on hover
-  useEffect(() => {
-    let timeoutId: NodeJS.Timeout
-
-    const handleMouseEnter = () => {
-      timeoutId = setTimeout(() => {
-        setSidebarExpanded(true)
-      }, 500)
-    }
-
-    const handleMouseLeave = () => {
-      clearTimeout(timeoutId)
-      setSidebarExpanded(false)
-    }
-
-    const sidebar = document.getElementById('sidebar')
-    if (sidebar) {
-      sidebar.addEventListener('mouseenter', handleMouseEnter)
-      sidebar.addEventListener('mouseleave', handleMouseLeave)
-      
-      return () => {
-        sidebar.removeEventListener('mouseenter', handleMouseEnter)
-        sidebar.removeEventListener('mouseleave', handleMouseLeave)
-        clearTimeout(timeoutId)
+  const calculateTableTotal = (tableId: string) => {
+    const tableOrders = restaurantOrders.filter(o => o.tableId === tableId)
+    const total = tableOrders.reduce((sum, order) => sum + order.total, 0)
+    
+    const table = restaurantTables.find(t => t.id === tableId)
+    let finalTotal = total
+    
+    if (table?.customerCount && currentRestaurant) {
+      if (currentRestaurant.allYouCanEat.enabled) {
+        finalTotal = currentRestaurant.allYouCanEat.pricePerPerson * table.customerCount
+        // Add excluded items
+        tableOrders.forEach(order => {
+          order.items.forEach(item => {
+            if (item.excludedFromAllYouCanEat) {
+              const menuItem = restaurantMenuItems.find(m => m.id === item.menuItemId)
+              if (menuItem) {
+                finalTotal += menuItem.price * item.quantity
+              }
+            }
+          })
+        })
+      } else if (currentRestaurant.coverChargePerPerson > 0) {
+        // Add cover charge
+        finalTotal += currentRestaurant.coverChargePerPerson * table.customerCount
       }
     }
-  }, [])
+    
+    return finalTotal
+  }
 
-  // Auto-switch tabs based on activeSection
-  useEffect(() => {
-    if (activeSection === 'tables') setActiveTab('tables')
-    else if (activeSection === 'menu') setActiveTab('menu')
-    else if (activeSection === 'reservations') setActiveTab('reservations')
-    else if (activeSection === 'analytics') setActiveTab('analytics')
-    else if (activeSection === 'settings') setActiveTab('settings')
-    else setActiveTab('orders')
-  }, [activeSection])
+  const handleMarkTableAsPaid = (tableId: string) => {
+    const tableOrders = restaurantOrders.filter(o => o.tableId === tableId)
+    const table = restaurantTables.find(t => t.id === tableId)
+    
+    if (!table) return
+    
+    // Move orders to history
+    const historyEntry: OrderHistory = {
+      id: `history-${Date.now()}`,
+      tableId,
+      tableName: table.name,
+      restaurantId: user.restaurantId!,
+      items: tableOrders.flatMap(o => 
+        o.items.map(item => {
+          const menuItem = restaurantMenuItems.find(m => m.id === item.menuItemId)
+          return {
+            menuItemId: item.menuItemId,
+            name: menuItem?.name || 'Piatto sconosciuto',
+            quantity: item.quantity,
+            price: menuItem?.price || 0,
+            notes: item.notes
+          }
+        })
+      ),
+      total: calculateTableTotal(tableId),
+      timestamp: tableOrders[0]?.timestamp || Date.now(),
+      paidAt: Date.now(),
+      customerCount: table.customerCount
+    }
+
+    setOrderHistory(prev => [...(prev || []), historyEntry])
+    
+    // Clear table orders
+    setOrders(prev => prev?.filter(o => o.tableId !== tableId) || [])
+    setCompletedOrders(prev => prev?.filter(o => o.tableId !== tableId) || [])
+    
+    // Reset table status
+    setTables(prev => prev?.map(t => 
+      t.id === tableId 
+        ? { ...t, status: 'available' as const, customerCount: undefined, remainingOrders: undefined }
+        : t
+    ) || [])
+    
+    toast.success('Conto saldato e tavolo liberato')
+  }
 
   return (
-    <div className="min-h-screen bg-subtle-gradient flex">
-      {/* Fixed Sidebar */}
-      <div
-        id="sidebar"
-        className={`${
-          sidebarExpanded ? 'w-64' : 'w-16'
-        } bg-white shadow-professional-lg transition-all duration-300 ease-in-out border-r border-border/20 flex flex-col fixed h-full z-50`}
-      >
-        <div className="p-4 border-b border-border/10">
-          <h1 className={`font-bold text-primary transition-all duration-300 ${
-            sidebarExpanded ? 'text-xl' : 'text-sm text-center'
-          }`}>
-            {sidebarExpanded ? 'Dashboard Ristorante' : 'DR'}
-          </h1>
+    <div className="min-h-screen bg-background flex">
+      {/* Sidebar */}
+      <div className={`${sidebarExpanded ? 'w-64' : 'w-16'} transition-all duration-300 bg-card border-r border-border flex flex-col`}>
+        {/* Sidebar Header */}
+        <div className="p-4 border-b border-border">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
+              <BookOpen size={16} className="text-primary-foreground" />
+            </div>
+            {sidebarExpanded && (
+              <div className="flex-1 min-w-0">
+                <h1 className="font-semibold text-sm truncate">
+                  {currentRestaurant?.name || 'Dashboard'}
+                </h1>
+              </div>
+            )}
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setSidebarExpanded(!sidebarExpanded)}
+              className="h-8 w-8 p-0"
+            >
+              <CaretDown size={14} className={`transition-transform ${sidebarExpanded ? 'rotate-180' : 'rotate-90'}`} />
+            </Button>
+          </div>
         </div>
 
-        <nav className="flex-1 p-2 space-y-1">
-          <Button
-            variant={activeSection === 'orders' ? 'secondary' : 'ghost'}
-            className={`w-full justify-start ${!sidebarExpanded && 'px-2'} transition-all duration-200 hover:shadow-gold ${
-              activeSection === 'orders' ? 'shadow-gold bg-primary/10 text-primary border-primary/20' : 'hover:bg-primary/5'
-            }`}
-            onClick={() => {
-              setActiveSection('orders')
-              if (sidebarExpanded) setSidebarExpanded(false)
-            }}
-          >
-            <Clock size={16} />
-            {sidebarExpanded && <span className="ml-2 transition-all duration-200">Ordini</span>}
-          </Button>
-          
-          <Button
-            variant={activeSection === 'tables' ? 'secondary' : 'ghost'}
-            className={`w-full justify-start ${!sidebarExpanded && 'px-2'} transition-all duration-200 hover:shadow-gold ${
-              activeSection === 'tables' ? 'shadow-gold bg-primary/10 text-primary border-primary/20' : 'hover:bg-primary/5'
-            }`}
-            onClick={() => {
-              setActiveSection('tables')
-              if (sidebarExpanded) setSidebarExpanded(false)
-            }}
-          >
-            <MapPin size={16} />
-            {sidebarExpanded && <span className="ml-2 transition-all duration-200">Tavoli</span>}
-          </Button>
-          
-          <Button
-            variant={activeSection === 'menu' ? 'secondary' : 'ghost'}
-            className={`w-full justify-start ${!sidebarExpanded && 'px-2'} transition-all duration-200 hover:shadow-gold ${
-              activeSection === 'menu' ? 'shadow-gold bg-primary/10 text-primary border-primary/20' : 'hover:bg-primary/5'
-            }`}
-            onClick={() => {
-              setActiveSection('menu')
-              if (sidebarExpanded) setSidebarExpanded(false)
-            }}
-          >
-            <BookOpen size={16} />
-            {sidebarExpanded && <span className="ml-2 transition-all duration-200">Menu</span>}
-          </Button>
-
-          <Button
-            variant={activeSection === 'reservations' ? 'secondary' : 'ghost'}
-            className={`w-full justify-start ${!sidebarExpanded && 'px-2'} transition-all duration-200 hover:shadow-gold ${
-              activeSection === 'reservations' ? 'shadow-gold bg-primary/10 text-primary border-primary/20' : 'hover:bg-primary/5'
-            }`}
-            onClick={() => {
-              setActiveSection('reservations')
-              if (sidebarExpanded) setSidebarExpanded(false)
-            }}
-          >
-            <Calendar size={16} />
-            {sidebarExpanded && <span className="ml-2 transition-all duration-200">Prenotazioni</span>}
-          </Button>
-          
-          <Button
-            variant={activeSection === 'analytics' ? 'secondary' : 'ghost'}
-            className={`w-full justify-start ${!sidebarExpanded && 'px-2'} transition-all duration-200 hover:shadow-gold ${
-              activeSection === 'analytics' ? 'shadow-gold bg-primary/10 text-primary border-primary/20' : 'hover:bg-primary/5'
-            }`}
-            onClick={() => {
-              setActiveSection('analytics')
-              if (sidebarExpanded) setSidebarExpanded(false)
-            }}
-          >
-            <ChartBar size={16} />
-            {sidebarExpanded && <span className="ml-2 transition-all duration-200">Analitiche</span>}
-          </Button>
-          
-          <Button
-            variant={activeSection === 'settings' ? 'secondary' : 'ghost'}
-            className={`w-full justify-start ${!sidebarExpanded && 'px-2'} transition-all duration-200 hover:shadow-gold ${
-              activeSection === 'settings' ? 'shadow-gold bg-primary/10 text-primary border-primary/20' : 'hover:bg-primary/5'
-            }`}
-            onClick={() => {
-              setActiveSection('settings')
-              if (sidebarExpanded) setSidebarExpanded(false)
-            }}
-          >
-            <Gear size={16} />
-            {sidebarExpanded && <span className="ml-2 transition-all duration-200">Impostazioni</span>}
-          </Button>
+        {/* Navigation */}
+        <nav className="flex-1 p-2">
+          <div className="space-y-1">
+            <button
+              onClick={() => setActiveTab('orders')}
+              className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors ${
+                activeTab === 'orders' 
+                  ? 'bg-primary text-primary-foreground' 
+                  : 'text-muted-foreground hover:text-foreground hover:bg-secondary/50'
+              }`}
+            >
+              <List size={16} />
+              {sidebarExpanded && 'Ordini'}
+            </button>
+            <button
+              onClick={() => setActiveTab('tables')}
+              className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors ${
+                activeTab === 'tables' 
+                  ? 'bg-primary text-primary-foreground' 
+                  : 'text-muted-foreground hover:text-foreground hover:bg-secondary/50'
+              }`}
+            >
+              <MapPin size={16} />
+              {sidebarExpanded && 'Tavoli'}
+            </button>
+            <button
+              onClick={() => setActiveTab('menu')}
+              className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors ${
+                activeTab === 'menu' 
+                  ? 'bg-primary text-primary-foreground' 
+                  : 'text-muted-foreground hover:text-foreground hover:bg-secondary/50'
+              }`}
+            >
+              <BookOpen size={16} />
+              {sidebarExpanded && 'Menu'}
+            </button>
+            <button
+              onClick={() => setActiveTab('reservations')}
+              className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors ${
+                activeTab === 'reservations' 
+                  ? 'bg-primary text-primary-foreground' 
+                  : 'text-muted-foreground hover:text-foreground hover:bg-secondary/50'
+              }`}
+            >
+              <Calendar size={16} />
+              {sidebarExpanded && 'Prenotazioni'}
+            </button>
+            <button
+              onClick={() => setActiveTab('settings')}
+              className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors ${
+                activeTab === 'settings' 
+                  ? 'bg-primary text-primary-foreground' 
+                  : 'text-muted-foreground hover:text-foreground hover:bg-secondary/50'
+              }`}
+            >
+              <Gear size={16} />
+              {sidebarExpanded && 'Impostazioni'}
+            </button>
+          </div>
         </nav>
 
-        <div className="p-2">
-          <Button variant="outline" onClick={onLogout} className={`w-full ${!sidebarExpanded && 'px-2'} transition-all duration-200 hover:shadow-gold hover:bg-destructive/5 hover:border-destructive/20 hover:text-destructive`}>
+        {/* Sidebar Footer */}
+        <div className="border-t border-border p-2">
+          <Button
+            variant="ghost"
+            onClick={onLogout}
+            className={`w-full ${sidebarExpanded ? 'justify-start' : 'justify-center'} text-muted-foreground hover:text-foreground`}
+          >
             <SignOut size={16} />
-            {sidebarExpanded && <span className="ml-2 transition-all duration-200">Esci</span>}
+            {sidebarExpanded && <span className="ml-3">Logout</span>}
           </Button>
         </div>
       </div>
 
       {/* Main Content */}
-      <div className={`flex-1 p-6 transition-all duration-300 ${
-        sidebarExpanded ? 'ml-64' : 'ml-16'
-      }`}>
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          {/* Orders Tab */}
-          <TabsContent value="orders" className="space-y-4">
-            <div className="flex items-center justify-between">
-              <h2 className="text-2xl font-bold text-foreground">Gestione Ordini</h2>
-              <div className="flex gap-2">
-                <Select value={orderViewMode} onValueChange={(value: 'table' | 'dish') => setOrderViewMode(value)}>
-                  <SelectTrigger className="w-36">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="table">Per Tavoli</SelectItem>
-                    <SelectItem value="dish">Per Piatti</SelectItem>
-                  </SelectContent>
-                </Select>
-                <Badge variant="secondary" className="text-sm">
-                  {restaurantOrders.length} {restaurantOrders.length === 1 ? 'ordine' : 'ordini'} attivo
-                </Badge>
-              </div>
-            </div>
-            
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-              {restaurantOrders.map(order => {
-                const table = restaurantTables.find(t => t.id === order.tableId)
-                
-                return (
-                  <Card key={order.id} className="bg-white border-l-4 border-l-yellow-400 shadow-professional hover:shadow-professional-lg transition-all duration-300 hover-lift">
-                    <CardHeader className="pb-3">
-                      <div className="flex items-center justify-between">
-                        <CardTitle className="text-lg font-semibold">{table?.name || 'Tavolo sconosciuto'}</CardTitle>
-                        <Badge variant="outline" className="text-xs">
-                          {getTimeAgo(order.timestamp)}
-                        </Badge>
-                      </div>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                      <div className="space-y-3">
-                        {order.items.map((item) => {
-                          const menuItem = restaurantMenuItems.find(m => m.id === item.menuItemId)
-                          const completedQuantity = item.completedQuantity || 0
-                          const remainingQuantity = item.quantity - completedQuantity
-                          
-                          return (
-                            <div key={item.id} className="p-3 bg-card-gradient rounded-lg border border-liquid shadow-sm">
-                              <div className="flex items-start justify-between mb-2">
-                                <div className="flex-1">
-                                  <div className="font-medium text-sm">
-                                    {item.quantity}x {menuItem?.name || 'Piatto sconosciuto'}
-                                  </div>
-                                  {item.notes && (
-                                    <div className="text-xs text-muted-foreground italic mt-1">
-                                      {item.notes}
-                                    </div>
-                                  )}
-                                  {completedQuantity > 0 && (
-                                    <div className="text-xs text-green-600 font-medium mt-1">
-                                      ✓ {completedQuantity} pronti
-                                    </div>
-                                  )}
-                                </div>
-                              </div>
-                              
-                              {remainingQuantity > 0 && (
-                                <Button 
-                                  onClick={() => handleCompleteDish(order.id, item.id)}
-                                  size="sm"
-                                  className="w-full bg-green-600 hover:bg-green-700 text-white shadow-md hover:shadow-lg transition-all duration-200 text-xs py-1.5"
-                                >
-                                  Pronto ({remainingQuantity} da fare)
-                                </Button>
-                              )}
-                              
-                              {remainingQuantity === 0 && (
-                                <div className="w-full py-1.5 text-center bg-green-100 text-green-700 rounded text-xs font-medium">
-                                  ✓ Completato
-                                </div>
-                              )}
-                            </div>
-                          )
-                        })}
-                      </div>
-                    </CardContent>
-                  </Card>
-                )
-              })}
-              
-              {restaurantOrders.length === 0 && (
-                <Card className="col-span-full shadow-professional">
-                  <CardContent className="text-center py-8">
-                    <Clock size={48} className="mx-auto text-muted-foreground mb-4" />
-                    <p className="text-muted-foreground">Nessun ordine attivo</p>
-                  </CardContent>
-                </Card>
-              )}
-            </div>
+      <div className="flex-1 flex flex-col">
+        {/* Top Header */}
+        <div className="bg-background border-b border-border px-6 py-4">
+          <div className="flex items-center justify-between">
+            <h2 className="text-xl font-semibold text-foreground">
+              {activeTab === 'orders' && 'Gestione Ordini'}
+              {activeTab === 'tables' && 'Gestione Tavoli'}
+              {activeTab === 'menu' && 'Gestione Menu'}
+              {activeTab === 'reservations' && 'Prenotazioni'}
+              {activeTab === 'settings' && 'Impostazioni'}
+            </h2>
+          </div>
+        </div>
 
-            {/* Completed Orders Section */}
-            {restaurantCompletedOrders.length > 0 && (
-              <>
-                <Separator className="my-6" />
+        {/* Content Area */}
+        <div className="flex-1 p-6 overflow-auto">
+          <div className="space-y-6">
+
+            {/* Orders Tab */}
+            {activeTab === 'orders' && (
+              <div className="space-y-6">
                 <div className="flex items-center justify-between">
-                  <h3 className="text-xl font-semibold text-foreground">Ordini Completati</h3>
-                  <Badge variant="secondary" className="text-sm">
-                    {restaurantCompletedOrders.length} {restaurantCompletedOrders.length === 1 ? 'completato' : 'completati'}
-                  </Badge>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant={orderViewMode === 'table' ? 'default' : 'outline'}
+                      size="sm"
+                      onClick={() => setOrderViewMode('table')}
+                    >
+                      Per Tavolo
+                    </Button>
+                    <Button
+                      variant={orderViewMode === 'dish' ? 'default' : 'outline'}
+                      size="sm"
+                      onClick={() => setOrderViewMode('dish')}
+                    >
+                      Per Piatto
+                    </Button>
+                  </div>
                 </div>
-                
-                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                  {restaurantCompletedOrders.map(order => {
+
+                {/* Active Orders */}
+                <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
+                  {restaurantOrders.map(order => {
                     const table = restaurantTables.find(t => t.id === order.tableId)
-                    
                     return (
-                      <Card key={order.id} className="bg-green-50 border-l-4 border-l-green-400 shadow-professional hover:shadow-professional-lg transition-all duration-300 hover-lift">
-                        <CardHeader className="pb-3">
+                      <Card key={order.id} className="shadow-professional hover:shadow-professional-lg transition-all duration-300">
+                        <CardHeader className="pb-2">
                           <div className="flex items-center justify-between">
-                            <CardTitle className="text-lg font-semibold">{table?.name || 'Tavolo sconosciuto'}</CardTitle>
-                            <Badge variant="outline" className="text-xs bg-green-100">
-                              Completato
+                            <CardTitle className="text-sm font-semibold">
+                              {table?.name || 'Tavolo sconosciuto'}
+                            </CardTitle>
+                            <Badge variant={order.status === 'waiting' ? 'default' : 'secondary'} className="text-xs">
+                              {order.status === 'waiting' ? 'In attesa' : 'In preparazione'}
                             </Badge>
                           </div>
-                        </CardHeader>
-                        <CardContent className="space-y-3">
-                          <div className="space-y-2">
-                            {order.items.map((item, index) => {
-                              const menuItem = restaurantMenuItems.find(m => m.id === item.menuItemId)
-                              return (
-                                <div key={index} className="flex items-center justify-between text-sm">
-                                  <span className="font-medium">{item.quantity}x {menuItem?.name || 'Piatto sconosciuto'}</span>
-                                </div>
-                              )
-                            })}
+                          <div className="text-xs text-muted-foreground">
+                            {formatTimeAgo(order.timestamp)}
                           </div>
-                          <Separator />
-                          <Button 
-                            variant="outline"
-                            onClick={() => handleUncompleteOrder(order.id)}
-                            className="w-full text-sm shadow-sm hover:shadow-md transition-all duration-200"
-                          >
-                            Riporta in Attesa
-                          </Button>
+                        </CardHeader>
+                        <CardContent className="space-y-2">
+                          {order.items.map(item => {
+                            const menuItem = restaurantMenuItems.find(m => m.id === item.menuItemId)
+                            const completedQuantity = item.completedQuantity || 0
+                            const remainingQuantity = item.quantity - completedQuantity
+                            
+                            return (
+                              <div key={item.id} className="flex items-center justify-between p-2 bg-background/50 rounded-lg">
+                                <div className="flex-1">
+                                  <div className="text-xs font-medium">{menuItem?.name}</div>
+                                  <div className="text-xs text-muted-foreground">
+                                    Qta: {item.quantity} {completedQuantity > 0 && `(${remainingQuantity} rimasti)`}
+                                  </div>
+                                  {item.notes && (
+                                    <div className="text-xs text-accent italic">{item.notes}</div>
+                                  )}
+                                </div>
+                                {remainingQuantity > 0 && (
+                                  <Button
+                                    size="sm"
+                                    onClick={() => handleCompleteOrderItem(order.id, item.id)}
+                                    className="h-6 w-12 text-xs bg-green-600 hover:bg-green-700 text-white"
+                                  >
+                                    Pronto
+                                  </Button>
+                                )}
+                              </div>
+                            )
+                          })}
                         </CardContent>
                       </Card>
                     )
                   })}
                 </div>
-              </>
-            )}
 
-            {/* Order History Section */}
-            {restaurantOrderHistory.length > 0 && (
-              <>
-                <Separator className="my-6" />
-                <div className="flex items-center justify-between">
-                  <h3 className="text-xl font-semibold text-foreground">Storico Ordini</h3>
-                  <Badge variant="secondary" className="text-sm">
-                    {restaurantOrderHistory.length} {restaurantOrderHistory.length === 1 ? 'storico' : 'storici'}
-                  </Badge>
-                </div>
-                
-                <div className="grid gap-4 md:grid-cols-1 lg:grid-cols-2">
-                  {restaurantOrderHistory
-                    .sort((a, b) => b.paidAt - a.paidAt)
-                    .slice(0, 10)
-                    .map(order => {
+                {/* Completed Orders Section */}
+                <div className="mt-8">
+                  <h3 className="text-xl font-bold text-foreground mb-4">Ordini Completati</h3>
+                  <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
+                    {completedOrders?.map(order => {
+                      const table = restaurantTables.find(t => t.id === order.tableId)
                       return (
-                        <Card key={order.id} className="bg-gray-50 border-l-4 border-l-gray-400 shadow-professional">
-                          <CardHeader className="pb-3">
-                            <div className="flex items-center justify-between">
-                              <CardTitle className="text-lg font-semibold">{order.tableName}</CardTitle>
-                              <div className="text-right">
-                                <Badge variant="outline" className="text-xs bg-gray-100">
-                                  Pagato
-                                </Badge>
-                                <p className="text-xs text-muted-foreground mt-1">
-                                  {new Date(order.paidAt).toLocaleDateString('it-IT')}
-                                </p>
-                              </div>
-                            </div>
+                        <Card key={order.id} className="bg-green-50 border-green-200 shadow-professional">
+                          <CardHeader className="pb-2">
+                            <CardTitle className="text-sm font-semibold text-green-800">
+                              {table?.name || 'Tavolo sconosciuto'} - Completato
+                            </CardTitle>
                           </CardHeader>
-                          <CardContent className="space-y-3">
-                            <div className="space-y-2">
-                              {order.items.slice(0, 3).map((item, index) => (
-                                <div key={index} className="flex items-center justify-between text-sm">
-                                  <span className="font-medium">{item.quantity}x {item.name}</span>
-                                  <span className="text-muted-foreground">€{(item.price * item.quantity).toFixed(2)}</span>
-                                </div>
-                              ))}
-                              {order.items.length > 3 && (
-                                <p className="text-xs text-muted-foreground">
-                                  ...e altri {order.items.length - 3} piatti
-                                </p>
-                              )}
-                            </div>
-                            <Separator />
-                            <div className="flex justify-between items-center">
-                              <span className="font-bold text-primary">Totale: €{order.total.toFixed(2)}</span>
-                              <span className="text-xs text-muted-foreground">
-                                {formatTime(order.timestamp)}
-                              </span>
+                          <CardContent>
+                            <div className="text-xs text-green-600">
+                              Completato alle {new Date(order.timestamp).toLocaleTimeString()}
                             </div>
                           </CardContent>
                         </Card>
                       )
-                    })
-                  }
-                </div>
-              </>
-            )}
-          </TabsContent>
-
-          {/* Tables Tab */}
-          <TabsContent value="tables" className="space-y-4">
-            <div className="flex items-center justify-between">
-              <h2 className="text-2xl font-bold text-foreground">Gestione Tavoli</h2>
-              <Dialog>
-                <DialogTrigger asChild>
-                  <Button>
-                    <Plus size={16} className="mr-2" />
-                    Aggiungi Tavolo
-                  </Button>
-                </DialogTrigger>
-                <DialogContent>
-                  <DialogHeader>
-                    <DialogTitle>Nuovo Tavolo</DialogTitle>
-                  </DialogHeader>
-                  <div className="space-y-4">
-                    <div>
-                      <Label htmlFor="table-name">Nome Tavolo</Label>
-                      <Input
-                        id="table-name"
-                        value={newTableName}
-                        onChange={(e) => setNewTableName(e.target.value)}
-                        placeholder="es. Tavolo 1"
-                      />
-                    </div>
-                    <Button onClick={handleCreateTable} className="w-full">
-                      Crea Tavolo
-                    </Button>
+                    }) || []}
                   </div>
-                </DialogContent>
-              </Dialog>
-            </div>
-            
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-              {restaurantTables.map(table => (
-                <Card key={table.id} className={`shadow-professional hover:shadow-professional-lg transition-all duration-300 ${!table.isActive ? 'opacity-75 bg-gray-50 border-2 border-dashed border-gray-300' : 'bg-white'}`}>
-                  <CardHeader className="pb-3">
-                    <div className="flex items-center justify-between">
-                      <CardTitle className={`text-lg flex items-center gap-2 ${!table.isActive ? 'font-bold' : ''}`}>
-                        <div className={`w-8 h-8 rounded border-2 flex items-center justify-center text-xs font-bold ${
-                          table.isActive ? 'bg-green-100 border-green-400 text-green-700' : 'bg-gray-200 border-gray-500 text-gray-700'
-                        }`}>
-                          {table.name.slice(-1)}
-                        </div>
-                        <span className={!table.isActive ? 'text-gray-900 font-semibold' : ''}>{table.name}</span>
-                      </CardTitle>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleToggleTable(table.id)}
-                        className="h-6 w-6 p-0"
-                        title={table.isActive ? 'Disattiva tavolo' : 'Attiva tavolo'}
-                      >
-                        {table.isActive ? <EyeSlash size={12} /> : <Eye size={12} />}
+                </div>
+              </div>
+            )}
+
+            {/* Tables Tab */}
+            {activeTab === 'tables' && (
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <Dialog open={showTableDialog} onOpenChange={setShowTableDialog}>
+                    <DialogTrigger asChild>
+                      <Button className="shadow-gold hover:shadow-gold-lg">
+                        <Plus size={16} className="mr-2" />
+                        Nuovo Tavolo
                       </Button>
-                    </div>
-                  </CardHeader>
-                  <CardContent className="space-y-3">
-                    {table.isActive ? (
-                      <>
-                        <div className="bg-primary/10 border border-primary/20 rounded-lg p-3 text-center">
-                          <div className="text-xs text-muted-foreground mb-1">PIN Temporaneo</div>
-                          <div className="text-2xl font-bold text-primary tracking-wider">{table.pin}</div>
+                    </DialogTrigger>
+                    <DialogContent>
+                      <DialogHeader>
+                        <DialogTitle>Nuovo Tavolo</DialogTitle>
+                      </DialogHeader>
+                      <div className="space-y-4">
+                        <div>
+                          <Label htmlFor="table-name">Nome Tavolo</Label>
+                          <Input
+                            id="table-name"
+                            value={newTableName}
+                            onChange={(e) => setNewTableName(e.target.value)}
+                            placeholder="es. Tavolo 1"
+                          />
                         </div>
-                        {table.customerCount && (
-                          <div className="text-center">
-                            <div className="text-xs text-muted-foreground">Clienti</div>
-                            <div className="text-lg font-semibold">{table.customerCount}</div>
-                            {currentRestaurant?.allYouCanEat.enabled && table.remainingOrders !== undefined && (
+                        <Button onClick={handleCreateTable} className="w-full">
+                          Crea Tavolo
+                        </Button>
+                      </div>
+                    </DialogContent>
+                  </Dialog>
+                </div>
+                
+                <div className="grid gap-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6">
+                  {restaurantTables.map(table => (
+                    <Card key={table.id} className={`shadow-professional hover:shadow-professional-lg transition-all duration-300 hover-lift ${!table.isActive ? 'opacity-60' : ''}`}>
+                      <CardHeader className="pb-2">
+                        <div className="flex items-center justify-between">
+                          <CardTitle className="text-sm font-semibold">{table.name}</CardTitle>
+                          <Switch
+                            checked={table.isActive}
+                            onCheckedChange={() => handleToggleTable(table.id)}
+                          />
+                        </div>
+                        <Badge 
+                          variant={table.status === 'available' ? 'secondary' : 'default'}
+                          className="text-xs w-fit"
+                        >
+                          {table.status === 'available' ? 'Libero' : 
+                           table.status === 'waiting-order' ? 'Ordinazione' :
+                           table.status === 'eating' ? 'Occupato' : 'Servizio'}
+                        </Badge>
+                      </CardHeader>
+                      <CardContent className="space-y-2">
+                        {table.isActive && (
+                          <>
+                            <div className="text-xs text-muted-foreground">
+                              PIN: <code className="bg-muted px-1 py-0.5 rounded text-xs">{table.pin}</code>
+                            </div>
+                            <div className="flex gap-1">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleShowQrCode(table)}
+                                className="flex-1 text-xs h-7"
+                              >
+                                <QrCode size={12} className="mr-1" />
+                                QR
+                              </Button>
+                              {(table.status !== 'available') && (
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => handleMarkTableAsPaid(table.id)}
+                                  className="flex-1 text-xs h-7"
+                                >
+                                  Salda
+                                </Button>
+                              )}
+                            </div>
+                            {table.customerCount && (
                               <div className="text-xs text-accent">
-                                {table.remainingOrders} ordini rimasti
+                                {table.customerCount} persone
+                              </div>
+                            )}
+                            {calculateTableTotal(table.id) > 0 && (
+                              <div className="text-xs font-medium">
+                                Totale: €{calculateTableTotal(table.id).toFixed(2)}
+                              </div>
+                            )}
+                          </>
+                        )}
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Menu Tab */}
+            {activeTab === 'menu' && (
+              <div className="space-y-6">
+                <div className="flex items-center justify-between">
+                  <div className="flex gap-2">
+                    <Dialog open={showCategoryDialog} onOpenChange={setShowCategoryDialog}>
+                      <DialogTrigger asChild>
+                        <Button variant="outline" className="shadow-gold hover:shadow-gold-lg">
+                          Gestisci Categorie
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent className="max-w-md">
+                        <DialogHeader>
+                          <DialogTitle>Gestione Categorie</DialogTitle>
+                        </DialogHeader>
+                        <div className="space-y-4">
+                          <div className="flex gap-2">
+                            <Input
+                              value={newCategory}
+                              onChange={(e) => setNewCategory(e.target.value)}
+                              placeholder="Nome categoria"
+                            />
+                            <Button onClick={handleCreateCategory}>
+                              <Plus size={16} />
+                            </Button>
+                          </div>
+                          <div className="space-y-2 max-h-60 overflow-y-auto">
+                            {restaurantCategories.map(category => (
+                              <div key={category.id}>
+                                {editingCategory?.id === category.id ? (
+                                  <div className="flex items-center gap-2 p-2 bg-secondary/20 rounded">
+                                    <Input
+                                      value={editCategoryName}
+                                      onChange={(e) => setEditCategoryName(e.target.value)}
+                                      className="flex-1"
+                                    />
+                                    <Button
+                                      size="sm"
+                                      onClick={handleSaveEditCategory}
+                                    >
+                                      <Check size={14} />
+                                    </Button>
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      onClick={() => {
+                                        setEditingCategory(null)
+                                        setEditCategoryName('')
+                                      }}
+                                    >
+                                      <X size={14} />
+                                    </Button>
+                                  </div>
+                                ) : (
+                                  <div className="flex items-center justify-between p-2 bg-secondary/20 rounded">
+                                    <span className="text-sm">{category.name}</span>
+                                    <div className="flex gap-1">
+                                      <Button
+                                        variant="outline"
+                                        size="sm"
+                                        className="h-6 w-6 p-0"
+                                        onClick={() => handleEditCategory(category)}
+                                      >
+                                        <PencilSimple size={10} />
+                                      </Button>
+                                      <Button
+                                        variant="outline"
+                                        size="sm"
+                                        className="h-6 w-6 p-0"
+                                        onClick={() => handleToggleCategoryVisibility(category.id)}
+                                      >
+                                        {category.isActive ? <Eye size={10} /> : <EyeSlash size={10} />}
+                                      </Button>
+                                      <Button
+                                        variant="outline"
+                                        size="sm"
+                                        className="h-6 w-6 p-0 text-destructive"
+                                        onClick={() => handleDeleteCategory(category.id)}
+                                      >
+                                        <Trash size={10} />
+                                      </Button>
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      </DialogContent>
+                    </Dialog>
+                    <Dialog open={showMenuDialog} onOpenChange={setShowMenuDialog}>
+                      <DialogTrigger asChild>
+                        <Button className="shadow-gold hover:shadow-gold-lg">
+                          <Plus size={16} className="mr-2" />
+                          Nuovo Piatto
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent>
+                        <DialogHeader>
+                          <DialogTitle>Nuovo Piatto</DialogTitle>
+                        </DialogHeader>
+                        <div className="space-y-4">
+                          <div>
+                            <Label htmlFor="item-name">Nome Piatto</Label>
+                            <Input
+                              id="item-name"
+                              value={newMenuItem.name}
+                              onChange={(e) => setNewMenuItem(prev => ({ ...prev, name: e.target.value }))}
+                            />
+                          </div>
+                          <div>
+                            <Label htmlFor="item-description">Descrizione</Label>
+                            <Textarea
+                              id="item-description"
+                              value={newMenuItem.description}
+                              onChange={(e) => setNewMenuItem(prev => ({ ...prev, description: e.target.value }))}
+                            />
+                          </div>
+                          <div>
+                            <Label htmlFor="item-price">Prezzo (€)</Label>
+                            <Input
+                              id="item-price"
+                              type="number"
+                              step="0.01"
+                              value={newMenuItem.price}
+                              onChange={(e) => setNewMenuItem(prev => ({ ...prev, price: e.target.value }))}
+                            />
+                          </div>
+                          <div>
+                            <Label htmlFor="item-category">Categoria</Label>
+                            <Select value={newMenuItem.category} onValueChange={(value) => setNewMenuItem(prev => ({ ...prev, category: value }))}>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Seleziona categoria" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {restaurantCategories.filter(c => c.isActive).map(category => (
+                                  <SelectItem key={category.id} value={category.name}>
+                                    {category.name}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          <div>
+                            <Label htmlFor="item-image">Immagine (opzionale)</Label>
+                            <Input
+                              id="item-image"
+                              type="file"
+                              accept="image/*"
+                              onChange={handleImageUpload}
+                            />
+                            {newMenuItem.image && (
+                              <div className="mt-2">
+                                <img 
+                                  src={newMenuItem.image} 
+                                  alt="Preview" 
+                                  className="w-20 h-20 object-cover rounded"
+                                />
                               </div>
                             )}
                           </div>
-                        )}
-                        <div className="flex flex-wrap gap-2">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => {
-                              setSelectedTable(table)
-                              setShowQrDialog(true)
-                            }}
-                            className="text-xs flex-1"
-                          >
-                            QR Code
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => {
-                              setSelectedTable(table)
-                              setShowTableDialog(true)
-                            }}
-                            className="text-xs flex-1"
-                          >
-                            Conto
+                          <Button onClick={handleCreateMenuItem} className="w-full">
+                            Aggiungi Piatto
                           </Button>
                         </div>
-                        <div className="flex gap-2">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="text-xs h-8 w-8 p-0"
-                            title="Modifica tavolo"
-                          >
-                            <PencilSimple size={14} />
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleDeleteTable(table.id)}
-                            className="text-xs text-destructive hover:bg-destructive/10 h-8 w-8 p-0"
-                            title="Elimina tavolo"
-                          >
-                            <Trash size={14} />
-                          </Button>
-                        </div>
-                      </>
-                    ) : (
-                      <>
-                        <div className="bg-gray-100 border-2 border-gray-300 rounded-lg p-3 text-center">
-                          <div className="text-base font-medium text-gray-700">Tavolo Vuoto</div>
-                          <div className="text-sm text-gray-600 mt-1">Clicca "Attiva" per iniziare</div>
-                        </div>
-                        <Button
-                          onClick={() => handleToggleTable(table.id)}
-                          className="w-full bg-green-600 hover:bg-green-700 text-white font-semibold shadow-md hover:shadow-lg"
-                          size="sm"
-                        >
-                          Attiva Tavolo
-                        </Button>
-                        <div className="flex gap-2">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="text-xs h-8 w-8 p-0"
-                            title="Modifica tavolo"
-                          >
-                            <PencilSimple size={14} />
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleDeleteTable(table.id)}
-                            className="text-xs text-destructive hover:bg-destructive/10 h-8 w-8 p-0"
-                            title="Elimina tavolo"
-                          >
-                            <Trash size={14} />
-                          </Button>
-                        </div>
-                      </>
-                    )}
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          </TabsContent>
+                      </DialogContent>
+                    </Dialog>
+                  </div>
+                </div>
 
-          {/* Menu Tab */}
-          <TabsContent value="menu" className="space-y-4">
-            <div className="flex items-center justify-between">
-              <h2 className="text-2xl font-bold text-foreground">Gestione Menu</h2>
-              <div className="flex gap-2">
-                <Dialog open={showCategoryDialog} onOpenChange={setShowCategoryDialog}>
-                  <DialogTrigger asChild>
-                    <Button variant="outline">
-                      <List size={16} className="mr-2" />
-                      Gestisci Categorie
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent className="max-w-2xl">
-                    <DialogHeader>
-                      <DialogTitle>Gestione Categorie</DialogTitle>
-                      <DialogDescription>
-                        Riordina le categorie trascinandole per cambiare l'ordine nel menu
-                      </DialogDescription>
-                    </DialogHeader>
-                    <div className="space-y-4">
-                      <div className="flex gap-2">
-                        <Input
-                          value={newCategory}
-                          onChange={(e) => setNewCategory(e.target.value)}
-                          placeholder="Nome nuova categoria"
-                        />
-                        <Button onClick={handleCreateCategory}>
-                          <Plus size={16} />
-                        </Button>
-                      </div>
-                      
-                      <div className="space-y-2 max-h-96 overflow-y-auto">
-                        {restaurantCategories?.sort((a, b) => a.order - b.order).map((category) => {
-                          const categoryItemsCount = restaurantMenuItems.filter(item => item.category === category.name).length
-                          const isDragging = draggedCategory?.id === category.id
-                          
-                          return (
-                            <div 
-                              key={category.id} 
-                              className={`flex items-center justify-between p-3 bg-muted/50 rounded-lg border-2 cursor-move transition-all duration-200 ${
-                                isDragging ? 'border-primary bg-primary/10 scale-105 shadow-lg' : 'border-transparent hover:border-primary/20 hover:bg-muted/70'
-                              }`}
-                              draggable
-                              onDragStart={(e) => handleDragStart(e, category)}
-                              onDragOver={handleDragOver}
-                              onDrop={(e) => handleDrop(e, category)}
-                              onDragEnd={handleDragEnd}
-                            >
-                              <div className="flex items-center gap-3">
-                                <div className="text-muted-foreground cursor-move">⋮⋮</div>
-                                <div>
-                                  {editingCategory?.id === category.id ? (
-                                    <div className="flex gap-2">
-                                      <Input
-                                        value={editCategoryName}
-                                        onChange={(e) => setEditCategoryName(e.target.value)}
-                                        className="h-8 text-sm"
-                                        placeholder="Nome categoria"
-                                        onKeyDown={(e) => {
-                                          if (e.key === 'Enter') handleSaveCategory()
-                                          if (e.key === 'Escape') handleCancelEdit()
-                                        }}
-                                        autoFocus
-                                      />
-                                      <Button
-                                        variant="ghost"
-                                        size="sm"
-                                        onClick={handleSaveCategory}
-                                        className="h-8 w-8 p-0 text-green-600 hover:bg-green-600/10"
-                                      >
-                                        <Check size={14} />
-                                      </Button>
-                                      <Button
-                                        variant="ghost"
-                                        size="sm"
-                                        onClick={handleCancelEdit}
-                                        className="h-8 w-8 p-0 text-red-600 hover:bg-red-600/10"
-                                      >
-                                        <X size={14} />
-                                      </Button>
-                                    </div>
-                                  ) : (
-                                    <>
-                                      <p className="font-medium">{category.name}</p>
-                                      <p className="text-sm text-muted-foreground">
-                                        {categoryItemsCount} piatt{categoryItemsCount === 1 ? 'o' : 'i'}
-                                      </p>
-                                    </>
-                                  )}
-                                </div>
-                              </div>
-                              <div className="flex gap-2">
-                                {editingCategory?.id !== category.id && (
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    onClick={() => handleEditCategory(category)}
-                                    className="h-8 w-8 p-0 text-primary hover:bg-primary/10"
-                                    title="Modifica categoria"
-                                  >
-                                    <PencilSimple size={16} />
-                                  </Button>
-                                )}
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => handleToggleCategory(category.id)}
-                                  className="h-8 w-8 p-0"
-                                  title={category.isActive ? 'Disattiva categoria' : 'Attiva categoria'}
-                                >
-                                  {category.isActive ? <Eye size={16} /> : <EyeSlash size={16} />}
-                                </Button>
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => handleDeleteCategory(category.name)}
-                                  disabled={categoryItemsCount > 0}
-                                  className="h-8 w-8 p-0 text-destructive hover:bg-destructive/10"
-                                >
-                                  <Trash size={16} />
-                                </Button>
-                              </div>
-                            </div>
-                          )
-                        })}
-                      </div>
-                    </div>
-                  </DialogContent>
-                </Dialog>
-                
-                <Dialog open={showMenuDialog} onOpenChange={setShowMenuDialog}>
-                  <DialogTrigger asChild>
-                    <Button>
-                      <Plus size={16} className="mr-2" />
-                      Nuovo Piatto
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent>
-                    <DialogHeader>
-                      <DialogTitle>Aggiungi Nuovo Piatto</DialogTitle>
-                    </DialogHeader>
-                    <div className="space-y-4">
-                      <div>
-                        <Label htmlFor="dishName">Nome Piatto</Label>
-                        <Input
-                          id="dishName"
-                          value={newMenuItem.name}
-                          onChange={(e) => setNewMenuItem(prev => ({ ...prev, name: e.target.value }))}
-                          placeholder="Es: Spaghetti alla Carbonara"
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="dishDescription">Descrizione</Label>
-                        <Textarea
-                          id="dishDescription"
-                          value={newMenuItem.description}
-                          onChange={(e) => setNewMenuItem(prev => ({ ...prev, description: e.target.value }))}
-                          placeholder="Descrizione del piatto..."
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="dishPrice">Prezzo (€)</Label>
-                        <Input
-                          id="dishPrice"
-                          type="number"
-                          step="0.01"
-                          value={newMenuItem.price}
-                          onChange={(e) => setNewMenuItem(prev => ({ ...prev, price: e.target.value }))}
-                          placeholder="12.00"
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="dishCategory">Categoria</Label>
-                        <Select
-                          value={newMenuItem.category}
-                          onValueChange={(value) => setNewMenuItem(prev => ({ ...prev, category: value }))}
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder="Seleziona categoria" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {restaurantCategories?.filter(cat => cat.isActive).map((category) => (
-                              <SelectItem key={category.id} value={category.name}>{category.name}</SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <div>
-                        <Label htmlFor="dishImage">URL Immagine (opzionale)</Label>
-                        <Input
-                          id="dishImage"
-                          value={newMenuItem.image}
-                          onChange={(e) => setNewMenuItem(prev => ({ ...prev, image: e.target.value }))}
-                          placeholder="https://esempio.com/immagine.jpg"
-                        />
-                        {newMenuItem.image && (
-                          <div className="mt-2">
-                            <img 
-                              src={newMenuItem.image} 
-                              alt="Anteprima" 
-                              className="w-full h-32 object-cover rounded-lg"
-                              onError={(e) => {
-                                (e.target as HTMLImageElement).style.display = 'none'
+                {/* Menu Items Grid */}
+                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                  {restaurantMenuItems.map(item => (
+                    <Card key={item.id} className="shadow-professional hover:shadow-professional-lg transition-all duration-300">
+                      {item.image && (
+                        <div className="w-full h-32 bg-muted">
+                          <img 
+                            src={item.image} 
+                            alt={item.name}
+                            className="w-full h-full object-cover rounded-t-lg"
+                          />
+                        </div>
+                      )}
+                      <CardHeader className="pb-2">
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1">
+                            <CardTitle className="text-sm font-semibold">{item.name}</CardTitle>
+                            <CardDescription className="text-xs mt-1">
+                              {item.description}
+                            </CardDescription>
+                          </div>
+                          <div className="text-right">
+                            <div className="text-lg font-bold">€{item.price.toFixed(2)}</div>
+                            <Badge variant="outline" className="text-xs">
+                              {item.category}
+                            </Badge>
+                          </div>
+                        </div>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="flex items-center justify-between">
+                          <Badge variant={item.isActive ? 'default' : 'secondary'} className="text-xs">
+                            {item.isActive ? 'Attivo' : 'Disattivo'}
+                          </Badge>
+                          <div className="flex gap-1">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => {
+                                setMenuItems(prev => prev?.map(m => 
+                                  m.id === item.id ? { ...m, isActive: !m.isActive } : m
+                                ) || [])
                               }}
+                            >
+                              {item.isActive ? <EyeSlash size={14} /> : <Eye size={14} />}
+                            </Button>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Reservations Tab */}
+            {activeTab === 'reservations' && (
+              <ReservationsManager
+                user={user}
+                tables={restaurantTables}
+                reservations={reservations || []}
+                setReservations={setReservations}
+              />
+            )}
+
+            {/* Settings Tab */}
+            {activeTab === 'settings' && (
+              <div className="space-y-6">
+                {currentRestaurant && (
+                  <div className="grid gap-6 md:grid-cols-2">
+                    <Card className="shadow-professional">
+                      <CardHeader>
+                        <CardTitle>Informazioni Generali</CardTitle>
+                      </CardHeader>
+                      <CardContent className="space-y-4">
+                        <div>
+                          <Label>Nome Ristorante</Label>
+                          <Input
+                            value={currentRestaurant.name}
+                            onChange={(e) => handleUpdateRestaurantSettings({ name: e.target.value })}
+                          />
+                        </div>
+                        <div>
+                          <Label>Contatto</Label>
+                          <Input
+                            value={currentRestaurant.contact}
+                            onChange={(e) => handleUpdateRestaurantSettings({ contact: e.target.value })}
+                          />
+                        </div>
+                        <div>
+                          <Label>Orari</Label>
+                          <Input
+                            value={currentRestaurant.hours}
+                            onChange={(e) => handleUpdateRestaurantSettings({ hours: e.target.value })}
+                          />
+                        </div>
+                      </CardContent>
+                    </Card>
+
+                    <Card className="shadow-professional">
+                      <CardHeader>
+                        <CardTitle>Tariffe</CardTitle>
+                      </CardHeader>
+                      <CardContent className="space-y-4">
+                        <div>
+                          <Label>Coperto per persona (€)</Label>
+                          <Input
+                            type="number"
+                            step="0.01"
+                            value={currentRestaurant.coverChargePerPerson}
+                            onChange={(e) => handleUpdateRestaurantSettings({ 
+                              coverChargePerPerson: parseFloat(e.target.value) || 0 
+                            })}
+                          />
+                        </div>
+                        
+                        <Separator />
+                        
+                        <div className="space-y-4">
+                          <div className="flex items-center justify-between">
+                            <Label>All You Can Eat</Label>
+                            <Switch
+                              checked={currentRestaurant.allYouCanEat.enabled}
+                              onCheckedChange={(enabled) => handleUpdateRestaurantSettings({
+                                allYouCanEat: { ...currentRestaurant.allYouCanEat, enabled }
+                              })}
                             />
                           </div>
-                        )}
-                      </div>
-                      <Button onClick={handleCreateMenuItem} className="w-full">
-                        Aggiungi Piatto
-                      </Button>
-                    </div>
-                  </DialogContent>
-                </Dialog>
-              </div>
-            </div>
-
-            <div className="space-y-8">
-              {restaurantCategories?.filter(cat => cat.isActive).sort((a, b) => a.order - b.order).map((category) => {
-                const categoryItems = restaurantMenuItems.filter(item => item.category === category.name)
-                
-                if (categoryItems.length === 0) return null
-                
-                return (
-                  <div key={category.id} className="space-y-4">
-                    <div className="flex items-center justify-between">
-                      <h3 className="text-xl font-semibold text-primary">{category.name}</h3>
-                      <div className="flex items-center gap-2">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleEditCategory(category)}
-                          className="h-8 w-8 p-0"
-                          title="Modifica nome categoria"
-                        >
-                          <PencilSimple size={16} />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleToggleCategory(category.id)}
-                          className="h-8 w-8 p-0"
-                          title={category.isActive ? 'Disattiva categoria' : 'Attiva categoria'}
-                        >
-                          {category.isActive ? <Eye size={16} /> : <EyeSlash size={16} />}
-                        </Button>
-                      </div>
-                    </div>
-                    <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-                      {categoryItems.map((item) => (
-                        <Card key={item.id} className={`shadow-professional hover:shadow-professional-lg transition-all duration-300 ${!item.isActive ? 'opacity-50' : ''}`}>
-                          {item.image && (
-                            <div className="relative">
-                              <img 
-                                src={item.image} 
-                                alt={item.name}
-                                className="w-full h-48 object-cover rounded-t-lg"
-                                onError={(e) => {
-                                  (e.target as HTMLImageElement).style.display = 'none'
-                                }}
-                              />
-                              {!item.isActive && (
-                                <div className="absolute inset-0 bg-black/50 rounded-t-lg flex items-center justify-center">
-                                  <Badge variant="secondary">Non Disponibile</Badge>
-                                </div>
-                              )}
-                            </div>
+                          
+                          {currentRestaurant.allYouCanEat.enabled && (
+                            <>
+                              <div>
+                                <Label>Prezzo per persona (€)</Label>
+                                <Input
+                                  type="number"
+                                  step="0.01"
+                                  value={currentRestaurant.allYouCanEat.pricePerPerson}
+                                  onChange={(e) => handleUpdateRestaurantSettings({
+                                    allYouCanEat: {
+                                      ...currentRestaurant.allYouCanEat,
+                                      pricePerPerson: parseFloat(e.target.value) || 0
+                                    }
+                                  })}
+                                />
+                              </div>
+                              <div>
+                                <Label>Massimo ordini per tavolo</Label>
+                                <Input
+                                  type="number"
+                                  value={currentRestaurant.allYouCanEat.maxOrders}
+                                  onChange={(e) => handleUpdateRestaurantSettings({
+                                    allYouCanEat: {
+                                      ...currentRestaurant.allYouCanEat,
+                                      maxOrders: parseInt(e.target.value) || 1
+                                    }
+                                  })}
+                                />
+                              </div>
+                            </>
                           )}
-                          <CardHeader className="pb-3">
-                            <div className="flex items-start justify-between">
-                              <div className="flex-1">
-                                <CardTitle className="text-lg">{item.name}</CardTitle>
-                                <p className="text-sm text-muted-foreground mt-1">{item.description}</p>
-                              </div>
-                              <div className="text-right ml-4">
-                                <div className="font-bold text-primary text-lg">€{item.price.toFixed(2)}</div>
-                                {!item.image && (
-                                  <Badge variant={item.isActive ? "default" : "secondary"} className="text-xs">
-                                    {item.isActive ? "Disponibile" : "Non Disponibile"}
-                                  </Badge>
-                                )}
-                              </div>
-                            </div>
-                          </CardHeader>
-                          <CardContent>
-                            <div className="flex gap-2 flex-wrap">
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => handleToggleMenuItem(item.id)}
-                                className="h-8 w-8 p-0"
-                                title={item.isActive ? 'Disattiva piatto' : 'Attiva piatto'}
-                              >
-                                {item.isActive ? <Eye size={14} /> : <EyeSlash size={14} />}
-                              </Button>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                className="h-8 w-8 p-0"
-                              >
-                                <PencilSimple size={14} />
-                              </Button>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => handleDeleteMenuItem(item.id)}
-                                className="h-8 w-8 p-0 text-destructive hover:bg-destructive/10"
-                              >
-                                <Trash size={14} />
-                              </Button>
-                              {currentRestaurant?.allYouCanEat.enabled && (
-                                <Button
-                                  variant={item.excludeFromAllYouCanEat ? "destructive" : "outline"}
-                                  size="sm"
-                                  onClick={() => handleToggleAllYouCanEatExclusion(item.id)}
-                                  className="h-8 text-xs px-2"
-                                  title={item.excludeFromAllYouCanEat ? 'Includi in All You Can Eat' : 'Escludi da All You Can Eat'}
-                                >
-                                  {item.excludeFromAllYouCanEat ? 'Escluso' : 'Incluso'}
-                                </Button>
-                              )}
-                            </div>
-                          </CardContent>
-                        </Card>
-                      ))}
-                    </div>
+                        </div>
+                      </CardContent>
+                    </Card>
                   </div>
-                )
-              })}
-            </div>
-          </TabsContent>
-
-          {/* Reservations Tab */}
-          <TabsContent value="reservations" className="space-y-4">
-            <ReservationsManager
-              user={user}
-              tables={tables || []}
-              reservations={reservations || []}
-              setReservations={setReservations}
-            />
-          </TabsContent>
-
-          {/* Analytics Tab */}
-          <TabsContent value="analytics" className="space-y-4">
-            <AnalyticsCharts
-              orders={restaurantOrders}
-              completedOrders={restaurantCompletedOrders}
-              orderHistory={restaurantOrderHistory}
-              menuItems={restaurantMenuItems}
-              categories={restaurantCategories}
-            />
-          </TabsContent>
-
-          {/* Settings Tab */}
-          <TabsContent value="settings" className="space-y-4">
-            <div className="flex items-center justify-between">
-              <h2 className="text-2xl font-bold text-foreground">Impostazioni</h2>
-            </div>
-            
-            <div className="grid gap-6 md:grid-cols-2">
-              {/* Restaurant Info */}
-              <Card className="shadow-professional">
-                <CardHeader>
-                  <CardTitle>Informazioni Ristorante</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div>
-                    <Label htmlFor="restaurantName">Nome Ristorante</Label>
-                    <Input
-                      id="restaurantName"
-                      value={currentRestaurant?.name || ''}
-                      onChange={(e) => {
-                        if (currentRestaurant) {
-                          setRestaurants(restaurants?.map(r => 
-                            r.id === currentRestaurant.id 
-                              ? { ...r, name: e.target.value }
-                              : r
-                          ) || [])
-                        }
-                      }}
-                      placeholder="Nome del ristorante"
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="restaurantContact">Contatto</Label>
-                    <Input
-                      id="restaurantContact"
-                      value={currentRestaurant?.contact || ''}
-                      onChange={(e) => {
-                        if (currentRestaurant) {
-                          setRestaurants(restaurants?.map(r => 
-                            r.id === currentRestaurant.id 
-                              ? { ...r, contact: e.target.value }
-                              : r
-                          ) || [])
-                        }
-                      }}
-                      placeholder="email@ristorante.com"
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="restaurantHours">Orari</Label>
-                    <Input
-                      id="restaurantHours"
-                      value={currentRestaurant?.hours || ''}
-                      onChange={(e) => {
-                        if (currentRestaurant) {
-                          setRestaurants(restaurants?.map(r => 
-                            r.id === currentRestaurant.id 
-                              ? { ...r, hours: e.target.value }
-                              : r
-                          ) || [])
-                        }
-                      }}
-                      placeholder="12:00-23:00"
-                    />
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Cover Charge Settings */}
-              <Card className="shadow-professional">
-                <CardHeader>
-                  <CardTitle>Coperto</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div>
-                    <Label htmlFor="coverCharge">Costo Coperto per Persona (€)</Label>
-                    <Input
-                      id="coverCharge"
-                      type="number"
-                      step="0.50"
-                      min="0"
-                      value={currentRestaurant?.coverChargePerPerson || 0}
-                      onChange={(e) => {
-                        if (currentRestaurant) {
-                          setRestaurants(restaurants?.map(r => 
-                            r.id === currentRestaurant.id 
-                              ? { ...r, coverChargePerPerson: parseFloat(e.target.value) || 0 }
-                              : r
-                          ) || [])
-                        }
-                      }}
-                      placeholder="2.00"
-                    />
-                  </div>
-                  <p className="text-sm text-muted-foreground">
-                    Il coperto verrà automaticamente aggiunto al conto di ogni tavolo in base al numero di persone.
-                  </p>
-                </CardContent>
-              </Card>
-
-              {/* All You Can Eat Settings */}
-              <Card className="shadow-professional md:col-span-2">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    All You Can Eat
-                    <Badge variant={currentRestaurant?.allYouCanEat.enabled ? "default" : "secondary"}>
-                      {currentRestaurant?.allYouCanEat.enabled ? "Attivo" : "Disattivo"}
-                    </Badge>
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="flex items-center space-x-2">
-                    <input
-                      type="checkbox"
-                      id="enableAllYouCanEat"
-                      checked={currentRestaurant?.allYouCanEat.enabled || false}
-                      onChange={(e) => {
-                        if (currentRestaurant) {
-                          setRestaurants(restaurants?.map(r => 
-                            r.id === currentRestaurant.id 
-                              ? { 
-                                  ...r, 
-                                  allYouCanEat: { 
-                                    ...r.allYouCanEat, 
-                                    enabled: e.target.checked 
-                                  } 
-                                }
-                              : r
-                          ) || [])
-                        }
-                      }}
-                      className="rounded"
-                    />
-                    <Label htmlFor="enableAllYouCanEat">Abilita modalità All You Can Eat</Label>
-                  </div>
-
-                  {currentRestaurant?.allYouCanEat.enabled && (
-                    <div className="grid gap-4 md:grid-cols-2">
-                      <div>
-                        <Label htmlFor="allYouCanEatPrice">Prezzo per Persona (€)</Label>
-                        <Input
-                          id="allYouCanEatPrice"
-                          type="number"
-                          step="1.00"
-                          min="0"
-                          value={currentRestaurant?.allYouCanEat.pricePerPerson || 0}
-                          onChange={(e) => {
-                            if (currentRestaurant) {
-                              setRestaurants(restaurants?.map(r => 
-                                r.id === currentRestaurant.id 
-                                  ? { 
-                                      ...r, 
-                                      allYouCanEat: { 
-                                        ...r.allYouCanEat, 
-                                        pricePerPerson: parseFloat(e.target.value) || 0 
-                                      } 
-                                    }
-                                  : r
-                              ) || [])
-                            }
-                          }}
-                          placeholder="25.00"
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="maxOrders">Numero Massimo Ordini per Tavolo</Label>
-                        <Input
-                          id="maxOrders"
-                          type="number"
-                          min="1"
-                          max="10"
-                          value={currentRestaurant?.allYouCanEat.maxOrders || 3}
-                          onChange={(e) => {
-                            if (currentRestaurant) {
-                              setRestaurants(restaurants?.map(r => 
-                                r.id === currentRestaurant.id 
-                                  ? { 
-                                      ...r, 
-                                      allYouCanEat: { 
-                                        ...r.allYouCanEat, 
-                                        maxOrders: parseInt(e.target.value) || 3 
-                                      } 
-                                    }
-                                  : r
-                              ) || [])
-                            }
-                          }}
-                          placeholder="3"
-                        />
-                      </div>
-                    </div>
-                  )}
-
-                  <p className="text-sm text-muted-foreground">
-                    Con All You Can Eat attivo, i clienti pagano un prezzo fisso e possono ordinare liberamente 
-                    entro il limite di ordini impostato. I piatti esclusi verranno addebitati separatamente.
-                  </p>
-                </CardContent>
-              </Card>
-            </div>
-          </TabsContent>
-
-          {/* History Tab */}
-          <TabsContent value="history" className="space-y-4">
-            <div className="flex items-center justify-between">
-              <h2 className="text-2xl font-bold text-foreground">Storico Ordini</h2>
-            </div>
-            
-            {restaurantOrderHistory.length === 0 && (
-              <Card>
-                <CardContent className="text-center py-8">
-                  <ClockCounterClockwise size={48} className="mx-auto text-muted-foreground mb-4" />
-                  <p className="text-muted-foreground">Nessun ordine nello storico</p>
-                </CardContent>
-              </Card>
+                )}
+              </div>
             )}
-          </TabsContent>
-        </Tabs>
+          </div>
+        </div>
       </div>
 
       {/* QR Code Dialog */}
       <Dialog open={showQrDialog} onOpenChange={setShowQrDialog}>
-        <DialogContent>
+        <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle>QR Code - {selectedTable?.name}</DialogTitle>
             <DialogDescription>
-              Scansiona questo codice per accedere al menu del tavolo
+              I clienti possono scansionare questo QR code per accedere al menu e ordinare
             </DialogDescription>
           </DialogHeader>
-          <div className="text-center py-8">
-            <div className="mx-auto w-64 h-64 bg-white border-2 border-primary rounded-lg flex items-center justify-center mb-4">
-              <div className="text-center">
-                <QrCode size={120} className="mx-auto mb-4 text-primary" />
-                <p className="text-xs font-mono text-muted-foreground break-all px-4">
-                  {selectedTable?.qrCode}
-                </p>
-              </div>
-            </div>
-            <div className="space-y-2">
-              <p className="text-sm text-muted-foreground">
-                URL per test: <button 
-                  onClick={() => {
-                    if (selectedTable?.qrCode) {
-                      navigator.clipboard.writeText(selectedTable.qrCode)
-                      toast.success('Link copiato!')
-                    }
-                  }}
-                  className="font-mono text-primary hover:underline cursor-pointer"
-                >
-                  {selectedTable?.qrCode}
-                </button>
-              </p>
-              <p className="text-sm text-muted-foreground">
-                PIN attuale: <strong className="text-2xl font-bold text-primary">{selectedTable?.pin}</strong>
-              </p>
-              <div className="flex gap-2 mt-4">
-                <Button 
-                  onClick={() => {
-                    if (selectedTable?.qrCode) {
-                      window.open(selectedTable.qrCode, '_blank')
-                    }
-                  }}
-                  className="flex-1"
-                >
-                  Testa QR Code
-                </Button>
-                <Button 
-                  variant="outline"
-                  onClick={() => {
-                    if (selectedTable?.qrCode) {
-                      navigator.clipboard.writeText(selectedTable.qrCode)
-                      toast.success('Link copiato negli appunti!')
-                    }
-                  }}
-                  className="flex-1"
-                >
-                  Copia Link
-                </Button>
-              </div>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      {/* Customer Count Dialog for Table Activation */}
-      <Dialog open={!!selectedTable && !selectedTable.isActive} onOpenChange={(open) => {
-        if (!open) {
-          setSelectedTable(null)
-          setCustomerCount('')
-        }
-      }}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Attiva {selectedTable?.name}</DialogTitle>
-            <DialogDescription>
-              Inserisci il numero di clienti per questo tavolo
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div>
-              <Label htmlFor="customerCount">Numero di Clienti</Label>
-              <Input
-                id="customerCount"
-                type="number"
-                min="1"
-                max="20"
-                value={customerCount}
-                onChange={(e) => setCustomerCount(e.target.value)}
-                placeholder="es. 4"
-                className="text-lg text-center"
+          <div className="flex flex-col items-center space-y-4">
+            {qrCodeDataUrl && (
+              <img 
+                src={qrCodeDataUrl} 
+                alt="QR Code" 
+                className="w-64 h-64 border rounded-lg"
               />
-            </div>
-            
-            {currentRestaurant?.coverChargePerPerson && currentRestaurant.coverChargePerPerson > 0 && (
-              <div className="bg-muted/50 p-3 rounded-lg">
-                <p className="text-sm text-muted-foreground">
-                  Coperto: €{currentRestaurant.coverChargePerPerson.toFixed(2)} × {customerCount || 0} = 
-                  <span className="font-semibold ml-1">
-                    €{((currentRestaurant.coverChargePerPerson || 0) * (parseInt(customerCount) || 0)).toFixed(2)}
-                  </span>
-                </p>
-              </div>
             )}
-            
-            {currentRestaurant?.allYouCanEat.enabled && (
-              <div className="bg-primary/10 p-3 rounded-lg">
-                <p className="text-sm font-medium text-primary mb-1">All You Can Eat Attivo</p>
-                <p className="text-sm text-muted-foreground">
-                  €{currentRestaurant.allYouCanEat.pricePerPerson.toFixed(2)} × {customerCount || 0} = 
-                  <span className="font-semibold ml-1">
-                    €{((currentRestaurant.allYouCanEat.pricePerPerson || 0) * (parseInt(customerCount) || 0)).toFixed(2)}
-                  </span>
-                </p>
-                <p className="text-xs text-muted-foreground mt-1">
-                  Massimo {currentRestaurant.allYouCanEat.maxOrders} ordini per tavolo
-                </p>
-              </div>
-            )}
-            
-            <div className="flex gap-2">
-              <Button 
-                variant="outline" 
-                className="flex-1"
-                onClick={() => {
-                  setSelectedTable(null)
-                  setCustomerCount('')
-                }}
-              >
-                Annulla
-              </Button>
-              <Button 
-                className="flex-1 bg-green-600 hover:bg-green-700"
-                onClick={() => {
-                  if (selectedTable) {
-                    handleActivateTable(selectedTable.id, parseInt(customerCount))
-                  }
-                }}
-                disabled={!customerCount || parseInt(customerCount) <= 0}
-              >
-                Attiva Tavolo
-              </Button>
+            <div className="text-center space-y-2">
+              <p className="text-sm text-muted-foreground">
+                PIN Tavolo: <code className="bg-muted px-2 py-1 rounded text-sm font-mono">{selectedTable?.pin}</code>
+              </p>
+              <p className="text-xs text-muted-foreground">
+                Il PIN può essere utilizzato in alternativa al QR code
+              </p>
             </div>
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      {/* Table Bill Dialog */}
-      <Dialog open={showTableDialog} onOpenChange={setShowTableDialog}>
-        <DialogContent className="max-w-2xl">
-          <DialogHeader>
-            <DialogTitle>Conto - {selectedTable?.name}</DialogTitle>
-            <DialogDescription>
-              Riepilogo ordini per questo tavolo
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4">
-            {(() => {
-              const tableOrders = [...restaurantOrders, ...restaurantCompletedOrders].filter(order => order.tableId === selectedTable?.id)
-              const totalAmount = tableOrders.reduce((sum, order) => sum + order.total, 0)
-              
-              if (tableOrders.length === 0) {
-                return (
-                  <p className="text-center text-muted-foreground py-8">
-                    Nessun ordine per questo tavolo
-                  </p>
-                )
-              }
-              
-              return (
-                <>
-                  <div className="space-y-3 max-h-96 overflow-y-auto">
-                    {tableOrders.map((order) => (
-                      <Card key={order.id} className="border-l-4 border-l-primary">
-                        <CardContent className="p-4">
-                          <div className="flex justify-between items-start mb-2">
-                            <h4 className="font-semibold">Ordine #{order.id.slice(-6)}</h4>
-                            <Badge variant="outline">{formatTime(order.timestamp)}</Badge>
-                          </div>
-                          <div className="space-y-1">
-                            {order.items.map((item, index) => {
-                              const menuItem = restaurantMenuItems.find(m => m.id === item.menuItemId)
-                              return (
-                                <div key={index} className="flex justify-between text-sm">
-                                  <span>{item.quantity}x {menuItem?.name || 'Unknown'}</span>
-                                  <span>€{((menuItem?.price || 0) * item.quantity).toFixed(2)}</span>
-                                </div>
-                              )
-                            })}
-                          </div>
-                          <Separator className="my-2" />
-                          <div className="flex justify-between font-medium">
-                            <span>Subtotale:</span>
-                            <span>€{order.total.toFixed(2)}</span>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    ))}
-                  </div>
-                  <Separator />
-                  <div className="flex justify-between items-center">
-                    <div className="text-xl font-bold">
-                      Totale: €{totalAmount.toFixed(2)}
-                    </div>
-                    <div className="flex gap-2">
-                      <Button
-                        variant="destructive"
-                        onClick={() => {
-                          // Delete all orders for this table
-                          setOrders(orders?.filter(o => o.tableId !== selectedTable?.id) || [])
-                          setCompletedOrders(completedOrders?.filter(o => o.tableId !== selectedTable?.id) || [])
-                          toast.success('Ordini eliminati')
-                          setShowTableDialog(false)
-                        }}
-                      >
-                        Elimina Ordini
-                      </Button>
-                      <Button
-                        onClick={() => {
-                          // Move orders to history and mark as paid
-                          const orderHistoryEntries: OrderHistory[] = tableOrders.map(order => ({
-                            id: order.id,
-                            tableId: order.tableId,
-                            tableName: selectedTable?.name || 'Unknown',
-                            restaurantId: order.restaurantId,
-                            items: order.items.map(item => {
-                              const menuItem = restaurantMenuItems.find(m => m.id === item.menuItemId)
-                              return {
-                                menuItemId: item.menuItemId,
-                                name: menuItem?.name || 'Unknown',
-                                quantity: item.quantity,
-                                price: menuItem?.price || 0,
-                                notes: item.notes
-                              }
-                            }),
-                            total: order.total,
-                            timestamp: order.timestamp,
-                            paidAt: Date.now()
-                          }))
-                          
-                          setOrderHistory([...(orderHistory || []), ...orderHistoryEntries])
-                          setOrders(orders?.filter(o => o.tableId !== selectedTable?.id) || [])
-                          setCompletedOrders(completedOrders?.filter(o => o.tableId !== selectedTable?.id) || [])
-                          
-                          // Generate new PIN for the table
-                          setTables(tables?.map(t => 
-                            t.id === selectedTable?.id 
-                              ? { ...t, pin: generatePin() }
-                              : t
-                          ) || [])
-                          
-                          toast.success('Conto segnato come pagato')
-                          setShowTableDialog(false)
-                        }}
-                        className="bg-green-600 hover:bg-green-700"
-                      >
-                        Segna come Pagato
-                      </Button>
-                    </div>
-                  </div>
-                </>
-              )
-            })()}
           </div>
         </DialogContent>
       </Dialog>
