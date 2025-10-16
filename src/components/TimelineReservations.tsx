@@ -368,30 +368,28 @@ const TimelineReservations = ({ user, tables, reservations, setReservations }: T
                 placeholder="Numero di telefono"
               />
             </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-2">
-                <Label htmlFor="tableSelect">Tavolo *</Label>
-                <select
-                  id="tableSelect"
-                  value={newReservation.tableId}
-                  onChange={(e) => setNewReservation(prev => ({ ...prev, tableId: e.target.value }))}
-                  className="w-full h-10 px-3 border border-input rounded-md bg-background text-sm"
-                >
-                  <option value="">Seleziona</option>
-                  {restaurantTables.map((table) => (
-                    <option key={table.id} value={table.id}>{table.name}</option>
-                  ))}
-                </select>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="reservationTime">Orario *</Label>
-                <Input
-                  id="reservationTime"
-                  type="time"
-                  value={newReservation.time}
-                  onChange={(e) => setNewReservation(prev => ({ ...prev, time: e.target.value }))}
-                />
-              </div>
+            <div className="space-y-2">
+              <Label htmlFor="tableSelect">Tavolo *</Label>
+              <select
+                id="tableSelect"
+                value={newReservation.tableId}
+                onChange={(e) => setNewReservation(prev => ({ ...prev, tableId: e.target.value }))}
+                className="w-full h-10 px-3 border border-input rounded-md bg-background text-sm"
+              >
+                <option value="">Seleziona tavolo</option>
+                {restaurantTables.map(table => (
+                  <option key={table.id} value={table.id}>{table.name}</option>
+                ))}
+              </select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="reservationTime">Orario *</Label>
+              <Input
+                id="reservationTime"
+                type="time"
+                value={newReservation.time}
+                onChange={(e) => setNewReservation(prev => ({ ...prev, time: e.target.value }))}
+              />
             </div>
             <div className="space-y-2">
               <Label htmlFor="guests">Numero di persone *</Label>
@@ -427,7 +425,7 @@ const TimelineReservations = ({ user, tables, reservations, setReservations }: T
                 onClick={handleCreateReservation}
                 className="flex-1"
               >
-                Crea Prenotazione
+                Conferma
               </Button>
             </div>
           </div>
