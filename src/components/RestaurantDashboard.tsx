@@ -966,7 +966,7 @@ const RestaurantDashboard = ({ user, onLogout }: RestaurantDashboardProps) => {
                             )}
                           </div>
 
-                          <div className="p-2 space-y-2">
+                          <div className="p-3 space-y-2">
                             {sortedOrders.map((orderInfo) => {
                               const remaining = orderInfo.quantity - orderInfo.completedQuantity
                               const isFullyCompleted = remaining === 0
@@ -997,17 +997,17 @@ const RestaurantDashboard = ({ user, onLogout }: RestaurantDashboardProps) => {
                                         </div>
                                       </div>
                                     </div>
-
-                                    {!isFullyCompleted && (
-                                      <Button
-                                        onClick={() => handleCompleteDish(orderInfo.orderId, orderInfo.itemId)}
-                                        size="sm"
-                                        className="flex-shrink-0 bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white shadow-sm hover:shadow-md hover:scale-105 transition-all duration-150 font-semibold h-8 px-3"
-                                      >
-                                        <Check size={14} weight="bold" />
-                                      </Button>
-                                    )}
                                   </div>
+
+                                  {!isFullyCompleted && (
+                                    <Button
+                                      onClick={() => handleCompleteDish(orderInfo.orderId, orderInfo.itemId)}
+                                      size="sm"
+                                      className="flex-shrink-0 bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white shadow-sm hover:shadow-md hover:scale-105 transition-all duration-150 font-semibold h-8 px-3 mt-2"
+                                    >
+                                      <Check size={14} weight="bold" />
+                                    </Button>
+                                  )}
                                 </div>
                               )
                             })}
