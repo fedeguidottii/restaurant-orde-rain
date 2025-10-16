@@ -30,6 +30,7 @@ interface CartItem {
   menuItemId: string
   quantity: number
   notes?: string
+  instanceId?: string
 }
 
 export default function CustomerMenu({ tableId, onExit }: Props) {
@@ -122,36 +123,30 @@ export default function CustomerMenu({ tableId, onExit }: Props) {
       return
     }
     setCart(current => {
-      const existingItem = current.find(item => item.menuItemId === menuItemId)
-      if (existingItem) {
-        return current.map(item =>
-          item.menuItemId === menuItemId
-            ? { ...item, quantity: item.quantity + 1 }
-            : item
-        )
-      }
-      return [...current, { menuItemId, quantity: 1 }]
+      return [...current, { menuItemId, quantity: 1, instanceId: `${menuItemId}-${Date.now()}` }]
     })
   }
 
-  const removeFromCart = (menuItemId: string) => {
-    setCart(current => {
-      const existingItem = current.find(item => item.menuItemId === menuItemId)
-      if (existingItem && existingItem.quantity > 1) {
-        return current.map(item =>
-          item.menuItemId === menuItemId
-            ? { ...item, quantity: item.quantity - 1 }
-            : item
-        )
-      }
-      return current.filter(item => item.menuItemId !== menuItemId)
-    })
+  const removeFromCart = (instanceId: string) => {
+    setCart(current => current.filter(item => item.instanceId !== instanceId))
   }
 
-  const updateItemNotes = (menuItemId: string, notes: string) => {
+  const updateQuantity = (instanceId: string, delta: number) => {
+    setCart(current =>
+      current.map(item => {
+        if (item.instanceId === instanceId) {
+          const newQuantity = item.quantity + delta
+          return newQuantity > 0 ? { ...item, quantity: newQuantity } : item
+        }
+        return item
+      }).filter(item => item.quantity > 0)
+    )
+  }
+
+  const updateItemNotes = (instanceId: string, notes: string) => {
     setCart(current =>
       current.map(item =>
-        item.menuItemId === menuItemId
+        item.instanceId === instanceId
           ? { ...item, notes }
           : item
       )
@@ -233,8 +228,7 @@ export default function CustomerMenu({ tableId, onExit }: Props) {
   }
 
   const getItemQuantityInCart = (menuItemId: string) => {
-    const cartItem = cart.find(item => item.menuItemId === menuItemId)
-    return cartItem?.quantity || 0
+    return cart.filter(item => item.menuItemId === menuItemId).reduce((sum, item) => sum + item.quantity, 0)
   }
 
   if (!table) {
@@ -420,37 +414,13 @@ export default function CustomerMenu({ tableId, onExit }: Props) {
                     </div>
                     
                     <div className="flex items-center justify-between gap-2">
-                      {quantityInCart > 0 ? (
-                        <div className="flex items-center gap-2 flex-1">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => removeFromCart(item.id)}
-                            className="h-8 w-8 p-0 rounded-full"
-                          >
-                            <Minus size={14} />
-                          </Button>
-                          <span className="text-lg font-bold text-primary min-w-[2rem] text-center">
-                            {quantityInCart}
-                          </span>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => addToCart(item.id)}
-                            className="h-8 w-8 p-0 rounded-full"
-                          >
-                            <Plus size={14} />
-                          </Button>
-                        </div>
-                      ) : (
-                        <Button
-                          onClick={() => addToCart(item.id)}
-                          className="flex-1 bg-primary hover:bg-primary/90 shadow-gold"
-                        >
-                          <Plus size={16} className="mr-2" />
-                          Aggiungi
-                        </Button>
-                      )}
+                      <Button
+                        onClick={() => addToCart(item.id)}
+                        className="flex-1 bg-primary hover:bg-primary/90 shadow-gold"
+                      >
+                        <Plus size={16} className="mr-2" />
+                        Aggiungi {quantityInCart > 0 && `(${quantityInCart})`}
+                      </Button>
                     </div>
                   </div>
                 </CardContent>
@@ -483,44 +453,55 @@ export default function CustomerMenu({ tableId, onExit }: Props) {
               </p>
             ) : (
               <>
-                <div className="space-y-3 max-h-60 overflow-y-auto">
+                <div className="space-y-3 max-h-96 overflow-y-auto">
                   {cart.map((cartItem) => {
                     const menuItem = restaurantMenuItems.find(m => m.id === cartItem.menuItemId)
                     if (!menuItem) return null
                     
                     return (
-                      <div key={cartItem.menuItemId} className="p-3 bg-liquid-gradient rounded-lg border-liquid shadow-liquid">
+                      <div key={cartItem.instanceId} className="p-3 bg-liquid-gradient rounded-lg border-liquid shadow-liquid">
                         <div className="flex justify-between items-start mb-2">
                           <div className="flex-1">
-                            <h4 className="font-bold text-lg">{menuItem.name}</h4>
-                            <p className="text-muted-foreground">
-                              {cartItem.quantity}x €{menuItem.price.toFixed(2)} = €{(menuItem.price * cartItem.quantity).toFixed(2)}
-                            </p>
+                            <h4 className="font-bold text-base">{menuItem.name}</h4>
+                            <div className="flex items-center gap-2 mt-1">
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => updateQuantity(cartItem.instanceId!, -1)}
+                                className="h-7 w-7 p-0 rounded-full"
+                              >
+                                <Minus size={12} />
+                              </Button>
+                              <span className="w-8 text-center font-bold text-primary">{cartItem.quantity}</span>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => updateQuantity(cartItem.instanceId!, 1)}
+                                className="h-7 w-7 p-0 rounded-full"
+                              >
+                                <Plus size={12} />
+                              </Button>
+                              <span className="text-sm text-muted-foreground ml-2">
+                                {restaurant?.allYouCanEat.enabled && !menuItem.excludeFromAllYouCanEat 
+                                  ? 'Incluso' 
+                                  : `€${(menuItem.price * cartItem.quantity).toFixed(2)}`
+                                }
+                              </span>
+                            </div>
                           </div>
-                          <div className="flex items-center gap-2">
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => removeFromCart(cartItem.menuItemId)}
-                              className="h-8 w-8 p-0"
-                            >
-                              <Minus size={14} />
-                            </Button>
-                            <span className="w-8 text-center font-bold">{cartItem.quantity}</span>
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => addToCart(cartItem.menuItemId)}
-                              className="h-8 w-8 p-0"
-                            >
-                              <Plus size={14} />
-                            </Button>
-                          </div>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => removeFromCart(cartItem.instanceId!)}
+                            className="h-8 w-8 p-0 text-destructive hover:bg-destructive/10"
+                          >
+                            <X size={16} />
+                          </Button>
                         </div>
                         <Textarea
                           placeholder="Note speciali per questo piatto..."
                           value={cartItem.notes || ''}
-                          onChange={(e) => updateItemNotes(cartItem.menuItemId, e.target.value)}
+                          onChange={(e) => updateItemNotes(cartItem.instanceId!, e.target.value)}
                           className="h-16 text-sm shadow-liquid"
                         />
                       </div>

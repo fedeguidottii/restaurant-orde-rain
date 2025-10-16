@@ -59,6 +59,7 @@ const RestaurantDashboard = ({ user, onLogout }: RestaurantDashboardProps) => {
   const [selectedOrderHistory, setSelectedOrderHistory] = useState<OrderHistory | null>(null)
   const [historyDateFilter, setHistoryDateFilter] = useState<string>('')
   const [selectedCategoryFilter, setSelectedCategoryFilter] = useState<string>('all')
+  const [orderSortMode, setOrderSortMode] = useState<'oldest' | 'newest'>('oldest')
   
   const restaurantMenuItems = menuItems?.filter(item => item.restaurantId === user.restaurantId) || []
   const restaurantTables = tables?.filter(table => table.restaurantId === user.restaurantId) || []
@@ -409,13 +410,22 @@ const RestaurantDashboard = ({ user, onLogout }: RestaurantDashboardProps) => {
     const hours = Math.floor(minutes / 60)
     
     if (hours >= 1) {
-      return `${hours}h ${minutes % 60}min fa`
-    } else if (minutes >= 60) {
-      return `1h fa`
+      return `${hours}h ${minutes % 60}min`
     } else if (minutes < 1) {
-      return 'Appena ora'
+      return 'Ora'
     }
-    return `${minutes}min fa`
+    return `${minutes}min`
+  }
+
+  const getTimeColor = (timestamp: number) => {
+    const now = Date.now()
+    const diff = now - timestamp
+    const minutes = Math.floor(diff / 60000)
+    
+    if (minutes < 5) return 'text-green-600 bg-green-50 border-green-200'
+    if (minutes < 15) return 'text-yellow-600 bg-yellow-50 border-yellow-200'
+    if (minutes < 30) return 'text-orange-600 bg-orange-50 border-orange-200'
+    return 'text-red-600 bg-red-50 border-red-200'
   }
 
   const formatTime = (timestamp: number) => {
@@ -634,6 +644,25 @@ const RestaurantDashboard = ({ user, onLogout }: RestaurantDashboardProps) => {
                     </SelectContent>
                   </Select>
                 )}
+                <Select value={orderSortMode} onValueChange={(value: 'oldest' | 'newest') => setOrderSortMode(value)}>
+                  <SelectTrigger className="w-[160px] h-9 shadow-sm hover:shadow-md border hover:border-primary/30 transition-all duration-200">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="oldest">
+                      <div className="flex items-center gap-2">
+                        <ClockCounterClockwise size={14} />
+                        <span className="text-sm">Più Vecchi</span>
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="newest">
+                      <div className="flex items-center gap-2">
+                        <Clock size={14} />
+                        <span className="text-sm">Più Recenti</span>
+                      </div>
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
                 <div className="flex items-center gap-2 px-4 py-2 rounded-lg bg-gradient-to-br from-primary/5 to-accent/5 border border-primary/20 shadow-sm">
                   <Clock size={16} className="text-primary" weight="duotone" />
                   <div className="text-right">
@@ -656,7 +685,9 @@ const RestaurantDashboard = ({ user, onLogout }: RestaurantDashboardProps) => {
               </div>
             ) : orderViewMode === 'table' ? (
               <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-                {restaurantOrders.map(order => {
+                {restaurantOrders
+                  .sort((a, b) => orderSortMode === 'oldest' ? a.timestamp - b.timestamp : b.timestamp - a.timestamp)
+                  .map(order => {
                   const table = restaurantTables.find(t => t.id === order.tableId)
                   const totalDishes = order.items.reduce((sum, item) => sum + item.quantity, 0)
                   const completedDishes = order.items.reduce((sum, item) => sum + (item.completedQuantity || 0), 0)
@@ -668,31 +699,29 @@ const RestaurantDashboard = ({ user, onLogout }: RestaurantDashboardProps) => {
                       className="group bg-white rounded-xl shadow-md border border-border/20 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 overflow-hidden"
                     >
                       <div className="bg-gradient-to-br from-primary/5 via-accent/5 to-primary/5 p-3.5 border-b border-border/10">
-                        <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center justify-between mb-2.5">
                           <div className="flex items-center gap-2.5">
                             <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-primary to-accent flex items-center justify-center text-white font-bold text-base shadow-md group-hover:scale-105 transition-transform duration-200">
                               {table?.name?.match(/\d+/)?.[0] || table?.name?.slice(-1) || '?'}
                             </div>
                             <div>
                               <h3 className="text-base font-bold text-foreground">{table?.name || 'Tavolo'}</h3>
-                              <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                                <Clock size={10} weight="duotone" />
-                                <span className="text-[11px]">{getTimeAgo(order.timestamp)}</span>
+                              <div className={`flex items-center gap-1.5 text-xs font-bold px-2 py-0.5 rounded-md border ${getTimeColor(order.timestamp)}`}>
+                                <Clock size={12} weight="fill" />
+                                <span className="text-xs font-bold">{getTimeAgo(order.timestamp)}</span>
                               </div>
                             </div>
                           </div>
                           <div className="text-right">
-                            <div className="text-xl font-bold text-primary">{totalDishes}</div>
-                            <div className="text-[9px] text-muted-foreground font-medium">piatti</div>
+                            <div className="text-2xl font-bold text-primary">{totalDishes}</div>
+                            <div className="text-[10px] text-muted-foreground font-medium leading-none">
+                              {completedDishes > 0 ? `${totalDishes - completedDishes} da fare` : 'piatti'}
+                            </div>
                           </div>
                         </div>
 
                         {progressPercent > 0 && (
                           <div className="mt-2">
-                            <div className="flex items-center justify-between text-xs mb-1">
-                              <span className="text-muted-foreground text-[11px]">Progresso</span>
-                              <span className="text-green-600 font-bold text-[11px]">{completedDishes}/{totalDishes}</span>
-                            </div>
                             <div className="h-1.5 bg-muted/50 rounded-full overflow-hidden">
                               <div 
                                 className="h-full bg-gradient-to-r from-green-500 to-green-400 rounded-full transition-all duration-300 ease-out"
@@ -708,33 +737,33 @@ const RestaurantDashboard = ({ user, onLogout }: RestaurantDashboardProps) => {
                           const menuItem = restaurantMenuItems.find(m => m.id === item.menuItemId)
                           const completedQuantity = item.completedQuantity || 0
                           const remainingQuantity = item.quantity - completedQuantity
-                          const itemProgress = (completedQuantity / item.quantity) * 100
+                          const isFullyCompleted = completedQuantity >= item.quantity
                           
                           return (
                             <div 
                               key={item.id} 
-                              className="bg-gradient-to-br from-white to-muted/20 rounded-lg p-2.5 border border-border/40 hover:border-primary/30 transition-all duration-150 shadow-sm"
+                              className={`bg-gradient-to-br rounded-lg p-2.5 border transition-all duration-150 shadow-sm ${
+                                isFullyCompleted 
+                                  ? 'from-green-50 to-green-100 border-green-300 opacity-60' 
+                                  : 'from-white to-muted/20 border-border/40 hover:border-primary/30'
+                              }`}
                             >
                               <div className="flex items-start gap-2.5">
                                 <div className="relative flex-shrink-0">
-                                  <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center text-foreground text-base font-bold border border-primary/30">
-                                    {item.quantity}
+                                  <div className={`w-9 h-9 rounded-lg flex items-center justify-center text-base font-bold border ${
+                                    isFullyCompleted 
+                                      ? 'bg-green-500 text-white border-green-600' 
+                                      : 'bg-gradient-to-br from-primary/20 to-accent/20 text-foreground border-primary/30'
+                                  }`}>
+                                    {isFullyCompleted ? '✓' : remainingQuantity}
                                   </div>
-                                  {completedQuantity > 0 && (
-                                    <div className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-green-500 flex items-center justify-center text-white text-[10px] font-bold border-2 border-white shadow-md">
-                                      ✓
-                                    </div>
-                                  )}
                                 </div>
                                 <div className="flex-1 min-w-0 flex flex-col gap-1.5">
                                   <div>
                                     <div className="flex items-start justify-between gap-2">
-                                      <h4 className="font-bold text-sm text-foreground leading-tight flex-1">{menuItem?.name || 'Piatto'}</h4>
-                                      {completedQuantity > 0 && (
-                                        <span className="text-[10px] font-bold text-green-600 bg-green-50 px-1.5 py-0.5 rounded border border-green-200 flex-shrink-0 leading-tight">
-                                          {completedQuantity}/{item.quantity}
-                                        </span>
-                                      )}
+                                      <h4 className="font-bold text-sm text-foreground leading-tight flex-1">
+                                        {remainingQuantity > 1 && `${remainingQuantity}× `}{menuItem?.name || 'Piatto'}
+                                      </h4>
                                     </div>
                                     {item.notes && (
                                       <div className="flex items-start gap-1 mt-1 bg-amber-50 border border-amber-200 rounded px-2 py-1">
@@ -745,27 +774,15 @@ const RestaurantDashboard = ({ user, onLogout }: RestaurantDashboardProps) => {
                                       </div>
                                     )}
                                   </div>
-
-                                  {completedQuantity > 0 && completedQuantity < item.quantity && (
-                                    <div className="h-1 bg-green-100 rounded-full overflow-hidden">
-                                      <div 
-                                        className="h-full bg-gradient-to-r from-green-600 to-green-500 rounded-full transition-all duration-500"
-                                        style={{ width: `${itemProgress}%` }}
-                                      />
-                                    </div>
-                                  )}
                                 </div>
                                 
-                                {remainingQuantity > 0 && (
+                                {!isFullyCompleted && (
                                   <Button 
                                     onClick={() => handleCompleteDish(order.id, item.id)}
                                     size="sm"
-                                    className="flex-shrink-0 bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white shadow-sm hover:shadow-md hover:scale-105 transition-all duration-150 font-semibold h-8 min-w-[50px] px-3"
+                                    className="flex-shrink-0 bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white shadow-sm hover:shadow-md hover:scale-105 transition-all duration-150 font-semibold h-8 px-3"
                                   >
-                                    <div className="flex items-center gap-1.5">
-                                      <Check size={14} weight="bold" />
-                                      <span className="text-xs font-bold">{remainingQuantity}</span>
-                                    </div>
+                                    <Check size={14} weight="bold" />
                                   </Button>
                                 )}
                               </div>
@@ -780,7 +797,19 @@ const RestaurantDashboard = ({ user, onLogout }: RestaurantDashboardProps) => {
             ) : (
               <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
                 {(() => {
-                  const dishGroups: Record<string, { item: MenuItem, orders: Array<{ orderId: string, tableId: string, tableName: string, quantity: number, completedQuantity: number, notes?: string, itemId: string }> }> = {}
+                  const dishGroups: Record<string, { 
+                    item: MenuItem, 
+                    orders: Array<{ 
+                      orderId: string, 
+                      tableId: string, 
+                      tableName: string, 
+                      quantity: number, 
+                      completedQuantity: number, 
+                      notes?: string, 
+                      itemId: string,
+                      timestamp: number
+                    }> 
+                  }> = {}
                   
                   restaurantOrders.forEach(order => {
                     order.items.forEach(item => {
@@ -797,7 +826,8 @@ const RestaurantDashboard = ({ user, onLogout }: RestaurantDashboardProps) => {
                           quantity: item.quantity,
                           completedQuantity: item.completedQuantity || 0,
                           notes: item.notes,
-                          itemId: item.id
+                          itemId: item.id,
+                          timestamp: order.timestamp
                         })
                       }
                     })
@@ -834,17 +864,22 @@ const RestaurantDashboard = ({ user, onLogout }: RestaurantDashboardProps) => {
                   return sortedDishGroups.map(({ item, orders }) => {
                     const totalQuantity = orders.reduce((sum, o) => sum + o.quantity, 0)
                     const totalCompleted = orders.reduce((sum, o) => sum + o.completedQuantity, 0)
+                    const totalRemaining = totalQuantity - totalCompleted
                     const progressPercent = totalQuantity > 0 ? (totalCompleted / totalQuantity) * 100 : 0
+                    
+                    const sortedOrders = [...orders].sort((a, b) => 
+                      orderSortMode === 'oldest' ? a.timestamp - b.timestamp : b.timestamp - a.timestamp
+                    )
 
                     return (
                       <div 
                         key={item.id}
                         className="group bg-white rounded-xl shadow-md border border-border/20 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 overflow-hidden"
                       >
-                        <div className="p-3">
+                        <div className="p-3 border-b border-border/10">
                           <div className="flex items-start gap-2.5 mb-2">
                             <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-primary to-accent flex items-center justify-center text-white text-lg font-bold shadow-md group-hover:scale-105 transition-transform duration-200 flex-shrink-0">
-                              {totalQuantity}
+                              {totalRemaining}
                             </div>
                             <div className="flex-1 min-w-0">
                               <h3 className="text-base font-bold text-foreground leading-tight">{item.name}</h3>
@@ -853,7 +888,7 @@ const RestaurantDashboard = ({ user, onLogout }: RestaurantDashboardProps) => {
                                   {item.category}
                                 </Badge>
                                 <p className="text-xs text-muted-foreground">
-                                  {orders.length} {orders.length === 1 ? 'tavolo' : 'tavoli'}
+                                  {sortedOrders.length} {sortedOrders.length === 1 ? 'tavolo' : 'tavoli'}
                                 </p>
                               </div>
                             </div>
@@ -861,10 +896,6 @@ const RestaurantDashboard = ({ user, onLogout }: RestaurantDashboardProps) => {
 
                           {progressPercent > 0 && (
                             <div className="mt-2">
-                              <div className="flex items-center justify-between text-[11px] mb-1">
-                                <span className="text-muted-foreground">Progresso totale</span>
-                                <span className="text-green-600 font-bold">{totalCompleted}/{totalQuantity} pronti</span>
-                              </div>
                               <div className="h-1.5 bg-muted/50 rounded-full overflow-hidden">
                                 <div 
                                   className="h-full bg-gradient-to-r from-green-500 to-green-600 transition-all duration-300"
@@ -876,34 +907,37 @@ const RestaurantDashboard = ({ user, onLogout }: RestaurantDashboardProps) => {
                         </div>
 
                         <div className="p-2.5 space-y-1.5 max-h-[600px] overflow-y-auto scrollbar-thin">
-                          {orders.map((orderInfo) => {
+                          {sortedOrders.map((orderInfo) => {
                             const remaining = orderInfo.quantity - orderInfo.completedQuantity
+                            const isFullyCompleted = remaining === 0
                             
                             return (
                               <div 
                                 key={`${orderInfo.orderId}-${orderInfo.itemId}`} 
-                                className="bg-gradient-to-br from-white to-muted/30 rounded-lg p-2.5 border border-border/40 shadow-sm hover:shadow-md hover:border-primary/30 transition-all duration-200"
+                                className={`rounded-lg p-2.5 border shadow-sm transition-all duration-200 ${
+                                  isFullyCompleted 
+                                    ? 'bg-gradient-to-br from-green-50 to-green-100 border-green-300 opacity-60' 
+                                    : 'bg-gradient-to-br from-white to-muted/30 border-border/40 hover:shadow-md hover:border-primary/30'
+                                }`}
                               >
                                 <div className="flex items-start gap-2.5">
                                   <div className="relative flex-shrink-0">
-                                    <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center text-foreground text-base font-bold border border-primary/30">
-                                      {orderInfo.quantity}
+                                    <div className={`w-9 h-9 rounded-lg flex items-center justify-center text-base font-bold border ${
+                                      isFullyCompleted 
+                                        ? 'bg-green-500 text-white border-green-600' 
+                                        : 'bg-gradient-to-br from-primary/20 to-accent/20 text-foreground border-primary/30'
+                                    }`}>
+                                      {isFullyCompleted ? '✓' : remaining}
                                     </div>
-                                    {orderInfo.completedQuantity > 0 && (
-                                      <div className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-green-500 flex items-center justify-center text-white text-[10px] font-bold border-2 border-white shadow-md">
-                                        ✓
-                                      </div>
-                                    )}
                                   </div>
                                   <div className="flex-1 min-w-0 flex flex-col gap-1.5">
                                     <div>
                                       <div className="flex items-start justify-between gap-2">
                                         <h4 className="font-bold text-sm text-foreground leading-tight flex-1">{orderInfo.tableName}</h4>
-                                        {orderInfo.completedQuantity > 0 && (
-                                          <span className="text-[10px] font-bold text-green-600 bg-green-50 px-1.5 py-0.5 rounded border border-green-200 flex-shrink-0 leading-tight">
-                                            {orderInfo.completedQuantity}/{orderInfo.quantity}
-                                          </span>
-                                        )}
+                                        <div className={`flex items-center gap-1 text-xs font-bold px-1.5 py-0.5 rounded border flex-shrink-0 ${getTimeColor(orderInfo.timestamp)}`}>
+                                          <Clock size={10} weight="fill" />
+                                          <span className="text-[10px]">{getTimeAgo(orderInfo.timestamp)}</span>
+                                        </div>
                                       </div>
                                       {orderInfo.notes && (
                                         <div className="flex items-start gap-1 mt-1 bg-amber-50 border border-amber-200 rounded px-2 py-1">
@@ -914,27 +948,15 @@ const RestaurantDashboard = ({ user, onLogout }: RestaurantDashboardProps) => {
                                         </div>
                                       )}
                                     </div>
-
-                                    {orderInfo.completedQuantity > 0 && orderInfo.completedQuantity < orderInfo.quantity && (
-                                      <div className="h-1 bg-green-100 rounded-full overflow-hidden">
-                                        <div 
-                                          className="h-full bg-gradient-to-r from-green-600 to-green-500 rounded-full transition-all duration-500"
-                                          style={{ width: `${(orderInfo.completedQuantity / orderInfo.quantity) * 100}%` }}
-                                        />
-                                      </div>
-                                    )}
                                   </div>
 
-                                  {remaining > 0 && (
+                                  {!isFullyCompleted && (
                                     <Button
                                       onClick={() => handleCompleteDish(orderInfo.orderId, orderInfo.itemId)}
                                       size="sm"
-                                      className="flex-shrink-0 bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white shadow-sm hover:shadow-md hover:scale-105 transition-all duration-150 font-semibold h-8 min-w-[50px] px-3"
+                                      className="flex-shrink-0 bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white shadow-sm hover:shadow-md hover:scale-105 transition-all duration-150 font-semibold h-8 px-3"
                                     >
-                                      <div className="flex items-center gap-1.5">
-                                        <Check size={14} weight="bold" />
-                                        <span className="text-xs font-bold">{remaining}</span>
-                                      </div>
+                                      <Check size={14} weight="bold" />
                                     </Button>
                                   )}
                                 </div>
