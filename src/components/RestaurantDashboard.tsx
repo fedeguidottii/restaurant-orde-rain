@@ -53,6 +53,16 @@ const RestaurantDashboard = ({ user, onLogout }: RestaurantDashboardProps) => {
   const [showMenuDialog, setShowMenuDialog] = useState(false)
   const [selectedTable, setSelectedTable] = useState<Table | null>(null)
   const [showTableDialog, setShowTableDialog] = useState(false)
+  const [editingTable, setEditingTable] = useState<Table | null>(null)
+  const [editTableName, setEditTableName] = useState('')
+  const [editingMenuItem, setEditingMenuItem] = useState<MenuItem | null>(null)
+  const [editMenuItemData, setEditMenuItemData] = useState({
+    name: '',
+    description: '',
+    price: '',
+    category: '',
+    image: ''
+  })
   const [orderViewMode, setOrderViewMode] = useState<'table' | 'dish'>('table')
   const [showCompletedOrders, setShowCompletedOrders] = useState(false)
   const [showQrDialog, setShowQrDialog] = useState(false)
@@ -150,6 +160,33 @@ const RestaurantDashboard = ({ user, onLogout }: RestaurantDashboardProps) => {
     toast.success('Tavolo eliminato')
   }
 
+  const handleEditTable = (table: Table) => {
+    setEditingTable(table)
+    setEditTableName(table.name)
+  }
+
+  const handleSaveTableName = () => {
+    if (!editingTable || !editTableName.trim()) {
+      toast.error('Inserisci un nome valido')
+      return
+    }
+
+    setTables(tables?.map(t => 
+      t.id === editingTable.id 
+        ? { ...t, name: editTableName.trim() }
+        : t
+    ) || [])
+    
+    setEditingTable(null)
+    setEditTableName('')
+    toast.success('Nome tavolo modificato')
+  }
+
+  const handleCancelTableEdit = () => {
+    setEditingTable(null)
+    setEditTableName('')
+  }
+
   const handleCreateMenuItem = () => {
     if (!newMenuItem.name.trim() || !newMenuItem.description.trim() || !newMenuItem.price || !newMenuItem.category) {
       toast.error('Compila tutti i campi')
@@ -190,6 +227,46 @@ const RestaurantDashboard = ({ user, onLogout }: RestaurantDashboardProps) => {
   const handleDeleteMenuItem = (itemId: string) => {
     setMenuItems(menuItems?.filter(item => item.id !== itemId) || [])
     toast.success('Piatto rimosso')
+  }
+
+  const handleEditMenuItem = (item: MenuItem) => {
+    setEditingMenuItem(item)
+    setEditMenuItemData({
+      name: item.name,
+      description: item.description,
+      price: item.price.toString(),
+      category: item.category,
+      image: item.image || ''
+    })
+  }
+
+  const handleSaveMenuItem = () => {
+    if (!editingMenuItem || !editMenuItemData.name.trim() || !editMenuItemData.description.trim() || !editMenuItemData.price || !editMenuItemData.category) {
+      toast.error('Compila tutti i campi obbligatori')
+      return
+    }
+
+    setMenuItems(menuItems?.map(item => 
+      item.id === editingMenuItem.id 
+        ? { 
+            ...item, 
+            name: editMenuItemData.name.trim(),
+            description: editMenuItemData.description.trim(),
+            price: parseFloat(editMenuItemData.price),
+            category: editMenuItemData.category,
+            image: editMenuItemData.image || undefined
+          }
+        : item
+    ) || [])
+    
+    setEditingMenuItem(null)
+    setEditMenuItemData({ name: '', description: '', price: '', category: '', image: '' })
+    toast.success('Piatto modificato')
+  }
+
+  const handleCancelMenuItemEdit = () => {
+    setEditingMenuItem(null)
+    setEditMenuItemData({ name: '', description: '', price: '', category: '', image: '' })
   }
 
   const handleToggleAllYouCanEatExclusion = (itemId: string) => {
@@ -1167,17 +1244,62 @@ const RestaurantDashboard = ({ user, onLogout }: RestaurantDashboardProps) => {
                         }`}>
                           {table.name.slice(-1)}
                         </div>
-                        <span className={!table.isActive ? 'text-gray-900 font-semibold' : ''}>{table.name}</span>
+                        {editingTable?.id === table.id ? (
+                          <div className="flex gap-2 items-center">
+                            <Input
+                              value={editTableName}
+                              onChange={(e) => setEditTableName(e.target.value)}
+                              className="h-8 text-sm w-32"
+                              placeholder="Nome tavolo"
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter') handleSaveTableName()
+                                if (e.key === 'Escape') handleCancelTableEdit()
+                              }}
+                              autoFocus
+                            />
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={handleSaveTableName}
+                              className="h-7 w-7 p-0 text-green-600 hover:bg-green-600/10"
+                            >
+                              <Check size={14} />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={handleCancelTableEdit}
+                              className="h-7 w-7 p-0 text-red-600 hover:bg-red-600/10"
+                            >
+                              <X size={14} />
+                            </Button>
+                          </div>
+                        ) : (
+                          <span className={!table.isActive ? 'text-gray-900 font-semibold' : ''}>{table.name}</span>
+                        )}
                       </CardTitle>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleToggleTable(table.id)}
-                        className="h-6 w-6 p-0"
-                        title={table.isActive ? 'Disattiva tavolo' : 'Attiva tavolo'}
-                      >
-                        {table.isActive ? <EyeSlash size={12} /> : <Eye size={12} />}
-                      </Button>
+                      <div className="flex gap-1">
+                        {editingTable?.id !== table.id && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleEditTable(table)}
+                            className="h-6 w-6 p-0"
+                            title="Modifica nome tavolo"
+                          >
+                            <PencilSimple size={12} />
+                          </Button>
+                        )}
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleToggleTable(table.id)}
+                          className="h-6 w-6 p-0"
+                          title={table.isActive ? 'Disattiva tavolo' : 'Attiva tavolo'}
+                        >
+                          {table.isActive ? <EyeSlash size={12} /> : <Eye size={12} />}
+                        </Button>
+                      </div>
                     </div>
                   </CardHeader>
                   <CardContent className="space-y-3">
@@ -1540,6 +1662,15 @@ const RestaurantDashboard = ({ user, onLogout }: RestaurantDashboardProps) => {
                           </CardHeader>
                           <CardContent>
                             <div className="flex gap-2 flex-wrap">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleEditMenuItem(item)}
+                                className="h-8 w-8 p-0 text-primary hover:bg-primary/10"
+                                title="Modifica piatto"
+                              >
+                                <PencilSimple size={14} />
+                              </Button>
                               <Button
                                 variant="outline"
                                 size="sm"
@@ -2359,6 +2490,101 @@ const RestaurantDashboard = ({ user, onLogout }: RestaurantDashboardProps) => {
                   €{selectedOrderHistory?.total.toFixed(2)}
                 </div>
               </div>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Menu Item Dialog */}
+      <Dialog open={!!editingMenuItem} onOpenChange={(open) => !open && handleCancelMenuItemEdit()}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Modifica Piatto</DialogTitle>
+            <DialogDescription>
+              Aggiorna le informazioni del piatto
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="editDishName">Nome Piatto</Label>
+              <Input
+                id="editDishName"
+                value={editMenuItemData.name}
+                onChange={(e) => setEditMenuItemData(prev => ({ ...prev, name: e.target.value }))}
+                placeholder="Es: Spaghetti alla Carbonara"
+              />
+            </div>
+            <div>
+              <Label htmlFor="editDishDescription">Descrizione</Label>
+              <Textarea
+                id="editDishDescription"
+                value={editMenuItemData.description}
+                onChange={(e) => setEditMenuItemData(prev => ({ ...prev, description: e.target.value }))}
+                placeholder="Descrizione del piatto..."
+              />
+            </div>
+            <div>
+              <Label htmlFor="editDishPrice">Prezzo (€)</Label>
+              <Input
+                id="editDishPrice"
+                type="number"
+                step="0.01"
+                value={editMenuItemData.price}
+                onChange={(e) => setEditMenuItemData(prev => ({ ...prev, price: e.target.value }))}
+                placeholder="12.00"
+              />
+            </div>
+            <div>
+              <Label htmlFor="editDishCategory">Categoria</Label>
+              <Select
+                value={editMenuItemData.category}
+                onValueChange={(value) => setEditMenuItemData(prev => ({ ...prev, category: value }))}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Seleziona categoria" />
+                </SelectTrigger>
+                <SelectContent>
+                  {restaurantCategories?.filter(cat => cat.isActive).map((category) => (
+                    <SelectItem key={category.id} value={category.name}>{category.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label htmlFor="editDishImage">URL Immagine (opzionale)</Label>
+              <Input
+                id="editDishImage"
+                value={editMenuItemData.image}
+                onChange={(e) => setEditMenuItemData(prev => ({ ...prev, image: e.target.value }))}
+                placeholder="https://esempio.com/immagine.jpg"
+              />
+              {editMenuItemData.image && (
+                <div className="mt-2">
+                  <img 
+                    src={editMenuItemData.image} 
+                    alt="Anteprima" 
+                    className="w-full h-32 object-cover rounded-lg"
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).style.display = 'none'
+                    }}
+                  />
+                </div>
+              )}
+            </div>
+            <div className="flex gap-2">
+              <Button 
+                variant="outline" 
+                onClick={handleCancelMenuItemEdit}
+                className="flex-1"
+              >
+                Annulla
+              </Button>
+              <Button 
+                onClick={handleSaveMenuItem}
+                className="flex-1"
+              >
+                Salva Modifiche
+              </Button>
             </div>
           </div>
         </DialogContent>
