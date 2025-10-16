@@ -53,9 +53,11 @@
 - **Success Criteria**: Modifiche visibili istantaneamente ai clienti
 
 ### Gestione Ordini in Tempo Reale
-- **Functionality**: Ordini ricevuti immediatamente con stati di avanzamento
-- **Purpose**: Ottimizzare i tempi di preparazione e servizio
-- **Success Criteria**: Latenza < 2 secondi, interfaccia chiara per cucina
+- **Functionality**: Ordini ricevuti immediatamente con stati di avanzamento, visualizzazione per tavolo o per piatto con filtri categoria
+- **Purpose**: Ottimizzare i tempi di preparazione e servizio con massima flessibilità
+- **Trigger**: Ordine cliente completato
+- **Progression**: Ricezione ordine → Visualizzazione (per tavolo/piatto) → Completamento incrementale → Archiviazione
+- **Success Criteria**: Latenza < 2 secondi, note individuali per ogni singolo piatto, pulsanti di completamento chiari, visualizzazione completa di tutti i piatti senza scroll eccessivo
 
 ### Sistema Analytics Integrato
 - **Functionality**: Statistiche dettagliate su ordini, ricavi e performance con grafici categoria/piatti

@@ -703,80 +703,75 @@ const RestaurantDashboard = ({ user, onLogout }: RestaurantDashboardProps) => {
                         )}
                       </div>
 
-                      <div className="relative">
-                        <div className="p-2.5 space-y-1.5 max-h-[380px] overflow-y-auto scrollbar-thin">
-                          {order.items.map((item) => {
-                            const menuItem = restaurantMenuItems.find(m => m.id === item.menuItemId)
-                            const completedQuantity = item.completedQuantity || 0
-                            const remainingQuantity = item.quantity - completedQuantity
-                            const itemProgress = (completedQuantity / item.quantity) * 100
-                            
-                            return (
-                              <div 
-                                key={item.id} 
-                                className="bg-gradient-to-br from-white to-muted/20 rounded-lg p-2.5 border border-border/40 hover:border-primary/30 transition-all duration-150 shadow-sm"
-                              >
-                                <div className="flex items-start gap-2.5">
-                                  <div className="relative flex-shrink-0">
-                                    <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center text-foreground text-base font-bold border border-primary/30">
-                                      {item.quantity}
-                                    </div>
-                                    {completedQuantity > 0 && (
-                                      <div className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-green-500 flex items-center justify-center text-white text-[10px] font-bold border-2 border-white shadow-md">
-                                        ✓
-                                      </div>
-                                    )}
+                      <div className="p-2.5 space-y-1.5 max-h-[600px] overflow-y-auto scrollbar-thin">
+                        {order.items.map((item) => {
+                          const menuItem = restaurantMenuItems.find(m => m.id === item.menuItemId)
+                          const completedQuantity = item.completedQuantity || 0
+                          const remainingQuantity = item.quantity - completedQuantity
+                          const itemProgress = (completedQuantity / item.quantity) * 100
+                          
+                          return (
+                            <div 
+                              key={item.id} 
+                              className="bg-gradient-to-br from-white to-muted/20 rounded-lg p-2.5 border border-border/40 hover:border-primary/30 transition-all duration-150 shadow-sm"
+                            >
+                              <div className="flex items-start gap-2.5">
+                                <div className="relative flex-shrink-0">
+                                  <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center text-foreground text-base font-bold border border-primary/30">
+                                    {item.quantity}
                                   </div>
-                                  <div className="flex-1 min-w-0 flex flex-col gap-1.5">
-                                    <div>
-                                      <div className="flex items-start justify-between gap-2">
-                                        <h4 className="font-bold text-sm text-foreground leading-tight flex-1">{menuItem?.name || 'Piatto'}</h4>
-                                        {completedQuantity > 0 && (
-                                          <span className="text-[10px] font-bold text-green-600 bg-green-50 px-1.5 py-0.5 rounded border border-green-200 flex-shrink-0 leading-tight">
-                                            {completedQuantity}/{item.quantity}
-                                          </span>
-                                        )}
-                                      </div>
-                                      {item.notes && (
-                                        <div className="flex items-start gap-1 mt-1 bg-amber-50 border border-amber-200 rounded px-2 py-1">
-                                          <span className="text-amber-600 text-[10px] flex-shrink-0 mt-0.5">💡</span>
-                                          <p className="text-[11px] text-amber-800 font-medium italic leading-tight">
-                                            {item.notes}
-                                          </p>
-                                        </div>
-                                      )}
+                                  {completedQuantity > 0 && (
+                                    <div className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-green-500 flex items-center justify-center text-white text-[10px] font-bold border-2 border-white shadow-md">
+                                      ✓
                                     </div>
-
-                                    {completedQuantity > 0 && completedQuantity < item.quantity && (
-                                      <div className="h-1 bg-green-100 rounded-full overflow-hidden">
-                                        <div 
-                                          className="h-full bg-gradient-to-r from-green-600 to-green-500 rounded-full transition-all duration-500"
-                                          style={{ width: `${itemProgress}%` }}
-                                        />
-                                      </div>
-                                    )}
-                                  </div>
-                                  
-                                  {remainingQuantity > 0 && (
-                                    <Button 
-                                      onClick={() => handleCompleteDish(order.id, item.id)}
-                                      size="sm"
-                                      className="flex-shrink-0 bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white shadow-sm hover:shadow-md hover:scale-105 transition-all duration-150 font-semibold h-8 px-2.5"
-                                    >
-                                      <div className="flex items-center gap-1">
-                                        <Check size={12} weight="bold" />
-                                        <span className="text-[11px]">({remainingQuantity})</span>
-                                      </div>
-                                    </Button>
                                   )}
                                 </div>
+                                <div className="flex-1 min-w-0 flex flex-col gap-1.5">
+                                  <div>
+                                    <div className="flex items-start justify-between gap-2">
+                                      <h4 className="font-bold text-sm text-foreground leading-tight flex-1">{menuItem?.name || 'Piatto'}</h4>
+                                      {completedQuantity > 0 && (
+                                        <span className="text-[10px] font-bold text-green-600 bg-green-50 px-1.5 py-0.5 rounded border border-green-200 flex-shrink-0 leading-tight">
+                                          {completedQuantity}/{item.quantity}
+                                        </span>
+                                      )}
+                                    </div>
+                                    {item.notes && (
+                                      <div className="flex items-start gap-1 mt-1 bg-amber-50 border border-amber-200 rounded px-2 py-1">
+                                        <span className="text-amber-600 text-[10px] flex-shrink-0 mt-0.5">💡</span>
+                                        <p className="text-[11px] text-amber-800 font-medium italic leading-tight">
+                                          {item.notes}
+                                        </p>
+                                      </div>
+                                    )}
+                                  </div>
+
+                                  {completedQuantity > 0 && completedQuantity < item.quantity && (
+                                    <div className="h-1 bg-green-100 rounded-full overflow-hidden">
+                                      <div 
+                                        className="h-full bg-gradient-to-r from-green-600 to-green-500 rounded-full transition-all duration-500"
+                                        style={{ width: `${itemProgress}%` }}
+                                      />
+                                    </div>
+                                  )}
+                                </div>
+                                
+                                {remainingQuantity > 0 && (
+                                  <Button 
+                                    onClick={() => handleCompleteDish(order.id, item.id)}
+                                    size="sm"
+                                    className="flex-shrink-0 bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white shadow-sm hover:shadow-md hover:scale-105 transition-all duration-150 font-semibold h-8 min-w-[50px] px-3"
+                                  >
+                                    <div className="flex items-center gap-1.5">
+                                      <Check size={14} weight="bold" />
+                                      <span className="text-xs font-bold">{remainingQuantity}</span>
+                                    </div>
+                                  </Button>
+                                )}
                               </div>
-                            )
-                          })}
-                        </div>
-                        {order.items.length > 4 && (
-                          <div className="absolute bottom-0 left-0 right-0 h-8 bg-gradient-to-t from-white via-white/80 to-transparent pointer-events-none rounded-b-xl" />
-                        )}
+                            </div>
+                          )
+                        })}
                       </div>
                     </div>
                   )
@@ -880,77 +875,72 @@ const RestaurantDashboard = ({ user, onLogout }: RestaurantDashboardProps) => {
                           )}
                         </div>
 
-                        <div className="relative">
-                          <div className="p-2.5 space-y-1.5 max-h-[380px] overflow-y-auto scrollbar-thin">
-                            {orders.map((orderInfo) => {
-                              const remaining = orderInfo.quantity - orderInfo.completedQuantity
-                              
-                              return (
-                                <div 
-                                  key={`${orderInfo.orderId}-${orderInfo.itemId}`} 
-                                  className="bg-gradient-to-br from-white to-muted/30 rounded-lg p-2.5 border border-border/40 shadow-sm hover:shadow-md hover:border-primary/30 transition-all duration-200"
-                                >
-                                  <div className="flex items-start gap-2.5">
-                                    <div className="relative flex-shrink-0">
-                                      <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center text-foreground text-base font-bold border border-primary/30">
-                                        {orderInfo.quantity}
-                                      </div>
-                                      {orderInfo.completedQuantity > 0 && (
-                                        <div className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-green-500 flex items-center justify-center text-white text-[10px] font-bold border-2 border-white shadow-md">
-                                          ✓
-                                        </div>
-                                      )}
+                        <div className="p-2.5 space-y-1.5 max-h-[600px] overflow-y-auto scrollbar-thin">
+                          {orders.map((orderInfo) => {
+                            const remaining = orderInfo.quantity - orderInfo.completedQuantity
+                            
+                            return (
+                              <div 
+                                key={`${orderInfo.orderId}-${orderInfo.itemId}`} 
+                                className="bg-gradient-to-br from-white to-muted/30 rounded-lg p-2.5 border border-border/40 shadow-sm hover:shadow-md hover:border-primary/30 transition-all duration-200"
+                              >
+                                <div className="flex items-start gap-2.5">
+                                  <div className="relative flex-shrink-0">
+                                    <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center text-foreground text-base font-bold border border-primary/30">
+                                      {orderInfo.quantity}
                                     </div>
-                                    <div className="flex-1 min-w-0 flex flex-col gap-1.5">
-                                      <div>
-                                        <div className="flex items-start justify-between gap-2">
-                                          <h4 className="font-bold text-sm text-foreground leading-tight flex-1">{orderInfo.tableName}</h4>
-                                          {orderInfo.completedQuantity > 0 && (
-                                            <span className="text-[10px] font-bold text-green-600 bg-green-50 px-1.5 py-0.5 rounded border border-green-200 flex-shrink-0 leading-tight">
-                                              {orderInfo.completedQuantity}/{orderInfo.quantity}
-                                            </span>
-                                          )}
-                                        </div>
-                                        {orderInfo.notes && (
-                                          <div className="flex items-start gap-1 mt-1 bg-amber-50 border border-amber-200 rounded px-2 py-1">
-                                            <span className="text-amber-600 text-[10px] flex-shrink-0 mt-0.5">💡</span>
-                                            <p className="text-[11px] text-amber-800 font-medium italic leading-tight">
-                                              {orderInfo.notes}
-                                            </p>
-                                          </div>
-                                        )}
+                                    {orderInfo.completedQuantity > 0 && (
+                                      <div className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-green-500 flex items-center justify-center text-white text-[10px] font-bold border-2 border-white shadow-md">
+                                        ✓
                                       </div>
-
-                                      {orderInfo.completedQuantity > 0 && orderInfo.completedQuantity < orderInfo.quantity && (
-                                        <div className="h-1 bg-green-100 rounded-full overflow-hidden">
-                                          <div 
-                                            className="h-full bg-gradient-to-r from-green-600 to-green-500 rounded-full transition-all duration-500"
-                                            style={{ width: `${(orderInfo.completedQuantity / orderInfo.quantity) * 100}%` }}
-                                          />
-                                        </div>
-                                      )}
-                                    </div>
-
-                                    {remaining > 0 && (
-                                      <Button
-                                        onClick={() => handleCompleteDish(orderInfo.orderId, orderInfo.itemId)}
-                                        size="sm"
-                                        className="flex-shrink-0 bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white shadow-sm hover:shadow-md hover:scale-105 transition-all duration-150 font-semibold h-8 px-2.5"
-                                      >
-                                        <div className="flex items-center gap-1">
-                                          <Check size={12} weight="bold" />
-                                          <span className="text-[11px]">({remaining})</span>
-                                        </div>
-                                      </Button>
                                     )}
                                   </div>
+                                  <div className="flex-1 min-w-0 flex flex-col gap-1.5">
+                                    <div>
+                                      <div className="flex items-start justify-between gap-2">
+                                        <h4 className="font-bold text-sm text-foreground leading-tight flex-1">{orderInfo.tableName}</h4>
+                                        {orderInfo.completedQuantity > 0 && (
+                                          <span className="text-[10px] font-bold text-green-600 bg-green-50 px-1.5 py-0.5 rounded border border-green-200 flex-shrink-0 leading-tight">
+                                            {orderInfo.completedQuantity}/{orderInfo.quantity}
+                                          </span>
+                                        )}
+                                      </div>
+                                      {orderInfo.notes && (
+                                        <div className="flex items-start gap-1 mt-1 bg-amber-50 border border-amber-200 rounded px-2 py-1">
+                                          <span className="text-amber-600 text-[10px] flex-shrink-0 mt-0.5">💡</span>
+                                          <p className="text-[11px] text-amber-800 font-medium italic leading-tight">
+                                            {orderInfo.notes}
+                                          </p>
+                                        </div>
+                                      )}
+                                    </div>
+
+                                    {orderInfo.completedQuantity > 0 && orderInfo.completedQuantity < orderInfo.quantity && (
+                                      <div className="h-1 bg-green-100 rounded-full overflow-hidden">
+                                        <div 
+                                          className="h-full bg-gradient-to-r from-green-600 to-green-500 rounded-full transition-all duration-500"
+                                          style={{ width: `${(orderInfo.completedQuantity / orderInfo.quantity) * 100}%` }}
+                                        />
+                                      </div>
+                                    )}
+                                  </div>
+
+                                  {remaining > 0 && (
+                                    <Button
+                                      onClick={() => handleCompleteDish(orderInfo.orderId, orderInfo.itemId)}
+                                      size="sm"
+                                      className="flex-shrink-0 bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white shadow-sm hover:shadow-md hover:scale-105 transition-all duration-150 font-semibold h-8 min-w-[50px] px-3"
+                                    >
+                                      <div className="flex items-center gap-1.5">
+                                        <Check size={14} weight="bold" />
+                                        <span className="text-xs font-bold">{remaining}</span>
+                                      </div>
+                                    </Button>
+                                  )}
                                 </div>
-                              )
-                            })}
-                          </div>
-                          {orders.length > 4 && (
-                            <div className="absolute bottom-0 left-0 right-0 h-8 bg-gradient-to-t from-white via-white/80 to-transparent pointer-events-none rounded-b-xl" />
-                          )}
+                              </div>
+                            )
+                          })}
                         </div>
                       </div>
                     )
@@ -1574,7 +1564,7 @@ const RestaurantDashboard = ({ user, onLogout }: RestaurantDashboardProps) => {
                                 className="h-8 w-8 p-0"
                                 title={item.isActive ? 'Disattiva piatto' : 'Attiva piatto'}
                               >
-                                {item.isActive ? <Eye size={14} /> : <EyeSlash size={14} />}
+                                {item.isActive ? <EyeSlash size={14} /> : <Eye size={14} />}
                               </Button>
                               <Button
                                 variant="outline"
