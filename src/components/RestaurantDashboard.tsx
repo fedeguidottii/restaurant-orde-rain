@@ -423,9 +423,8 @@ const RestaurantDashboard = ({ user, onLogout }: RestaurantDashboardProps) => {
     const diff = now - timestamp
     const minutes = Math.floor(diff / 60000)
     
-    if (minutes < 5) return 'text-green-600 bg-green-50 border-green-200'
-    if (minutes < 15) return 'text-yellow-600 bg-yellow-50 border-yellow-200'
-    if (minutes < 30) return 'text-orange-600 bg-orange-50 border-orange-200'
+    if (minutes < 10) return 'text-green-600 bg-green-50 border-green-200'
+    if (minutes < 20) return 'text-orange-600 bg-orange-50 border-orange-200'
     return 'text-red-600 bg-red-50 border-red-200'
   }
 
@@ -603,25 +602,26 @@ const RestaurantDashboard = ({ user, onLogout }: RestaurantDashboardProps) => {
                 </div>
               </div>
               <div className="flex gap-2">
-                <Select value={orderViewMode} onValueChange={(value: 'table' | 'dish') => setOrderViewMode(value)}>
-                  <SelectTrigger className="w-[160px] h-9 shadow-sm hover:shadow-md border hover:border-primary/30 transition-all duration-200">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="table">
-                      <div className="flex items-center gap-2">
-                        <MapPin size={14} />
-                        <span className="text-sm">Per Tavoli</span>
-                      </div>
-                    </SelectItem>
-                    <SelectItem value="dish">
-                      <div className="flex items-center gap-2">
-                        <List size={14} />
-                        <span className="text-sm">Per Piatti</span>
-                      </div>
-                    </SelectItem>
-                  </SelectContent>
-                </Select>
+                <div className="flex items-center gap-2 bg-white rounded-lg p-1 shadow-sm border border-border/30">
+                  <Button
+                    variant={orderViewMode === 'table' ? 'default' : 'ghost'}
+                    size="sm"
+                    onClick={() => setOrderViewMode('table')}
+                    className="h-7 px-3"
+                  >
+                    <MapPin size={14} className="mr-1.5" />
+                    <span className="text-xs font-medium">Tavoli</span>
+                  </Button>
+                  <Button
+                    variant={orderViewMode === 'dish' ? 'default' : 'ghost'}
+                    size="sm"
+                    onClick={() => setOrderViewMode('dish')}
+                    className="h-7 px-3"
+                  >
+                    <List size={14} className="mr-1.5" />
+                    <span className="text-xs font-medium">Piatti</span>
+                  </Button>
+                </div>
                 {orderViewMode === 'dish' && (
                   <Select value={selectedCategoryFilter} onValueChange={setSelectedCategoryFilter}>
                     <SelectTrigger className="w-[180px] h-9 shadow-sm hover:shadow-md border hover:border-primary/30 transition-all duration-200">
@@ -631,7 +631,7 @@ const RestaurantDashboard = ({ user, onLogout }: RestaurantDashboardProps) => {
                       <SelectItem value="all">
                         <div className="flex items-center gap-2">
                           <BookOpen size={14} />
-                          <span className="text-sm">Tutte le categorie</span>
+                          <span className="text-sm">Tutte</span>
                         </div>
                       </SelectItem>
                       {restaurantCategories
@@ -646,14 +646,14 @@ const RestaurantDashboard = ({ user, onLogout }: RestaurantDashboardProps) => {
                   </Select>
                 )}
                 <Select value={orderSortMode} onValueChange={(value: 'oldest' | 'newest') => setOrderSortMode(value)}>
-                  <SelectTrigger className="w-[160px] h-9 shadow-sm hover:shadow-md border hover:border-primary/30 transition-all duration-200">
+                  <SelectTrigger className="w-[140px] h-9 shadow-sm hover:shadow-md border hover:border-primary/30 transition-all duration-200">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="oldest">
                       <div className="flex items-center gap-2">
                         <ClockCounterClockwise size={14} />
-                        <span className="text-sm">Più Vecchi</span>
+                        <span className="text-sm">Meno Recenti</span>
                       </div>
                     </SelectItem>
                     <SelectItem value="newest">
@@ -759,22 +759,20 @@ const RestaurantDashboard = ({ user, onLogout }: RestaurantDashboardProps) => {
                                     {isFullyCompleted ? '✓' : remainingQuantity}
                                   </div>
                                 </div>
-                                <div className="flex-1 min-w-0 flex flex-col gap-1.5">
-                                  <div>
-                                    <div className="flex items-start justify-between gap-2">
-                                      <h4 className="font-bold text-sm text-foreground leading-tight flex-1">
-                                        {remainingQuantity > 1 && `${remainingQuantity}× `}{menuItem?.name || 'Piatto'}
-                                      </h4>
-                                    </div>
-                                    {item.notes && (
-                                      <div className="flex items-start gap-1 mt-1 bg-amber-50 border border-amber-200 rounded px-2 py-1">
-                                        <span className="text-amber-600 text-[10px] flex-shrink-0 mt-0.5">💡</span>
-                                        <p className="text-[11px] text-amber-800 font-medium italic leading-tight">
-                                          {item.notes}
-                                        </p>
-                                      </div>
-                                    )}
+                                <div className="flex-1 min-w-0">
+                                  <div className="flex items-start justify-between gap-2">
+                                    <h4 className="font-bold text-sm text-foreground leading-tight">
+                                      {remainingQuantity > 1 && `${remainingQuantity}× `}{menuItem?.name || 'Piatto'}
+                                    </h4>
                                   </div>
+                                  {item.notes && (
+                                    <div className="flex items-start gap-1 mt-1.5 bg-amber-50 border border-amber-200 rounded px-2 py-1">
+                                      <span className="text-amber-600 text-[10px] flex-shrink-0 mt-0.5">💡</span>
+                                      <p className="text-[11px] text-amber-800 font-medium italic leading-tight">
+                                        {item.notes}
+                                      </p>
+                                    </div>
+                                  )}
                                 </div>
                                 
                                 {!isFullyCompleted && (
@@ -796,233 +794,200 @@ const RestaurantDashboard = ({ user, onLogout }: RestaurantDashboardProps) => {
                 })}
               </div>
             ) : (
-              <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-                {(() => {
-                  const dishGroups: Record<string, { 
-                    item: MenuItem, 
-                    orders: Array<{ 
-                      orderId: string, 
-                      tableId: string, 
-                      tableName: string, 
-                      quantity: number, 
-                      completedQuantity: number, 
-                      notes?: string, 
-                      itemId: string,
-                      timestamp: number
-                    }> 
-                  }> = {}
-                  
-                  restaurantOrders.forEach(order => {
-                    order.items.forEach(item => {
-                      const menuItem = restaurantMenuItems.find(m => m.id === item.menuItemId)
-                      if (menuItem) {
-                        if (!dishGroups[menuItem.id]) {
-                          dishGroups[menuItem.id] = { item: menuItem, orders: [] }
+              <>
+                {selectedCategoryFilter !== 'all' && (
+                  <div className="bg-gradient-to-br from-primary/10 to-accent/10 rounded-xl p-4 mb-4 border-2 border-primary/30">
+                    <h2 className="text-2xl font-bold text-primary flex items-center gap-2">
+                      <BookOpen size={24} weight="duotone" />
+                      {selectedCategoryFilter}
+                    </h2>
+                  </div>
+                )}
+                
+                <div className="space-y-6">
+                  {(() => {
+                    const dishGroups: Record<string, { 
+                      item: MenuItem, 
+                      orders: Array<{ 
+                        orderId: string, 
+                        tableId: string, 
+                        tableName: string, 
+                        quantity: number, 
+                        completedQuantity: number, 
+                        notes?: string, 
+                        itemId: string,
+                        timestamp: number
+                      }> 
+                    }> = {}
+                    
+                    restaurantOrders.forEach(order => {
+                      order.items.forEach(item => {
+                        const menuItem = restaurantMenuItems.find(m => m.id === item.menuItemId)
+                        if (menuItem) {
+                          if (!dishGroups[menuItem.id]) {
+                            dishGroups[menuItem.id] = { item: menuItem, orders: [] }
+                          }
+                          const table = restaurantTables.find(t => t.id === order.tableId)
+                          dishGroups[menuItem.id].orders.push({
+                            orderId: order.id,
+                            tableId: order.tableId,
+                            tableName: table?.name || 'Tavolo',
+                            quantity: item.quantity,
+                            completedQuantity: item.completedQuantity || 0,
+                            notes: item.notes,
+                            itemId: item.id,
+                            timestamp: order.timestamp
+                          })
                         }
-                        const table = restaurantTables.find(t => t.id === order.tableId)
-                        dishGroups[menuItem.id].orders.push({
-                          orderId: order.id,
-                          tableId: order.tableId,
-                          tableName: table?.name || 'Tavolo',
-                          quantity: item.quantity,
-                          completedQuantity: item.completedQuantity || 0,
-                          notes: item.notes,
-                          itemId: item.id,
-                          timestamp: order.timestamp
-                        })
-                      }
+                      })
                     })
-                  })
 
-                  const filteredDishGroups = selectedCategoryFilter === 'all' 
-                    ? Object.values(dishGroups)
-                    : Object.values(dishGroups).filter(({ item }) => item.category === selectedCategoryFilter)
+                    const filteredDishGroups = selectedCategoryFilter === 'all' 
+                      ? Object.values(dishGroups)
+                      : Object.values(dishGroups).filter(({ item }) => item.category === selectedCategoryFilter)
 
-                  const sortedDishGroups = filteredDishGroups.sort((a, b) => {
-                    const categoryA = restaurantCategories.find(c => c.name === a.item.category)
-                    const categoryB = restaurantCategories.find(c => c.name === b.item.category)
-                    const orderA = categoryA?.order ?? 999
-                    const orderB = categoryB?.order ?? 999
-                    
-                    if (orderA !== orderB) {
-                      return orderA - orderB
-                    }
-                    return a.item.name.localeCompare(b.item.name)
-                  })
+                    const sortedDishGroups = filteredDishGroups.sort((a, b) => {
+                      const categoryA = restaurantCategories.find(c => c.name === a.item.category)
+                      const categoryB = restaurantCategories.find(c => c.name === b.item.category)
+                      const orderA = categoryA?.order ?? 999
+                      const orderB = categoryB?.order ?? 999
+                      
+                      if (orderA !== orderB) {
+                        return orderA - orderB
+                      }
+                      return a.item.name.localeCompare(b.item.name)
+                    })
 
-                  if (sortedDishGroups.length === 0) {
-                    return (
-                      <div className="col-span-full text-center py-16">
-                        <div className="w-16 h-16 rounded-2xl bg-muted/20 flex items-center justify-center mx-auto mb-4">
-                          <BookOpen size={32} className="text-muted-foreground/40" weight="duotone" />
-                        </div>
-                        <p className="text-lg font-semibold text-muted-foreground">Nessun piatto in questa categoria</p>
-                        <p className="text-xs text-muted-foreground mt-1">Seleziona un'altra categoria per vedere i piatti</p>
-                      </div>
-                    )
-                  }
-
-                  return sortedDishGroups.map(({ item, orders }) => {
-                    const totalQuantity = orders.reduce((sum, o) => sum + o.quantity, 0)
-                    const totalCompleted = orders.reduce((sum, o) => sum + o.completedQuantity, 0)
-                    const totalRemaining = totalQuantity - totalCompleted
-                    const progressPercent = totalQuantity > 0 ? (totalCompleted / totalQuantity) * 100 : 0
-                    
-                    const sortedOrders = [...orders].sort((a, b) => 
-                      orderSortMode === 'oldest' ? a.timestamp - b.timestamp : b.timestamp - a.timestamp
-                    )
-
-                    return (
-                      <div 
-                        key={item.id}
-                        className="group bg-white rounded-xl shadow-md border border-border/20 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 overflow-hidden"
-                      >
-                        <div className="p-3 border-b border-border/10">
-                          <div className="flex items-start gap-2.5 mb-2">
-                            <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-primary to-accent flex items-center justify-center text-white text-lg font-bold shadow-md group-hover:scale-105 transition-transform duration-200 flex-shrink-0">
-                              {totalRemaining}
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <h3 className="text-base font-bold text-foreground leading-tight">{item.name}</h3>
-                              <div className="flex items-center gap-2 mt-1">
-                                <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-5 border-primary/30 bg-primary/5 text-primary font-medium">
-                                  {item.category}
-                                </Badge>
-                                <p className="text-xs text-muted-foreground">
-                                  {sortedOrders.length} {sortedOrders.length === 1 ? 'tavolo' : 'tavoli'}
-                                </p>
-                              </div>
-                            </div>
+                    if (sortedDishGroups.length === 0) {
+                      return (
+                        <div className="col-span-full text-center py-16">
+                          <div className="w-16 h-16 rounded-2xl bg-muted/20 flex items-center justify-center mx-auto mb-4">
+                            <BookOpen size={32} className="text-muted-foreground/40" weight="duotone" />
                           </div>
-
-                          {progressPercent > 0 && (
-                            <div className="mt-2">
-                              <Progress value={progressPercent} className="h-1.5" />
-                            </div>
-                          )}
+                          <p className="text-lg font-semibold text-muted-foreground">Nessun piatto in questa categoria</p>
+                          <p className="text-xs text-muted-foreground mt-1">Seleziona un'altra categoria per vedere i piatti</p>
                         </div>
+                      )
+                    }
 
-                        <div className="p-2 space-y-2">
-                          {sortedOrders.map((orderInfo) => {
-                            const remaining = orderInfo.quantity - orderInfo.completedQuantity
-                            const isFullyCompleted = remaining === 0
-                            
-                            return (
-                              <div 
-                                key={`${orderInfo.orderId}-${orderInfo.itemId}`} 
-                                className={`rounded-lg p-2.5 border shadow-sm transition-all duration-200 ${
-                                  isFullyCompleted 
-                                    ? 'bg-gradient-to-br from-green-50 to-green-100 border-green-300 opacity-60' 
-                                    : 'bg-gradient-to-br from-white to-muted/30 border-border/40 hover:shadow-md hover:border-primary/30'
-                                }`}
-                              >
-                                <div className="flex items-center gap-2">
-                                  <div className={`w-9 h-9 rounded-lg flex items-center justify-center text-base font-bold border ${
-                                    isFullyCompleted 
-                                      ? 'bg-green-500 text-white border-green-600' 
-                                      : 'bg-gradient-to-br from-primary/20 to-accent/20 text-foreground border-primary/30'
-                                  }`}>
-                                    {isFullyCompleted ? '✓' : remaining}
-                                  </div>
-                                  <div className="flex-1 min-w-0">
-                                    <div className="flex items-center gap-2">
-                                      <h4 className="text-sm font-bold text-foreground leading-tight flex-1">{orderInfo.tableName}</h4>
-                                      <div className={`flex items-center gap-1 text-xs font-bold px-1.5 py-0.5 rounded border flex-shrink-0 ${getTimeColor(orderInfo.timestamp)}`}>
-                                        <Clock size={10} weight="fill" />
-                                        <span className="text-[10px]">{getTimeAgo(orderInfo.timestamp)}</span>
-                                      </div>
-                                    </div>
-                                    {orderInfo.notes && (
-                                      <div className="mt-1 bg-amber-50/80 border border-amber-200 rounded px-1.5 py-0.5">
-                                        <p className="text-[10px] text-amber-800 italic leading-tight">
-                                          {orderInfo.notes}
-                                        </p>
-                                      </div>
-                                    )}
-                                  </div>
+                    let currentCategory = ''
+                    const elementsToRender: React.ReactElement[] = []
 
-                                  {!isFullyCompleted && (
-                                    <Button
-                                      onClick={() => handleCompleteDish(orderInfo.orderId, orderInfo.itemId)}
-                                      size="sm"
-                                      className="flex-shrink-0 bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white shadow-sm hover:shadow-md hover:scale-105 transition-all duration-150 font-semibold h-8 px-3"
-                                    >
-                                      <Check size={14} weight="bold" />
-                                    </Button>
+                    sortedDishGroups.forEach(({ item, orders }, index) => {
+                      if (selectedCategoryFilter === 'all' && item.category !== currentCategory) {
+                        currentCategory = item.category
+                        elementsToRender.push(
+                          <div key={`category-${currentCategory}`} className="bg-gradient-to-r from-primary/10 to-accent/10 rounded-lg p-3 border-l-4 border-primary">
+                            <h3 className="text-xl font-bold text-primary flex items-center gap-2">
+                              <BookOpen size={20} weight="duotone" />
+                              {currentCategory}
+                            </h3>
+                          </div>
+                        )
+                      }
+
+                      const totalQuantity = orders.reduce((sum, o) => sum + o.quantity, 0)
+                      const totalCompleted = orders.reduce((sum, o) => sum + o.completedQuantity, 0)
+                      const totalRemaining = totalQuantity - totalCompleted
+                      const progressPercent = totalQuantity > 0 ? (totalCompleted / totalQuantity) * 100 : 0
+                      
+                      const sortedOrders = [...orders].sort((a, b) => 
+                        orderSortMode === 'oldest' ? a.timestamp - b.timestamp : b.timestamp - a.timestamp
+                      )
+
+                      elementsToRender.push(
+                        <div 
+                          key={item.id}
+                          className="group bg-white rounded-xl shadow-md border border-border/20 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 overflow-hidden"
+                        >
+                          <div className="p-3 border-b border-border/10">
+                            <div className="flex items-start gap-2.5 mb-2">
+                              <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-primary to-accent flex items-center justify-center text-white text-lg font-bold shadow-md group-hover:scale-105 transition-transform duration-200 flex-shrink-0">
+                                {totalRemaining}
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <h3 className="text-base font-bold text-foreground leading-tight">{item.name}</h3>
+                                <div className="flex items-center gap-2 mt-1">
+                                  {selectedCategoryFilter === 'all' && (
+                                    <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-5 border-primary/30 bg-primary/5 text-primary font-medium">
+                                      {item.category}
+                                    </Badge>
                                   )}
+                                  <p className="text-xs text-muted-foreground">
+                                    {sortedOrders.length} {sortedOrders.length === 1 ? 'tavolo' : 'tavoli'}
+                                  </p>
                                 </div>
                               </div>
-                            )
-                          })}
-                        </div>
-                      </div>
-                    )
-                  })
-                })()}
+                            </div>
 
-                {/* Completed Orders Section */}
-                {restaurantCompletedOrders.length > 0 && (
-                <>
-                  <Separator className="my-6 opacity-20" />
-                  <div className="flex items-center justify-between mb-4">
-                    <div className="flex items-center gap-2.5">
-                      <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-green-600 to-green-500 flex items-center justify-center text-white shadow-sm">
-                        <Check size={16} weight="bold" />
-                      </div>
-                      <h3 className="text-xl font-bold text-foreground">Ordini Completati</h3>
-                    </div>
-                    <Badge variant="secondary" className="text-xs shadow-sm px-3 py-1 bg-green-50 border-green-200 text-green-700">
-                      {restaurantCompletedOrders.length} completati
-                    </Badge>
-                  </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                    {restaurantCompletedOrders.map((order) => {
-                      const table = restaurantTables.find(t => t.id === order.tableId)
-                      const totalItems = order.items.reduce((sum, item) => sum + item.quantity, 0)
-                      
-                      return (
-                      <div 
-                        key={order.id} 
-                        className="group bg-gradient-to-br from-green-50 via-emerald-50/50 to-green-50 rounded-lg p-3 shadow-sm border border-green-200/50 hover:shadow-md hover:-translate-y-0.5 transition-all duration-150"
-                      >
-                        <div className="flex items-center gap-2.5 mb-2.5">
-                          <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-green-600 to-green-500 flex items-center justify-center text-white font-bold text-base shadow-sm group-hover:scale-105 transition-transform duration-150">
-                            ✓
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <h4 className="text-sm font-bold text-foreground truncate">{table?.name || 'Tavolo'}</h4>
-                            <p className="text-xs text-green-700 font-medium">{totalItems} {totalItems === 1 ? 'piatto' : 'piatti'}</p>
-                          </div>
-                        </div>
-                        
-                        <div className="bg-white/70 rounded-md px-2.5 py-2 mb-2.5 space-y-0.5 max-h-20 overflow-y-auto">
-                          {order.items.map((item, index) => {
-                            const menuItem = restaurantMenuItems.find(m => m.id === item.menuItemId)
-                            return (
-                              <div key={index} className="text-xs text-foreground/70 flex items-center gap-1">
-                                <span className="font-bold text-green-600 w-4 flex-shrink-0 text-[11px]">{item.quantity}×</span>
-                                <span className="truncate text-[11px]">{menuItem?.name || 'Piatto'}</span>
+                            {progressPercent > 0 && (
+                              <div className="mt-2">
+                                <Progress value={progressPercent} className="h-1.5" />
                               </div>
-                            )
-                          })}
+                            )}
+                          </div>
+
+                          <div className="p-2 space-y-2">
+                            {sortedOrders.map((orderInfo) => {
+                              const remaining = orderInfo.quantity - orderInfo.completedQuantity
+                              const isFullyCompleted = remaining === 0
+                              
+                              return (
+                                <div 
+                                  key={`${orderInfo.orderId}-${orderInfo.itemId}`} 
+                                  className={`rounded-lg p-2.5 border shadow-sm transition-all duration-200 ${
+                                    isFullyCompleted 
+                                      ? 'bg-gradient-to-br from-green-50 to-green-100 border-green-300 opacity-60' 
+                                      : 'bg-gradient-to-br from-white to-muted/30 border-border/40 hover:shadow-md hover:border-primary/30'
+                                  }`}
+                                >
+                                  <div className="flex items-start gap-2">
+                                    <div className={`w-9 h-9 rounded-lg flex items-center justify-center text-base font-bold border flex-shrink-0 ${
+                                      isFullyCompleted 
+                                        ? 'bg-green-500 text-white border-green-600' 
+                                        : 'bg-gradient-to-br from-primary/20 to-accent/20 text-foreground border-primary/30'
+                                    }`}>
+                                      {isFullyCompleted ? '✓' : remaining}
+                                    </div>
+                                    <div className="flex-1 min-w-0">
+                                      <div className="flex items-center gap-2">
+                                        <h4 className="text-sm font-bold text-foreground leading-tight flex-1">{orderInfo.tableName}</h4>
+                                        <div className={`flex items-center gap-1 text-xs font-bold px-1.5 py-0.5 rounded border flex-shrink-0 ${getTimeColor(orderInfo.timestamp)}`}>
+                                          <Clock size={10} weight="fill" />
+                                          <span className="text-[10px]">{getTimeAgo(orderInfo.timestamp)}</span>
+                                        </div>
+                                      </div>
+                                      {orderInfo.notes && (
+                                        <div className="mt-1.5 bg-amber-50/80 border border-amber-200 rounded px-2 py-1">
+                                          <p className="text-[10px] text-amber-800 italic leading-tight font-medium">
+                                            💡 {orderInfo.notes}
+                                          </p>
+                                        </div>
+                                      )}
+                                    </div>
+
+                                    {!isFullyCompleted && (
+                                      <Button
+                                        onClick={() => handleCompleteDish(orderInfo.orderId, orderInfo.itemId)}
+                                        size="sm"
+                                        className="flex-shrink-0 bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white shadow-sm hover:shadow-md hover:scale-105 transition-all duration-150 font-semibold h-8 px-3"
+                                      >
+                                        <Check size={14} weight="bold" />
+                                      </Button>
+                                    )}
+                                  </div>
+                                </div>
+                              )
+                            })}
+                          </div>
                         </div>
-                        
-                        <Button 
-                          variant="outline"
-                          onClick={() => handleUncompleteOrder(order.id)}
-                          size="sm"
-                          className="w-full text-xs border-green-300 hover:bg-green-100 hover:border-green-400 h-7"
-                        >
-                          <X size={12} className="mr-1" />
-                          Riporta in Attesa
-                        </Button>
-                      </div>
-                    )
-                  })}
+                      )
+                    })
+
+                    return <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">{elementsToRender}</div>
+                  })()}
                 </div>
               </>
-            )}
-              </div>
             )}
 
             {/* Order History Section */}
