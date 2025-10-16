@@ -620,7 +620,15 @@ const RestaurantDashboard = ({ user, onLogout }: RestaurantDashboardProps) => {
               </div>
             </div>
             
-            {orderViewMode === 'table' ? (
+            {restaurantOrders.length === 0 ? (
+              <div className="col-span-full text-center py-16">
+                <div className="w-16 h-16 rounded-2xl bg-muted/20 flex items-center justify-center mx-auto mb-4">
+                  <Clock size={32} className="text-muted-foreground/40" weight="duotone" />
+                </div>
+                <p className="text-lg font-semibold text-muted-foreground">Nessun ordine attivo</p>
+                <p className="text-xs text-muted-foreground mt-1">Gli ordini appariranno qui non appena arrivano</p>
+              </div>
+            ) : orderViewMode === 'table' ? (
               <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
                 {restaurantOrders.map(order => {
                   const table = restaurantTables.find(t => t.id === order.tableId)
@@ -679,15 +687,11 @@ const RestaurantDashboard = ({ user, onLogout }: RestaurantDashboardProps) => {
                           return (
                             <div 
                               key={item.id} 
-                              className="bg-gradient-to-br from-white to-muted/20 rounded-lg p-3 border border-border/30 hover:border-primary/20 transition-all duration-150"
                             >
                               <div className="flex items-start gap-2.5 mb-2">
-                                <div className="relative flex-shrink-0">
-                                  <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-primary to-accent flex items-center justify-center text-white text-sm font-bold shadow-sm">
-                                    {item.quantity}
-                                  </div>
+                                <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-primary to-accent flex items-center justify-center text-white text-sm font-bold shadow-sm">
                                   {completedQuantity > 0 && (
-                                    <div className="absolute -top-0.5 -right-0.5 w-4 h-4 rounded-full bg-green-500 flex items-center justify-center text-white text-[10px] font-bold border-2 border-white shadow-sm">
+                                    <div className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-green-500 flex items-center justify-center text-white text-xs font-bold border-2 border-white shadow-md">
                                       ✓
                                     </div>
                                   )}
@@ -697,7 +701,7 @@ const RestaurantDashboard = ({ user, onLogout }: RestaurantDashboardProps) => {
                                   {item.notes && (
                                     <div className="flex items-start gap-1 mt-1 bg-amber-50 border border-amber-200 rounded-md px-2 py-1">
                                       <span className="text-amber-600 text-[10px] flex-shrink-0 mt-0.5">💡</span>
-                                      <p className="text-[11px] text-amber-800 font-medium italic leading-tight">
+                                      <p className="text-xs text-amber-800 font-medium italic leading-tight">
                                         {item.notes}
                                       </p>
                                     </div>
@@ -708,12 +712,12 @@ const RestaurantDashboard = ({ user, onLogout }: RestaurantDashboardProps) => {
                               {completedQuantity > 0 && (
                                 <div className="mb-2 bg-green-50 border border-green-200 rounded-md px-2.5 py-1.5">
                                   <div className="flex items-center justify-between text-xs mb-1">
-                                    <span className="text-green-700 font-semibold text-[11px]">✓ Completati</span>
+                                    <span className="text-green-700 font-semibold">✓ Completati</span>
                                     <span className="text-green-700 font-bold text-xs">{completedQuantity}/{item.quantity}</span>
                                   </div>
-                                  <div className="h-1 bg-green-100 rounded-full overflow-hidden">
+                                  <div className="h-1.5 bg-green-100 rounded-full overflow-hidden">
                                     <div 
-                                      className="h-full bg-gradient-to-r from-green-600 to-green-500 rounded-full transition-all duration-300"
+                                      className="h-full bg-gradient-to-r from-green-600 to-green-500 rounded-full transition-all duration-500"
                                       style={{ width: `${itemProgress}%` }}
                                     />
                                   </div>
@@ -722,7 +726,6 @@ const RestaurantDashboard = ({ user, onLogout }: RestaurantDashboardProps) => {
                               
                               {remainingQuantity > 0 && (
                                 <Button 
-                                  onClick={() => handleCompleteDish(order.id, item.id)}
                                   size="sm"
                                   className="w-full bg-gradient-to-r from-green-600 to-green-500 hover:from-green-700 hover:to-green-600 text-white shadow-sm hover:shadow-md hover:scale-[1.02] transition-all duration-150 font-semibold text-xs h-8"
                                 >
@@ -737,16 +740,6 @@ const RestaurantDashboard = ({ user, onLogout }: RestaurantDashboardProps) => {
                     </div>
                   )
                 })}
-                
-                {restaurantOrders.length === 0 && (
-                  <div className="col-span-full text-center py-16">
-                    <div className="w-16 h-16 rounded-2xl bg-muted/20 flex items-center justify-center mx-auto mb-4">
-                      <Clock size={32} className="text-muted-foreground/40" weight="duotone" />
-                    </div>
-                    <p className="text-lg font-semibold text-muted-foreground">Nessun ordine attivo</p>
-                    <p className="text-xs text-muted-foreground mt-1">Gli ordini appariranno qui non appena arrivano</p>
-                  </div>
-                )}
               </div>
             ) : (
               <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
@@ -777,8 +770,7 @@ const RestaurantDashboard = ({ user, onLogout }: RestaurantDashboardProps) => {
                   return Object.values(dishGroups).map(({ item, orders }) => {
                     const totalQuantity = orders.reduce((sum, o) => sum + o.quantity, 0)
                     const totalCompleted = orders.reduce((sum, o) => sum + o.completedQuantity, 0)
-                    const totalRemaining = totalQuantity - totalCompleted
-                    const progressPercent = (totalCompleted / totalQuantity) * 100
+                    const progressPercent = totalQuantity > 0 ? (totalCompleted / totalQuantity) * 100 : 0
 
                     return (
                       <div 
@@ -822,25 +814,25 @@ const RestaurantDashboard = ({ user, onLogout }: RestaurantDashboardProps) => {
                             return (
                               <div 
                                 key={`${orderInfo.orderId}-${orderInfo.itemId}`} 
-                                className="bg-gradient-to-br from-white to-muted/20 rounded-lg p-3 border border-border/30 hover:border-primary/20 transition-all duration-150"
+                                className="bg-gradient-to-br from-white to-muted/30 rounded-xl p-4 border border-border/30 shadow-sm hover:shadow-md hover:border-primary/20 transition-all duration-200"
                               >
-                                <div className="flex items-start gap-2.5 mb-2">
+                                <div className="flex items-start gap-3 mb-3">
                                   <div className="relative flex-shrink-0">
-                                    <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center text-foreground text-sm font-bold border border-primary/30">
+                                    <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center text-foreground text-lg font-bold border-2 border-primary/30">
                                       {orderInfo.quantity}
                                     </div>
                                     {orderInfo.completedQuantity > 0 && (
-                                      <div className="absolute -top-0.5 -right-0.5 w-4 h-4 rounded-full bg-green-500 flex items-center justify-center text-white text-[10px] font-bold border-2 border-white shadow-sm">
+                                      <div className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-green-500 flex items-center justify-center text-white text-xs font-bold border-2 border-white shadow-md">
                                         ✓
                                       </div>
                                     )}
                                   </div>
                                   <div className="flex-1 min-w-0">
-                                    <h4 className="font-semibold text-sm text-foreground mb-0.5">{orderInfo.tableName}</h4>
+                                    <h4 className="font-bold text-base text-foreground mb-1">{orderInfo.tableName}</h4>
                                     {orderInfo.notes && (
-                                      <div className="flex items-start gap-1 mt-1 bg-amber-50 border border-amber-200 rounded-md px-2 py-1">
-                                        <span className="text-amber-600 text-[10px] flex-shrink-0 mt-0.5">💡</span>
-                                        <p className="text-[11px] text-amber-800 font-medium italic leading-tight">
+                                      <div className="flex items-start gap-1 mt-1 bg-amber-50 border border-amber-200 rounded-lg px-2 py-1.5">
+                                        <span className="text-amber-600 text-xs flex-shrink-0 mt-0.5">💡</span>
+                                        <p className="text-xs text-amber-800 font-medium italic leading-tight">
                                           {orderInfo.notes}
                                         </p>
                                       </div>
@@ -849,12 +841,12 @@ const RestaurantDashboard = ({ user, onLogout }: RestaurantDashboardProps) => {
                                 </div>
 
                                 {orderInfo.completedQuantity > 0 && (
-                                  <div className="mb-2 bg-green-50 border border-green-200 rounded-md px-2.5 py-1.5">
+                                  <div className="mb-3 bg-green-50 border border-green-200 rounded-lg px-3 py-2">
                                     <div className="flex items-center justify-between text-xs mb-1">
-                                      <span className="text-green-700 font-semibold text-[11px]">✓ Completati</span>
-                                      <span className="text-green-700 font-bold text-xs">{orderInfo.completedQuantity}/{orderInfo.quantity}</span>
+                                      <span className="text-green-700 font-semibold">✓ Completati</span>
+                                      <span className="text-green-700 font-bold">{orderInfo.completedQuantity}/{orderInfo.quantity}</span>
                                     </div>
-                                    <div className="h-1 bg-green-100 rounded-full overflow-hidden">
+                                    <div className="h-1.5 bg-green-100 rounded-full overflow-hidden">
                                       <div 
                                         className="h-full bg-gradient-to-r from-green-600 to-green-500 rounded-full transition-all duration-300"
                                         style={{ width: `${itemProgress}%` }}
@@ -862,7 +854,7 @@ const RestaurantDashboard = ({ user, onLogout }: RestaurantDashboardProps) => {
                                     </div>
                                   </div>
                                 )}
-                                
+
                                 {remaining > 0 && (
                                   <Button 
                                     onClick={() => handleCompleteDish(orderInfo.orderId, orderInfo.itemId)}
@@ -881,16 +873,6 @@ const RestaurantDashboard = ({ user, onLogout }: RestaurantDashboardProps) => {
                     )
                   })
                 })()}
-
-                {restaurantOrders.length === 0 && (
-                  <div className="col-span-full text-center py-16">
-                    <div className="w-16 h-16 rounded-2xl bg-muted/20 flex items-center justify-center mx-auto mb-4">
-                      <Clock size={32} className="text-muted-foreground/40" weight="duotone" />
-                    </div>
-                    <p className="text-lg font-semibold text-muted-foreground">Nessun ordine attivo</p>
-                    <p className="text-xs text-muted-foreground mt-1">Gli ordini appariranno qui non appena arrivano</p>
-                  </div>
-                )}
               </div>
             )}
 
