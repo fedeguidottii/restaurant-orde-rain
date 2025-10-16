@@ -2126,16 +2126,15 @@ const RestaurantDashboard = ({ user, onLogout }: RestaurantDashboardProps) => {
             }).length === 0 && restaurantOrderHistory.length > 0 && (
               <Card>
                 <CardContent className="text-center py-12">
-                  <Calendar size={40} className="mx-auto text-muted-foreground/40 mb-3" weight="duotone" />
                   <p className="text-base font-semibold text-muted-foreground">Nessun ordine in questa data</p>
                   <p className="text-xs text-muted-foreground mt-1">Prova a selezionare un'altra data</p>
                 </CardContent>
               </Card>
             )}
-          </TabsContent>
-        </Tabs>
+        </TabsContent>
+      </Tabs>
       </div>
-
+      
       {/* QR Code Dialog */}
       <Dialog open={showQrDialog} onOpenChange={setShowQrDialog}>
         <DialogContent className="max-w-md">
@@ -2147,12 +2146,14 @@ const RestaurantDashboard = ({ user, onLogout }: RestaurantDashboardProps) => {
           </DialogHeader>
           <div className="text-center py-6">
             <div className="mx-auto w-72 h-72 bg-white border-4 border-primary rounded-2xl flex items-center justify-center mb-6 shadow-xl p-4">
-              {selectedTable?.qrCode ? (
-                <QRCodeGenerator value={selectedTable.qrCode} size={240} />
-              ) : (
-                <QrCode size={160} className="text-primary" weight="duotone" />
-              )}
+              <div className="text-center w-full">
+                <QrCode size={160} className="mx-auto mb-4 text-primary" weight="duotone" />
+                <p className="text-xs font-mono text-muted-foreground break-all px-2">
+                  {selectedTable?.qrCode}
+                </p>
+              </div>
             </div>
+            
             <div className="space-y-4 bg-gradient-to-br from-primary/10 to-accent/10 rounded-xl p-5 border-2 border-primary/30">
               <div>
                 <p className="text-sm text-muted-foreground mb-2">PIN Temporaneo</p>
@@ -2160,8 +2161,9 @@ const RestaurantDashboard = ({ user, onLogout }: RestaurantDashboardProps) => {
                 <p className="text-xs text-muted-foreground mt-2">Il PIN cambia ogni volta che attivi il tavolo</p>
               </div>
             </div>
+            
             <div className="flex gap-2 mt-6">
-              <Button 
+              <Button
                 onClick={() => {
                   if (selectedTable?.qrCode) {
                     window.open(selectedTable.qrCode, '_blank')
@@ -2172,7 +2174,7 @@ const RestaurantDashboard = ({ user, onLogout }: RestaurantDashboardProps) => {
               >
                 Testa QR Code
               </Button>
-              <Button 
+              <Button
                 variant="outline"
                 onClick={() => {
                   if (selectedTable?.qrCode) {
