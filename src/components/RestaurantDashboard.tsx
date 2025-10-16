@@ -10,6 +10,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { Badge } from '@/components/ui/badge'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Separator } from '@/components/ui/separator'
+import { Progress } from '@/components/ui/progress'
 import { toast } from 'sonner'
 import { Plus, MapPin, BookOpen, Clock, ChartBar, Gear, SignOut, Trash, Eye, EyeSlash, QrCode, PencilSimple, Calendar, List, ClockCounterClockwise, Check, X } from '@phosphor-icons/react'
 import type { User, Table, MenuItem, Order, Restaurant, Reservation, OrderHistory, MenuCategory } from '../App'
@@ -896,17 +897,12 @@ const RestaurantDashboard = ({ user, onLogout }: RestaurantDashboardProps) => {
 
                           {progressPercent > 0 && (
                             <div className="mt-2">
-                              <div className="h-1.5 bg-muted/50 rounded-full overflow-hidden">
-                                <div 
-                                  className="h-full bg-gradient-to-r from-green-500 to-green-600 transition-all duration-300"
-                                  style={{ width: `${progressPercent}%` }}
-                                />
-                              </div>
+                              <Progress value={progressPercent} className="h-1.5" />
                             </div>
                           )}
                         </div>
 
-                        <div className="p-2.5 space-y-1.5 max-h-[600px] overflow-y-auto scrollbar-thin">
+                        <div className="p-2 space-y-2">
                           {sortedOrders.map((orderInfo) => {
                             const remaining = orderInfo.quantity - orderInfo.completedQuantity
                             const isFullyCompleted = remaining === 0
@@ -920,34 +916,29 @@ const RestaurantDashboard = ({ user, onLogout }: RestaurantDashboardProps) => {
                                     : 'bg-gradient-to-br from-white to-muted/30 border-border/40 hover:shadow-md hover:border-primary/30'
                                 }`}
                               >
-                                <div className="flex items-start gap-2.5">
-                                  <div className="relative flex-shrink-0">
-                                    <div className={`w-9 h-9 rounded-lg flex items-center justify-center text-base font-bold border ${
-                                      isFullyCompleted 
-                                        ? 'bg-green-500 text-white border-green-600' 
-                                        : 'bg-gradient-to-br from-primary/20 to-accent/20 text-foreground border-primary/30'
-                                    }`}>
-                                      {isFullyCompleted ? '✓' : remaining}
-                                    </div>
+                                <div className="flex items-center gap-2">
+                                  <div className={`w-9 h-9 rounded-lg flex items-center justify-center text-base font-bold border ${
+                                    isFullyCompleted 
+                                      ? 'bg-green-500 text-white border-green-600' 
+                                      : 'bg-gradient-to-br from-primary/20 to-accent/20 text-foreground border-primary/30'
+                                  }`}>
+                                    {isFullyCompleted ? '✓' : remaining}
                                   </div>
-                                  <div className="flex-1 min-w-0 flex flex-col gap-1.5">
-                                    <div>
-                                      <div className="flex items-start justify-between gap-2">
-                                        <h4 className="font-bold text-sm text-foreground leading-tight flex-1">{orderInfo.tableName}</h4>
-                                        <div className={`flex items-center gap-1 text-xs font-bold px-1.5 py-0.5 rounded border flex-shrink-0 ${getTimeColor(orderInfo.timestamp)}`}>
-                                          <Clock size={10} weight="fill" />
-                                          <span className="text-[10px]">{getTimeAgo(orderInfo.timestamp)}</span>
-                                        </div>
+                                  <div className="flex-1 min-w-0">
+                                    <div className="flex items-center gap-2">
+                                      <h4 className="text-sm font-bold text-foreground leading-tight flex-1">{orderInfo.tableName}</h4>
+                                      <div className={`flex items-center gap-1 text-xs font-bold px-1.5 py-0.5 rounded border flex-shrink-0 ${getTimeColor(orderInfo.timestamp)}`}>
+                                        <Clock size={10} weight="fill" />
+                                        <span className="text-[10px]">{getTimeAgo(orderInfo.timestamp)}</span>
                                       </div>
-                                      {orderInfo.notes && (
-                                        <div className="flex items-start gap-1 mt-1 bg-amber-50 border border-amber-200 rounded px-2 py-1">
-                                          <span className="text-amber-600 text-[10px] flex-shrink-0 mt-0.5">💡</span>
-                                          <p className="text-[11px] text-amber-800 font-medium italic leading-tight">
-                                            {orderInfo.notes}
-                                          </p>
-                                        </div>
-                                      )}
                                     </div>
+                                    {orderInfo.notes && (
+                                      <div className="mt-1 bg-amber-50/80 border border-amber-200 rounded px-1.5 py-0.5">
+                                        <p className="text-[10px] text-amber-800 italic leading-tight">
+                                          {orderInfo.notes}
+                                        </p>
+                                      </div>
+                                    )}
                                   </div>
 
                                   {!isFullyCompleted && (
@@ -968,28 +959,28 @@ const RestaurantDashboard = ({ user, onLogout }: RestaurantDashboardProps) => {
                     )
                   })
                 })()}
-              </div>
-            )}
-            {restaurantCompletedOrders.length > 0 && (
-              <>
-                <Separator className="my-6 opacity-20" />
-                <div className="flex items-center justify-between mb-4">
-                  <div className="flex items-center gap-2.5">
-                    <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-green-600 to-green-500 flex items-center justify-center text-white shadow-sm">
-                      <Check size={16} weight="bold" />
+
+                {/* Completed Orders Section */}
+                {restaurantCompletedOrders.length > 0 && (
+                <>
+                  <Separator className="my-6 opacity-20" />
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-green-600 to-green-500 flex items-center justify-center text-white shadow-sm">
+                        <Check size={16} weight="bold" />
+                      </div>
+                      <h3 className="text-xl font-bold text-foreground">Ordini Completati</h3>
                     </div>
-                    <h3 className="text-xl font-bold text-foreground">Ordini Completati</h3>
+                    <Badge variant="secondary" className="text-xs shadow-sm px-3 py-1 bg-green-50 border-green-200 text-green-700">
+                      {restaurantCompletedOrders.length} completati
+                    </Badge>
                   </div>
-                  <Badge variant="secondary" className="text-xs shadow-sm px-3 py-1 bg-green-50 border-green-200 text-green-700">
-                    {restaurantCompletedOrders.length}
-                  </Badge>
-                </div>
-                <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-                  {restaurantCompletedOrders.map(order => {
-                    const table = restaurantTables.find(t => t.id === order.tableId)
-                    const totalItems = order.items.reduce((sum, item) => sum + item.quantity, 0)
-                    
-                    return (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                    {restaurantCompletedOrders.map((order) => {
+                      const table = restaurantTables.find(t => t.id === order.tableId)
+                      const totalItems = order.items.reduce((sum, item) => sum + item.quantity, 0)
+                      
+                      return (
                       <div 
                         key={order.id} 
                         className="group bg-gradient-to-br from-green-50 via-emerald-50/50 to-green-50 rounded-lg p-3 shadow-sm border border-green-200/50 hover:shadow-md hover:-translate-y-0.5 transition-all duration-150"
@@ -1030,6 +1021,8 @@ const RestaurantDashboard = ({ user, onLogout }: RestaurantDashboardProps) => {
                   })}
                 </div>
               </>
+            )}
+              </div>
             )}
 
             {/* Order History Section */}
