@@ -2126,15 +2126,14 @@ const RestaurantDashboard = ({ user, onLogout }: RestaurantDashboardProps) => {
             }).length === 0 && restaurantOrderHistory.length > 0 && (
               <Card>
                 <CardContent className="text-center py-12">
-                  <p className="text-base font-semibold text-muted-foreground">Nessun ordine in questa data</p>
                   <p className="text-xs text-muted-foreground mt-1">Prova a selezionare un'altra data</p>
                 </CardContent>
               </Card>
             )}
         </TabsContent>
       </Tabs>
-      </div>
-      
+    </div>
+
       {/* QR Code Dialog */}
       <Dialog open={showQrDialog} onOpenChange={setShowQrDialog}>
         <DialogContent className="max-w-md">
@@ -2144,7 +2143,7 @@ const RestaurantDashboard = ({ user, onLogout }: RestaurantDashboardProps) => {
               QR code fisso per il tavolo. Il PIN cambia ad ogni attivazione.
             </DialogDescription>
           </DialogHeader>
-          <div className="text-center py-6">
+          <div className="space-y-6">
             <div className="mx-auto w-72 h-72 bg-white border-4 border-primary rounded-2xl flex items-center justify-center mb-6 shadow-xl p-4">
               <div className="text-center w-full">
                 <QrCode size={160} className="mx-auto mb-4 text-primary" weight="duotone" />
@@ -2154,15 +2153,13 @@ const RestaurantDashboard = ({ user, onLogout }: RestaurantDashboardProps) => {
               </div>
             </div>
             
-            <div className="space-y-4 bg-gradient-to-br from-primary/10 to-accent/10 rounded-xl p-5 border-2 border-primary/30">
-              <div>
-                <p className="text-sm text-muted-foreground mb-2">PIN Temporaneo</p>
-                <p className="text-5xl font-bold text-primary tracking-wider">{selectedTable?.pin}</p>
-                <p className="text-xs text-muted-foreground mt-2">Il PIN cambia ogni volta che attivi il tavolo</p>
-              </div>
+            <div>
+              <p className="text-sm text-muted-foreground mb-2">PIN Temporaneo</p>
+              <p className="text-5xl font-bold text-primary tracking-wider">{selectedTable?.pin}</p>
+              <p className="text-xs text-muted-foreground mt-2">Il PIN cambia ogni volta che attivi il tavolo</p>
             </div>
             
-            <div className="flex gap-2 mt-6">
+            <div className="flex gap-3">
               <Button
                 onClick={() => {
                   if (selectedTable?.qrCode) {
@@ -2175,22 +2172,18 @@ const RestaurantDashboard = ({ user, onLogout }: RestaurantDashboardProps) => {
                 Testa QR Code
               </Button>
               <Button
-                variant="outline"
                 onClick={() => {
                   if (selectedTable?.qrCode) {
                     navigator.clipboard.writeText(selectedTable.qrCode)
                     toast.success('Link copiato negli appunti!')
                   }
                 }}
-                className="flex-1"
+                variant="outline"
                 size="lg"
               >
                 Copia Link
               </Button>
             </div>
-            <p className="text-xs text-muted-foreground mt-4">
-              💡 Stampa questo QR e attaccalo sul tavolo. Il codice QR è fisso e non cambia mai.
-            </p>
           </div>
         </DialogContent>
       </Dialog>
