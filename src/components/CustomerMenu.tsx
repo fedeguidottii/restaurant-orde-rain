@@ -50,7 +50,6 @@ export default function CustomerMenu({ tableId, onExit }: Props) {
   )
   
   const [cart, setCart] = useState<CartItem[]>([])
-  const [selectedCategory, setSelectedCategory] = useState<string>('all')
   const [showCart, setShowCart] = useState(false)
   const [showPinDialog, setShowPinDialog] = useState(false)
   const [enteredPin, setEnteredPin] = useState('')
@@ -65,9 +64,10 @@ export default function CustomerMenu({ tableId, onExit }: Props) {
     cat.restaurantId === table?.restaurantId && cat.isActive
   ).sort((a, b) => a.order - b.order) || []
   
-  const filteredItems = selectedCategory === 'all' 
-    ? restaurantMenuItems 
-    : restaurantMenuItems.filter(item => item.category === selectedCategory)
+  const itemsByCategory = restaurantCategories.map(category => ({
+    category: category.name,
+    items: restaurantMenuItems.filter(item => item.category === category.name)
+  })).filter(group => group.items.length > 0)
 
   // Calculate different totals for display
   const cartCalculations = {
@@ -341,97 +341,86 @@ export default function CustomerMenu({ tableId, onExit }: Props) {
               </Button>
             </div>
           </div>
-          
-          {/* Category Navigation - Fixed */}
-          <div className="mt-4">
-            <div className="flex gap-2 overflow-x-auto pb-2">
-              <Button
-                variant={selectedCategory === 'all' ? 'default' : 'outline'}
-                onClick={() => setSelectedCategory('all')}
-                className="flex-shrink-0"
-              >
-                Tutti
-              </Button>
-              {restaurantCategories.map((category) => (
-                <Button
-                  key={category.id}
-                  variant={selectedCategory === category.name ? 'default' : 'outline'}
-                  onClick={() => setSelectedCategory(category.name)}
-                  className="flex-shrink-0"
-                >
-                  {category.name}
-                </Button>
-              ))}
-            </div>
-          </div>
         </div>
       </div>
 
       {/* Main Content */}
       <main className="container mx-auto px-4 py-6">
-        {/* Menu Items Grid */}
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          {filteredItems.map((item) => {
-            const quantityInCart = getItemQuantityInCart(item.id)
-            
-            return (
-              <Card key={item.id} className="overflow-hidden shadow-professional hover:shadow-professional-lg transition-all duration-300 hover-lift bg-order-card">
-                {item.image && (
-                  <div className="relative h-48 overflow-hidden">
-                    <img 
-                      src={item.image} 
-                      alt={item.name}
-                      className="w-full h-full object-cover transition-transform duration-300 hover:scale-105"
-                      onError={(e) => {
-                        (e.target as HTMLImageElement).style.display = 'none'
-                      }}
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent" />
-                  </div>
-                )}
-                <CardContent className="p-4">
-                  <div className="space-y-3">
-                    <div>
-                      <h3 className="font-bold text-lg text-foreground">{item.name}</h3>
-                      <p className="text-sm text-muted-foreground line-clamp-2">{item.description}</p>
-                    </div>
-                    
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <span className="text-2xl font-bold text-primary">
-                          {restaurant?.allYouCanEat.enabled && !item.excludeFromAllYouCanEat 
-                            ? 'Incluso' 
-                            : `€${item.price.toFixed(2)}`
-                          }
-                        </span>
-                        {restaurant?.allYouCanEat.enabled && !item.excludeFromAllYouCanEat && (
-                          <Badge variant="secondary" className="text-xs bg-green-100 text-green-800">
-                            All You Can Eat
-                          </Badge>
-                        )}
-                      </div>
-                      <Badge variant="outline" className="text-xs">{item.category}</Badge>
-                    </div>
-                    
-                    <div className="flex items-center justify-between gap-2">
-                      <Button
-                        onClick={() => addToCart(item.id)}
-                        className="flex-1 bg-primary hover:bg-primary/90 shadow-gold"
-                      >
-                        <Plus size={16} className="mr-2" />
-                        Aggiungi {quantityInCart > 0 && `(${quantityInCart})`}
-                      </Button>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            )
-          })}
+        {/* Menu Items by Category */}
+        <div className="space-y-8">
+          {itemsByCategory.map((categoryGroup) => (
+            <div key={categoryGroup.category}>
+              {/* Category Title Separator */}
+              <div className="mb-6">
+                <h2 className="text-3xl font-bold text-primary mb-2">{categoryGroup.category}</h2>
+                <div className="h-1 w-20 bg-primary rounded-full"></div>
+              </div>
+              
+              {/* Items Grid for this Category */}
+              <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                {categoryGroup.items.map((item) => {
+                  const quantityInCart = getItemQuantityInCart(item.id)
+                  
+                  return (
+                    <Card key={item.id} className="overflow-hidden shadow-professional hover:shadow-professional-lg transition-all duration-300 hover-lift bg-order-card">
+                      {item.image && (
+                        <div className="relative h-48 overflow-hidden">
+                          <img 
+                            src={item.image} 
+                            alt={item.name}
+                            className="w-full h-full object-cover transition-transform duration-300 hover:scale-105"
+                            onError={(e) => {
+                              (e.target as HTMLImageElement).style.display = 'none'
+                            }}
+                          />
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent" />
+                        </div>
+                      )}
+                      <CardContent className="p-4">
+                        <div className="space-y-3">
+                          <div>
+                            <h3 className="font-bold text-lg text-foreground">{item.name}</h3>
+                            <p className="text-sm text-muted-foreground line-clamp-2">{item.description}</p>
+                          </div>
+                          
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                              <span className="text-2xl font-bold text-primary">
+                                {restaurant?.allYouCanEat.enabled && !item.excludeFromAllYouCanEat 
+                                  ? 'Incluso' 
+                                  : `€${item.price.toFixed(2)}`
+                                }
+                              </span>
+                              {restaurant?.allYouCanEat.enabled && !item.excludeFromAllYouCanEat && (
+                                <Badge variant="secondary" className="text-xs bg-green-100 text-green-800">
+                                  All You Can Eat
+                                </Badge>
+                              )}
+                            </div>
+                          </div>
+                          
+                          <div className="flex items-center justify-between gap-2">
+                            <Button
+                              onClick={() => addToCart(item.id)}
+                              className="flex-1 bg-primary hover:bg-primary/90 shadow-gold"
+                            >
+                              <Plus size={16} className="mr-2" />
+                              Aggiungi {quantityInCart > 0 && `(${quantityInCart})`}
+                            </Button>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  )
+                })}
+              </div>
+            </div>
+          ))}
           
-          {filteredItems.length === 0 && (
-            <div className="col-span-full text-center py-12">
+          {itemsByCategory.length === 0 && (
+            <div className="text-center py-12">
               <ChefHat size={48} className="mx-auto text-muted-foreground mb-4" />
-              <p className="text-muted-foreground text-lg">Nessun piatto disponibile in questa categoria</p>
+              <p className="text-muted-foreground text-lg">Nessun piatto disponibile al momento</p>
             </div>
           )}
         </div>
