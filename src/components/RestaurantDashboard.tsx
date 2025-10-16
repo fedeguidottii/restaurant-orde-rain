@@ -905,7 +905,7 @@ const RestaurantDashboard = ({ user, onLogout }: RestaurantDashboardProps) => {
                     const groupedByDish: Record<string, typeof dishOrders> = {}
 
                     sortedDishOrders.forEach((dishOrder) => {
-                      const key = dishOrder.item.id
+                      const key = `${dishOrder.item.id}-${dishOrder.notes || ''}`
                       if (!groupedByDish[key]) {
                         groupedByDish[key] = []
                       }
@@ -916,6 +916,7 @@ const RestaurantDashboard = ({ user, onLogout }: RestaurantDashboardProps) => {
                       if (orders.length === 0) return
                       
                       const item = orders[0].item
+                      const dishNotes = orders[0].notes
                       const totalQuantity = orders.reduce((sum, o) => sum + o.quantity, 0)
                       const totalCompleted = orders.reduce((sum, o) => sum + o.completedQuantity, 0)
                       const totalRemaining = totalQuantity - totalCompleted
@@ -927,7 +928,7 @@ const RestaurantDashboard = ({ user, onLogout }: RestaurantDashboardProps) => {
 
                       elementsToRender.push(
                         <div 
-                          key={item.id}
+                          key={`${item.id}-${dishNotes || ''}`}
                           className="group bg-white rounded-xl shadow-md border border-border/20 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 overflow-hidden"
                         >
                           <div className="p-3 border-b border-border/10">
@@ -947,6 +948,14 @@ const RestaurantDashboard = ({ user, onLogout }: RestaurantDashboardProps) => {
                                     {sortedOrders.length} {sortedOrders.length === 1 ? 'tavolo' : 'tavoli'}
                                   </p>
                                 </div>
+                                {dishNotes && (
+                                  <div className="flex items-start gap-1 mt-2 bg-amber-50 border border-amber-200 rounded px-2 py-1">
+                                    <span className="text-amber-600 text-[10px] flex-shrink-0 mt-0.5">💡</span>
+                                    <p className="text-[11px] text-amber-800 font-medium italic leading-tight">
+                                      {dishNotes}
+                                    </p>
+                                  </div>
+                                )}
                               </div>
                             </div>
 
@@ -987,14 +996,6 @@ const RestaurantDashboard = ({ user, onLogout }: RestaurantDashboardProps) => {
                                           <span className="text-[10px]">{getTimeAgo(orderInfo.timestamp)}</span>
                                         </div>
                                       </div>
-                                      {orderInfo.notes && (
-                                        <div className="flex items-start gap-1 bg-amber-50 border border-amber-200 rounded px-2 py-1">
-                                          <span className="text-amber-600 text-[10px] flex-shrink-0 mt-0.5">💡</span>
-                                          <p className="text-[11px] text-amber-800 font-medium italic leading-tight">
-                                            {orderInfo.notes}
-                                          </p>
-                                        </div>
-                                      )}
                                     </div>
 
                                     {!isFullyCompleted && (
